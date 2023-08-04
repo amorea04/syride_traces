@@ -10,7 +10,7 @@ main_path = "/Users/Adrien/Documents/paramoteur/syride/analyze_traces/syride_tra
 # list of pilots
 pilots = [
     "AdrienM",
-    "j2f",
-    "Thomas16",
-    "air race pro",
+    # "j2f",
+    # "Thomas16",
+    # "air race pro",
 ]

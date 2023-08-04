@@ -19,3 +19,5 @@ if __name__ == "__main__":
     for pilot in pilotes:
         print(pilot)
         python_functions.get_syride_traces(path=main_path, pilot=pilot)
+        print("\n\n")
+    print("Tous les fichiers ont été téléchargés")
