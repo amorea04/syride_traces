@@ -1,5 +1,17 @@
 """
-Fonctions utilisées dans le scraping de syride.
+Fonctions utilisées dans le scraping de syride :
+    - scroll_to_bottom
+    - get_filename_without_extension
+    - extract_site
+    - extract_date_heure
+    - extract_flight_data
+    - extract_flight_data2
+    - get_all_navs
+    - get_nav_infos_bs
+    - get_zip_adresses
+    - download_traces
+    - initiate_search
+    - get_syride_traces
 """
 
 # ------------------------ Imports -----------------------
@@ -7,25 +19,25 @@ Fonctions utilisées dans le scraping de syride.
 import zipfile
 import os
 import time
-import requests
 import json
 import traceback
-import sys
+import re
+import requests
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.chrome.service import Service
+
+# from selenium.webdriver.remote.webelement import WebElement
+
+from bs4 import BeautifulSoup
+
+
 from selenium.common.exceptions import (
     NoSuchElementException,
     StaleElementReferenceException,
 )
-
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
-from selenium.common import exceptions as se_exceptions
 
 # ------------------------ Functions -----------------------
 
@@ -40,9 +52,9 @@ def scroll_to_bottom(driver: webdriver, nb_scroll: int = 40):
     for i in range(nb_scroll):
         print(f"{i+1} ", end="", flush=True)
         driver.find_element(By.TAG_NAME, "body").send_keys(Keys.END)
-        time.sleep(3)  # Attendre pour permettre le chargement du contenu
+        time.sleep(2)  # Attendre pour permettre le chargement du contenu
     print("")
-    time.sleep(20)
+    time.sleep(30)
 
 
 def get_filename_without_extension(url: str) -> str:
@@ -61,6 +73,10 @@ def get_filename_without_extension(url: str) -> str:
 
 
 def extract_site(text: str) -> str:
+    """
+    Fonction permettant d'extraire le nom du site
+    lorsqu'il est précédé de "à" et suivi de "("
+    """
     # Trouver l'index du premier "à" dans la chaîne
     index_de_a = text.find("à")
 
@@ -73,142 +89,116 @@ def extract_site(text: str) -> str:
     return texte_extrait
 
 
-def extract_date_heure(date_h_data: str, date_hour: str) -> str:
+def extract_date_heure(date_h_data: str) -> str:
+    """
+    Fonction permettant d'extraire la date et
+    l'heure du vol
+    """
     try:
         date_h_temp = date_h_data.split(":")[1]
         date_h = date_h_temp.split(" ")
-    except:
+    except Exception:
+        print("", "\n", traceback.format_exc())
         date_h = ["None", "None", "None", "None"]
-    if date_hour == "date":
-        return date_h[1]
-    else:
-        return date_h[3]
+
+    date = date_h[1]
+
+    try:
+        heure = date_h[3]
+    except Exception:
+        heure = ""
+    return date, heure
 
 
 def extract_flight_data(data: list) -> str:
+    """
+    Fonction permettant d'extraire les données du vol
+    """
+
     def extract_flight_time(fl_time_data: str) -> str:
+        """
+        Fonction permettant d'extraire la durée du vol
+        """
         try:
             fl_time_temp = fl_time_data.split(":")[1:]
             fl_time = fl_time_temp[0] + ":" + fl_time_temp[1] + ":" + fl_time_temp[2]
             fl_time = fl_time[1:-1]
-        except:
+        except Exception:
+            print("", "\n", traceback.format_exc())
             fl_time = "None"
         return fl_time
 
     def extract_voile(voile_data: str) -> str:
+        """
+        Fonction permettant d'extraire la voile utilisée
+        """
         try:
             voile_data_temp = voile_data.split(":")[1]
             index_premiere_parenthese = voile_data_temp.find("(")
             voile = voile_data_temp[1 : index_premiere_parenthese - 1]
-        except:
+        except Exception:
+            print("", "\n", traceback.format_exc())
             voile = "None"
         return voile
 
     def extract_distance(distance_data: str) -> str:
+        """
+        Fonction permettant d'extraire la distance parcourue
+        """
         try:
             distance_data_temp = distance_data.split(":")[1]
             distance = distance_data_temp[1:-2]
-        except:
+        except Exception:
+            print("", "\n", traceback.format_exc())
             distance = "None"
         return distance
 
     def extract_alt_max(altitude_data: str) -> str:
+        """
+        Fonction permettant d'extraire l'altitude maximale
+        """
         try:
             altitude_data_temp = altitude_data.split(":")[1]
             altitude = altitude_data_temp[1:-1]
-        except:
+        except Exception:
+            print("", "\n", traceback.format_exc())
             altitude = "None"
         return altitude
 
     def extract_instrument(instrument_data: str) -> str:
+        """
+        Fonction permettant d'extraire l'instrument utilisé
+        """
         try:
             instrument_data_temp = instrument_data.split(":")[1]
             index_premiere_parenthese = instrument_data_temp.find("(")
             instrument = instrument_data_temp[1 : index_premiere_parenthese - 1]
-        except:
+        except Exception:
+            print("", "\n", traceback.format_exc())
             instrument = "None"
         return instrument
 
-    date = extract_date_heure(date_h_data=data[1], date_hour="date")
-    heure = extract_date_heure(date_h_data=data[1], date_hour="heure")
-    flight_time = extract_flight_time(fl_time_data=data[2])
-    voile = extract_voile(voile_data=data[3])
-    distance = extract_distance(distance_data=data[4])
-    # altitude = extract_alt_max(altitude_data=data[5])
-    instrument = extract_instrument(instrument_data=data[6])
+    date = None
+    heure = None
+    flight_time = None
+    voile = None
+    distance = None
+    # altitude = None
+    instrument = None
+
+    for item in data:
+        if item.startswith("Date :"):
+            date, heure = extract_date_heure(date_h_data=item)
+        elif item.startswith("Temps de vol :"):
+            flight_time = extract_flight_time(fl_time_data=item)
+        elif item.startswith("Voile utilisée :"):
+            voile = extract_voile(voile_data=item)
+        elif item.startswith("Distance parcourue :"):
+            distance = extract_distance(distance_data=item)
+        elif item.startswith("Instrument utilisé :"):
+            instrument = extract_instrument(instrument_data=item)
 
     return date, heure, flight_time, voile, distance, instrument
-
-
-def get_nav_infos1(activity: WebElement, pilote: str):
-    resultats = {}
-    # Trouver la div avec la classe "dateActivite" à l'intérieur de l'activité
-    # date_activite = activity.find_element(By.CLASS_NAME, "dateActivite").text
-
-    # Trouver l'élément avec la classe "photoGps" à l'intérieur de l'activité
-    try:
-        photo_gps_element = activity.find_element(By.CLASS_NAME, "photoGps")
-        photo_gps_url = get_filename_without_extension(
-            photo_gps_element.get_attribute("src")
-        )
-        is_trace = True
-    except se_exceptions:  # (NoSuchElementException, StaleElementReferenceException):
-        print("", "\n", traceback.format_exc())
-        photo_gps_url = "None"
-        is_trace = False
-
-    if is_trace is True:
-        try:
-            # Trouver l'élément dont l'id commence par "type" et est suivi de 7 chiffres à l'intérieur de l'activité
-            typename = f"type{photo_gps_url}"
-            # elements_type = activity.find_element(
-            #    By.XPATH,
-            #    f"//*[contains(@id, {typename})]",  # and string-length(@id)=11]"
-            # ).text
-            elements_type = activity.find_element(By.ID, typename).text
-        except Exception:
-            elements_type = "None"
-
-        try:
-            sitename = f"site{photo_gps_url}"
-            # site_name = extract_site(
-            #    activity.find_element(
-            #        By.XPATH,
-            #        f"//*[contains(@id, {sitename})]",  # and string-length(@id)=11]"
-            #    ).text
-            # )
-            site_name = extract_site(activity.find_element(By.ID, sitename).text)
-        except Exception:
-            site_name = "None"
-
-        ul_element = activity.find_elements(By.XPATH, ".//ul")
-        liste_data = [element.text for element in ul_element]
-
-        (
-            date,
-            heure,
-            flight_time,
-            voile,
-            distance,
-            instrument,
-        ) = extract_flight_data(data=liste_data)
-
-        # Parcourir les éléments "type" trouvés et récupérer leur texte
-        # types = [element.text for element in elements_type]
-
-        # # Ajouter les informations de l'activité au dict des résultats
-        resultats["pilote"] = pilote
-        resultats["num_activite"] = photo_gps_url
-        resultats["types"] = elements_type
-        resultats["site"] = site_name
-        resultats["date"] = date
-        resultats["heure"] = heure
-        resultats["flight_time"] = flight_time
-        resultats["voile"] = voile
-        resultats["distance"] = distance
-        resultats["instrument"] = instrument
-
-        return photo_gps_url, resultats
 
 
 def extract_flight_data2(flight_data: str):
@@ -221,7 +211,7 @@ def extract_flight_data2(flight_data: str):
             text = "None"
         return text
 
-    def extract_flight_site(text: str) -> str:
+    def extract_site(text: str) -> str:
         try:
             # Trouver l'index du premier ":" puis 1ere parenthese dans la chaîne
             index_de_ponct = text.find(":")
@@ -243,17 +233,41 @@ def extract_flight_data2(flight_data: str):
             fl_time = "None"
         return fl_time
 
-    date_act = extract_text_flight_data(text=flight_data[0], ind_end=1)
-    site_deco = extract_flight_site(flight_data[1])
-    distance = extract_text_flight_data(text=flight_data[7], ind_end=2)
-    distance_cumulee = extract_text_flight_data(text=flight_data[8], ind_end=2)
-    vitesse_max = extract_text_flight_data(text=flight_data[9], ind_end=4)
-    vitesse_moyenne = extract_text_flight_data(text=flight_data[10], ind_end=4)
-    plafond = extract_text_flight_data(text=flight_data[11], ind_end=1)
-    gain = extract_text_flight_data(text=flight_data[12], ind_end=1)
-    flight_duration = extract_flight_duration(fl_time_data=flight_data[13])
-    vario_max = extract_text_flight_data(text=flight_data[14], ind_end=3)
-    g_max = extract_text_flight_data(text=flight_data[15], ind_end=1)
+    date_act = (None,)
+    site_deco = (None,)
+    distance = (None,)
+    distance_cumulee = (None,)
+    vitesse_max = (None,)
+    vitesse_moyenne = (None,)
+    plafond = (None,)
+    gain = (None,)
+    flight_duration = (None,)
+    vario_max = (None,)
+    g_max = (None,)
+
+    for data in flight_data:
+        if data.startswith("Date :"):
+            date_act = data.split(":")[1].strip()
+        elif data.startswith("Décollage :"):
+            site_deco = extract_site(flight_data[1])
+        elif data.startswith("Distance :"):
+            distance = extract_text_flight_data(text=data, ind_end=2)
+        elif data.startswith("Distance cumulée :"):
+            distance_cumulee = extract_text_flight_data(text=data, ind_end=2)
+        elif data.startswith("Vitesse max :"):
+            vitesse_max = extract_text_flight_data(text=data, ind_end=4)
+        elif data.startswith("Vitesse moyenne :"):
+            vitesse_moyenne = extract_text_flight_data(text=data, ind_end=4)
+        elif data.startswith("Plafond :"):
+            plafond = extract_text_flight_data(text=data, ind_end=1)
+        elif data.startswith("Gain :"):
+            gain = extract_text_flight_data(text=data, ind_end=1)
+        elif data.startswith("Temps de vol :"):
+            flight_duration = extract_flight_duration(fl_time_data=data)
+        elif data.startswith("Vario max :"):
+            vario_max = extract_text_flight_data(text=data, ind_end=3)
+        elif data.startswith("G max :"):
+            g_max = extract_text_flight_data(text=data, ind_end=1)
 
     return (
         date_act,
@@ -284,48 +298,164 @@ def get_all_navs(
     chrome_options.add_argument(
         "--headless"
     )  # Exécuter le navigateur en mode headless (sans interface graphique)
-    # service = Service(
-    #     "/Users/Adrien/Documents/paramoteur/syride/analyze_traces/chromedriver-mac-x64/chromedriver"
-    # )
-    # driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver = webdriver.Chrome(options=chrome_options)
+    webdriver_path = "/Users/Adrien/Documents/paramoteur/syride/analyze_traces/chromedriver-mac-x64/chromedriver"
+    chrome_service = Service(webdriver_path)
+    driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
 
     url = base_url + pilote
     dict_navs = {}
 
     driver.get(url)
 
-    if len(known_traces) >= 50:
+    if len(known_traces) >= 40:
         nb_scroll = 1
     else:
         nb_scroll = 1
+
     # Faire défiler jusqu'en bas de la page
+    driver.implicitly_wait(600)
     scroll_to_bottom(driver, nb_scroll=nb_scroll)
 
-    activities = driver.find_elements(
-        By.XPATH, "//*[contains(@id, 'activite') and string-length(@id)=15]"
-    )
+    page_content = driver.page_source
+    soup = BeautifulSoup(page_content, "html.parser")
+    driver.quit()
+
+    id_pattern = re.compile(r"^activite\d{5,10}$")
+    activities = soup.find_all(id=id_pattern)
 
     for activity in activities:
         try:
-            num_activite, dict_activity = get_nav_infos1(
+            num_activite, dict_activity = get_nav_infos_bs(
                 activity=activity, pilote=pilote
             )
             dict_navs[f"{num_activite}"] = dict_activity
-        except:
+        except Exception:
+            print("", "\n", traceback.format_exc())
             pass
 
+    # On supprime toutes les activités déjà téléchargées
+    # et les activité qui ne sont pas un vol.
     dict_navs = {
-        key: value for key, value in dict_navs.items() if key not in known_traces
+        key: value
+        for key, value in dict_navs.items()
+        if key not in known_traces and key != "None"
     }
 
     final_list = list(set(dict_navs.keys()))
 
     print(f"{len(final_list)} nouvelles traces trouvées.")
 
-    driver.quit()
-
     return final_list, dict_navs
+
+
+def get_nav_infos_bs(activity: BeautifulSoup, pilote: str):
+    def get_activity_number(activity_id: str):
+        id_activity = activity_id.replace("activite", "")
+        return id_activity
+
+    resultats = {}
+
+    try:
+        # Trouver le numéro d'activité
+        id_activity = get_activity_number(
+            activity_id=activity.get("id"),
+        )
+    except Exception:
+        print("", "\n", traceback.format_exc())
+        id_activity = "None"
+
+    # identifier s'il s'agit d'une trace syride ou non
+    element = activity.find(class_="photoGps")
+    if element is not None:
+        is_syride = True
+    else:
+        is_syride = False
+
+    # identifier le numero d'activite et le type de vol
+    try:
+        type_pattern = re.compile(r"^type\d{5,10}$")
+        elements_type_temp = activity.find(id=type_pattern)
+        elements_type = elements_type_temp.text
+        if "\n" in elements_type:
+            elements_type = elements_type.replace("\n", "")
+        if "\t" in elements_type:
+            elements_type = elements_type.replace("\t", "")
+        num_activite_temp = elements_type_temp.get("id")
+        num_activite = num_activite_temp.replace("type", "")
+    except Exception:
+        print(f"activite{id_activity}: Ceci n'est pas un vol")
+        print("", "\n", traceback.format_exc())
+        elements_type = "None"
+        num_activite = "None"
+
+    # identifier l'id du nom du site
+    try:
+        site_pattern = re.compile(r"^site\d{5,10}$")
+        site_name_temp = activity.find(id=site_pattern)
+    except Exception:
+        print("", "\n", traceback.format_exc())
+        site_name_temp = "None"
+
+    # Récupérer les éléments de l'activté
+    ul_elements = activity.find_all("ul")
+    liste_data = [element.text for element in ul_elements]
+
+    # Récupérer les éléments en fonction de is_syride
+    if is_syride is True:
+        if site_name_temp != "None":
+            try:
+                site_name = extract_site(text=site_name_temp.text)
+            except Exception:
+                print("", "\n", traceback.format_exc())
+                site_name = "None"
+        else:
+            site_name = "None"
+
+        (
+            date,
+            heure,
+            flight_time,
+            voile,
+            distance,
+            instrument,
+        ) = extract_flight_data(data=liste_data)
+
+    else:
+        if site_name_temp != "None":
+            try:
+                site_name = site_name_temp.text
+            except Exception:
+                print("", "\n", traceback.format_exc())
+                site_name = "None"
+        else:
+            site_name = "None"
+
+        (
+            date,
+            _,
+            flight_time,
+            voile,
+            _,
+            _,
+        ) = extract_flight_data(data=liste_data)
+        heure = "None"
+        distance = "None"
+        instrument = "None"
+
+    resultats["pilote"] = pilote
+    resultats["id_activite"] = id_activity
+    resultats["num_activite"] = num_activite
+    resultats["types"] = elements_type
+    resultats["site"] = site_name
+    resultats["date"] = date
+    resultats["heure"] = heure
+    resultats["flight_time"] = flight_time
+    resultats["voile"] = voile
+    resultats["distance"] = distance
+    resultats["instrument"] = instrument
+    resultats["is_syride"] = is_syride
+
+    return num_activite, resultats
 
 
 def get_zip_adresses(
@@ -338,7 +468,10 @@ def get_zip_adresses(
     chrome_options.add_argument(
         "--headless"
     )  # Exécuter le navigateur en mode headless (sans interface graphique)
-    driver = webdriver.Chrome(options=chrome_options)
+    webdriver_path = "/Users/Adrien/Documents/paramoteur/syride/analyze_traces/chromedriver-mac-x64/chromedriver"
+    chrome_service = Service(webdriver_path)
+    driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+    # driver = webdriver.Chrome(options=chrome_options)
 
     # Charger la page
     url = base_url + pilote
@@ -348,56 +481,92 @@ def get_zip_adresses(
         trace = dict_nav[0]
         dict_nav = dict_nav[1]
         print(f"{i+1} ", end="", flush=True)
-        url1 = url + "/" + trace
 
-        driver.get(url1)
+        if dict_nav["is_syride"] is True:
+            url1 = url + "/" + trace
 
-        iframe_selector = "popupIframe"
-        iframe = driver.find_element(By.ID, iframe_selector)
+            driver.get(url1)
 
-        # Basculer vers l'iframe
-        driver.switch_to.frame(iframe)
+            try:
+                iframe_selector = "popupIframe"
+                iframe = driver.find_element(By.ID, iframe_selector)
 
-        liens_iframe = driver.find_elements(By.TAG_NAME, "a")
-        liens_download_zip = [
-            lien.get_attribute("href")
-            for lien in liens_iframe
-            if "downloadZIP" in lien.get_attribute("href")
-        ]
+                # Basculer vers l'iframe
+                driver.switch_to.frame(iframe)
 
-        flight_datas_temp = driver.find_elements(By.CLASS_NAME, "volTexte")
-        flight_datas = [element.text for element in flight_datas_temp]
+                liens_iframe = driver.find_elements(By.TAG_NAME, "a")
+                liens_download_zip = [
+                    lien.get_attribute("href")
+                    for lien in liens_iframe
+                    if "downloadZIP" in lien.get_attribute("href")
+                ]
 
-        (
-            date_act,
-            site_deco,
-            distance,
-            distance_cumulee,
-            vitesse_max,
-            vitesse_moyenne,
-            plafond,
-            gain,
-            flight_duration,
-            vario_max,
-            g_max,
-        ) = extract_flight_data2(flight_data=flight_datas)
+                flight_datas_temp = driver.find_elements(By.CLASS_NAME, "volTexte")
+                # flight_datas = [element.text for element in flight_datas_temp]
+                flight_datas = [
+                    element.accessible_name for element in flight_datas_temp
+                ]
 
-        dict_nav["date_activite"] = date_act
-        dict_nav["site_activite"] = site_deco
-        dict_nav["distance_activite"] = distance
-        dict_nav["distance_cumulee"] = distance_cumulee
-        dict_nav["vitesse_max"] = vitesse_max
-        dict_nav["vitesse_moyenne"] = vitesse_moyenne
-        dict_nav["plafond"] = plafond
-        dict_nav["gain"] = gain
-        dict_nav["duree_vol"] = flight_duration
-        dict_nav["vario_max"] = vario_max
-        dict_nav["g_max"] = g_max
-        dict_nav["adresse_zip"] = liens_download_zip[0]
+                (
+                    date_act,
+                    site_deco,
+                    distance,
+                    distance_cumulee,
+                    vitesse_max,
+                    vitesse_moyenne,
+                    plafond,
+                    gain,
+                    flight_duration,
+                    vario_max,
+                    g_max,
+                ) = extract_flight_data2(flight_data=flight_datas)
 
-        updated_dict_navs[trace] = dict_nav
+                dict_nav["date_activite"] = date_act
+                dict_nav["site_activite"] = site_deco
+                dict_nav["distance_activite"] = distance
+                dict_nav["distance_cumulee"] = distance_cumulee
+                dict_nav["vitesse_max"] = vitesse_max
+                dict_nav["vitesse_moyenne"] = vitesse_moyenne
+                dict_nav["plafond"] = plafond
+                dict_nav["gain"] = gain
+                dict_nav["duree_vol"] = flight_duration
+                dict_nav["vario_max"] = vario_max
+                dict_nav["g_max"] = g_max
+                dict_nav["adresse_zip"] = liens_download_zip[0]
 
-        driver.switch_to.default_content()
+                updated_dict_navs[trace] = dict_nav
+
+                driver.switch_to.default_content()
+            except (NoSuchElementException, StaleElementReferenceException, Exception):
+                dict_nav["date_activite"] = None
+                dict_nav["site_activite"] = None
+                dict_nav["distance_activite"] = None
+                dict_nav["distance_cumulee"] = None
+                dict_nav["vitesse_max"] = None
+                dict_nav["vitesse_moyenne"] = None
+                dict_nav["plafond"] = None
+                dict_nav["gain"] = None
+                dict_nav["duree_vol"] = None
+                dict_nav["vario_max"] = None
+                dict_nav["g_max"] = None
+                dict_nav["adresse_zip"] = None
+                updated_dict_navs[trace] = dict_nav
+                driver.switch_to.default_content()
+        else:
+            dict_nav["date_activite"] = None
+            dict_nav["site_activite"] = None
+            dict_nav["distance_activite"] = None
+            dict_nav["distance_cumulee"] = None
+            dict_nav["vitesse_max"] = None
+            dict_nav["vitesse_moyenne"] = None
+            dict_nav["plafond"] = None
+            dict_nav["gain"] = None
+            dict_nav["duree_vol"] = None
+            dict_nav["vario_max"] = None
+            dict_nav["g_max"] = None
+            dict_nav["adresse_zip"] = None
+
+            updated_dict_navs[trace] = dict_nav
 
     print("")
 
@@ -416,7 +585,7 @@ def download_traces(main_repertoire: str, nav: str, link: str):
     response = requests.get(link)
 
     if response.status_code == 200:
-        # Spécifier le nom de fichier souhaité (dans cet exemple, nous utilisons '2181222.zip')
+        # Spécifier le nom de fichier souhaité
         nom_fichier_zip = nav + ".zip"
 
         # Enregistrer le contenu téléchargé dans le fichier avec le nom spécifié
@@ -439,8 +608,12 @@ def download_traces(main_repertoire: str, nav: str, link: str):
 def save_flight_data(main_repertoire: str, flight_data: dict):
     num_act = flight_data["num_activite"]
     file_name = main_repertoire + "/traces/" + f"{num_act}/" + f"{num_act}.json"
-    with open(file_name, "w") as fp:
-        json.dump(flight_data, fp)
+    with open(file_name, "w", encoding="utf-8") as fp:
+        json.dump(
+            flight_data,
+            fp,
+            ensure_ascii=False,
+        )
     print(f"Données de vol {num_act} sauvegardées")
 
 
@@ -505,7 +678,22 @@ def get_syride_traces(path: str, pilot: str):
             data_nav = dict_item[1]
             link = data_nav["adresse_zip"]
             print(f"{i+1} ", end="", flush=True)
-            download_traces(main_repertoire=repertoire_pilote, nav=nav, link=link)
-            save_flight_data(main_repertoire=repertoire_pilote, flight_data=data_nav)
+            try:
+                if data_nav["is_syride"] is True:
+                    download_traces(
+                        main_repertoire=repertoire_pilote, nav=nav, link=link
+                    )
+                else:
+                    if not os.path.exists(f"{repertoire_pilote}/traces/{nav}"):
+                        os.makedirs(f"{repertoire_pilote}/traces/{nav}")
+
+                save_flight_data(
+                    main_repertoire=repertoire_pilote, flight_data=data_nav
+                )
+            except Exception:
+                print("", "\n", traceback.format_exc())
+                print(f"Trace {nav} non sauvegardée")
+                pass
+
     else:
         print("Pas de nouvelles traces a telecharger.")
