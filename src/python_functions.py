@@ -287,6 +287,7 @@ def extract_flight_data2(flight_data: str):
 def get_all_navs(
     pilote: str,
     known_traces: list,
+    scroll: int,
     base_url: str = "https://www.syride.com/fr/pilotes/",
 ) -> list:
     """
@@ -307,10 +308,13 @@ def get_all_navs(
 
     driver.get(url)
 
-    if len(known_traces) >= 40:
-        nb_scroll = 1
+    if scroll == -1:
+        if len(known_traces) >= 1:
+            nb_scroll = 3
+        else:
+            nb_scroll = 40
     else:
-        nb_scroll = 1
+        nb_scroll = scroll
 
     # Faire défiler jusqu'en bas de la page
     driver.implicitly_wait(600)
@@ -657,7 +661,7 @@ def initiate_search(main_repertoire: str):
     return folder_list
 
 
-def get_syride_traces(path: str, pilot: str):
+def get_syride_traces(path: str, pilot: str, scroll: int):
     """
     docstring
     """
@@ -665,7 +669,9 @@ def get_syride_traces(path: str, pilot: str):
     repertoire_pilote = path + pilot
     list_of_known_traces = initiate_search(main_repertoire=repertoire_pilote)
 
-    new_navs, dict_navs = get_all_navs(pilote=pilot, known_traces=list_of_known_traces)
+    new_navs, dict_navs = get_all_navs(
+        pilote=pilot, known_traces=list_of_known_traces, scroll=scroll
+    )
 
     if len(new_navs) > 0:
         print(f"Réupération des liens (total {len(new_navs)})...")
