@@ -7,15 +7,7 @@ import { fmtDate } from '@/lib/format';
 export function AppFooter() {
   const { meta } = useData();
   return (
-    <Group
-      component="footer"
-      justify="space-between"
-      gap="xs"
-      px="md"
-      py="md"
-      mt="xl"
-      style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}
-    >
+    <Group component="footer" justify="space-between" gap="xs" px="md" py="md" mt="xl" className="sr-footer">
       <Text size="xs" c="dimmed">
         {UPDATE_NOTICE}
       </Text>

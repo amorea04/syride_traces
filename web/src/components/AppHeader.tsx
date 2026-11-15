@@ -40,16 +40,18 @@ export function AppHeader({ filtersOpen, onToggleFilters }: Props) {
   const switchLabel = scheme === 'light' ? 'Passer au thème sombre' : 'Passer au thème clair';
 
   return (
-    <Group h="100%" px="md" gap="md" wrap="nowrap" justify="space-between">
+    <Group h="100%" px="md" gap="lg" wrap="nowrap" justify="space-between">
       <Anchor
         component={Link}
         to={{ pathname: '/', search }}
         underline="never"
         c="inherit"
-        fw={600}
         visibleFrom="sm"
-        style={{ whiteSpace: 'nowrap' }}
+        className="sr-brand"
       >
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path d="M3 18 9 7l4 6 2-3 6 8z" fill="var(--sr-accent)" />
+        </svg>
         {APP_NAME}
       </Anchor>
 
@@ -58,7 +60,7 @@ export function AppHeader({ filtersOpen, onToggleFilters }: Props) {
         aria-label="Navigation principale"
         style={{ overflowX: 'auto', flex: 1, minWidth: 0 }}
       >
-        <Group gap="md" wrap="nowrap" component="ul" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+        <Group gap="lg" wrap="nowrap" component="ul" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
           {NAV_ITEMS.map((item) => {
             const active = isNavActive(item, pathname);
             return (
@@ -68,11 +70,9 @@ export function AppHeader({ filtersOpen, onToggleFilters }: Props) {
                   nav
                   end={item.to === '/'}
                   isActive={active}
-                  underline={active ? 'always' : 'hover'}
-                  c="inherit"
-                  fw={active ? 600 : 400}
+                  underline="never"
+                  className="sr-nav-link"
                   size="sm"
-                  style={{ whiteSpace: 'nowrap' }}
                 >
                   {item.label}
                 </FilterLink>
