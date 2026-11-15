@@ -1,0 +1,17 @@
+# Cloudflare Pages : repli SPA (React Router) route par route.
+#
+# Pourquoi pas « /* /index.html 200 » : ce repli attrapait aussi les /data/* et /assets/* absents et les
+# servait en 200 HTML avec le Cache-Control immuable de _headers. La doc Cloudflare n'accepte pas le statut
+# 404 dans _redirects (seulement 301/302/303/307/308 et 200 en réécriture) ; la règle « /data/* /404 404 » serait donc ignorée.
+# Solution documentée : sans catch-all, Pages sert public/404.html (statut 404) pour tout chemin sans fichier,
+# donc aussi pour /data/* et /assets/* manquants ; seules les routes de l'application sont réécrites vers index.html.
+# Garder cette liste alignée avec src/router.tsx (vérifié par tests/deploy.test.ts).
+/vols         /index.html  200
+/vol/*        /index.html  200
+/pilotes      /index.html  200
+/pilote/*     /index.html  200
+/sites        /index.html  200
+/site/*       /index.html  200
+/comparer     /index.html  200
+/records      /index.html  200
+/a-propos     /index.html  200

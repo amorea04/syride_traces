@@ -42,3 +42,19 @@ Notre usage : < 2 Mo de données, ~200 fichiers (dont ~150 insights), largement 
 | Hors ligne (PWA) | Cache des tuiles déjà vues uniquement ; pas de téléchargement en masse (> 3 000 tuiles ou 50 Mo interdit sans accord) | [openfreemap.org](https://openfreemap.org/) |
 
 Plan de repli si l'une de ces conditions change : ROADMAP_WEBAPP.md §10.
+
+## Développement : données servies par `npm run dev`
+
+Le serveur de dev et `npm run preview` servent `web/public/data/` (vraies données, ignorées par Git) sous `/data/`.
+Pour utiliser les données synthétiques commitées à la place (e2e, CI, démo sans données réelles) :
+
+```bash
+VITE_DATA_DIR=tests/fixtures/data npm run dev      # ou dans un fichier web/.env.local : VITE_DATA_DIR=tests/fixtures/data
+```
+
+La variable (chemin relatif à `web/` ou absolu) est lue par un petit plugin de `vite.config.ts` qui répond à `/data/*` depuis ce dossier
+(dev et preview ; `npm run build` copie toujours `public/data/`). `npm run e2e` la positionne tout seul sur `tests/fixtures/data`
+et lance Playwright sur le build ; installer le navigateur une fois avec `npx playwright install chromium`.
+
+Les filtres globaux vivent dans l'URL : `?pilote=j2f&activite=parapente&du=2024-01-01&au=2024-12-31&voile=…&site=12`
+(paramètres répétables pour pilote, voile et site ; valeurs par défaut absentes).

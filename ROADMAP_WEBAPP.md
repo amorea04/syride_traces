@@ -417,7 +417,7 @@ C'est le produit de `src/web_export/insights.py`, qui appelle les fonctions de `
 
 ### 5.1 Tableau de bord `/` : **parité** avec l'existant, en mieux
 
-0. **Activité collective** (nouveau, en haut de page, raison d'être de la webapp selon D9)
+0. **Activité collective** (nouveau, raison d’être de la webapp selon D9 ; placé **sous** le bandeau de KPI, D14)
    - **« La saison du groupe »** : heures cumulées depuis le 1ᵉʳ janvier pour tous les pilotes, superposées à la même courbe de l'année précédente, avec la phrase d'écart (« le groupe a 34 h d'avance sur 2025 à date »). Réutilise `CumulativeChart` et la logique `year_gap`.
    - **Derniers vols** : fil des 10 à 20 vols les plus récents (pilote, site, durée, plafond), avec un lien vers la fiche vol et une icône « trace sur Syride ».
    - **Ce mois-ci / cette semaine** : pilotes actifs, vols, heures, site le plus fréquenté, plus long vol de la période.
@@ -466,6 +466,7 @@ C'est le produit de `src/web_export/insights.py`, qui appelle les fonctions de `
   - barres « ce vol / moyenne du pilote / moyenne du site » pour chaque métrique ;
   - vols du même jour (autres pilotes au même site, avec liens Syride) ;
   - vols précédent et suivant du pilote.
+- **Ce site face aux autres (D15)** : indicateurs des vols du site (durée moyenne, distance, plafond, vitesse, vario, nombre de vols et de pilotes, part parapente/paramoteur) positionnés par rapport aux autres sites (sites d'au moins 10 vols), même présentation que « Ce vol face aux moyennes ». Lien vers la page du site.
 - **Mini-carte** : position **du site** (pas de trace), avec un lien vers la page du site.
 
 ### 5.4 Pilotes `/pilotes` et `/pilote/:slug` (nouveau)
@@ -503,7 +504,7 @@ Les fonctions « souvenir » du rapport, le **rejeu animé de l'année** et le *
    - Portée : « site le plus éloigné : X à 84 km ».
 6. **Records** : top 5 sur 6 critères, mention « Nouveau record ! » et écart avec l'ancien record (`insights.records_beaten`).
 7. **Comparaison avec les années précédentes** : tableau KPI × années avec pastilles, plus des **graphiques en haltère** (T34). **Pas de radar**, refusé par Adrien.
-8. **Projection de fin d'année** (T31, si l'année est en cours) : projection des heures selon le profil mensuel de l'année précédente, et jauge d'objectif personnel (objectif stocké en `localStorage`).
+8. ~~**Projection de fin d'année** et jauge d'objectif (T31)~~ : retirées (D16).
 9. **Vols de l'année** : tableau des vols (composant de §5.2), avec les records en or.
 10. **Actions** :
     - « Copier le lien » (T14) et « Copier mon résumé » en texte (T24) ;
@@ -517,9 +518,12 @@ Les fonctions « souvenir » du rapport, le **rejeu animé de l'année** et le *
   - stats et pilotes présents ;
   - saisonnalité (mois × heure) ;
   - derniers vols sur le site, chacun avec un lien « trace sur Syride » ;
-  - records du site.
+  - records du site ;
+  - « Ce site face aux autres » (D15), même composant que sur la fiche vol.
 
 ### 5.6 Comparer `/comparer` (nouveau)
+
+- **Mode « Sites » (D17)** : 2 à 4 sites côte à côte (durée moyenne, distance, plafond, vitesse, vario, vols, pilotes, saisonnalité), calculés sur les pilotes sélectionnés dans les filtres globaux : « comment notre groupe vole à Montbron par rapport à Magnac ».
 
 - Choix de 2 à 4 pilotes, ou de 2 à 4 années pour un même pilote.
 - KPI côte à côte avec pastilles d'écart, courbes d'heures cumulées superposées (réticule commun), **graphiques en haltère** par métrique (T34) et rythme comparé (régularité, série, part du week-end).
@@ -593,7 +597,7 @@ Principe : **Opus** conçoit, arbitre et relit. **Sonnet** produit le code. **Ha
 | **Maître d'œuvre** (session principale) | Opus | Découpage, arbitrages, relecture des PR, intégration, dialogue avec Adrien |
 | **Architecte** | Opus (agent `Plan`) | Phase 0 : validation de l'architecture, contrat de données, arborescence. Relecture de la phase 2. |
 | **Data engineer** | Sonnet | Phase 1 : `export_web.py`, schéma, tests pytest |
-| **Data scientist** | Sonnet | Phase 1 : audit de cohérence des statistiques (fiche ou GPX), portage des indicateurs de rythme. Phase 5B : projection de fin d'année (T31). |
+| **Data scientist** | Sonnet | Phase 1 : audit de cohérence des statistiques (fiche ou GPX), portage des indicateurs de rythme. Phase 5B : agrégats « Ce site face aux autres » (D15). |
 | **Intégrateur du rapport** | Sonnet, relecture Opus | Phase 1 : rendre `report_data.py` importable, `insights.py`. Phase 5B : page Bilan. Il connaît `src/rapport/` et ses contraintes (Python 3.8, refus d'Adrien). |
 | **Designer UI** | Sonnet (avec les skills `artifact-design` et `dataviz`) | Phase 2 : jetons, thèmes, maquettes |
 | **Développeur front** | Sonnet | Phases 2 à 6 : composants, pages |
@@ -747,7 +751,7 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - **5B.5** Rythme : `CumulativeChart` multi-années (tirets et hachures, réticule, losanges des jalons), puis réutilisation des blocs de la phase 3.
 - **5B.6** Où : carte MapLibre avec boutons de cadrage par zone, nouveaux sites cerclés d'or, portée, tableau des sites.
 - **5B.7** Records de l'année et mention « Nouveau record ! » avec écart ; tableau de comparaison KPI × années et graphiques en haltère.
-- **5B.8** Projection de fin d'année et jauge d'objectif (T31), seulement pour l'année en cours ; méthode validée par le data scientist.
+- ~~**5B.8** Projection de fin d'année et jauge d'objectif (T31)~~ : retiré (D16).
 - **5B.9** Actions :
   - copier le lien et copier le résumé (T14, T24) ;
   - CSV ;
@@ -857,6 +861,11 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 | D10 | Polices | **Pile système** | §6 |
 | D11 | Persona et textes au « tu » | **Seulement sur le Bilan** | §5.4 bis |
 | D12 | Publier des traces (même simplifiées) ? | **Non.** Chaque référence à une trace renvoie vers syride.com, qui les a déjà publiées. | §4.4 supprimé, fiche vol sans carte de trace, phases 1.4 et 4 allégées, pas de superposition ni de mini-trace, contrôle automatique dans `publish.py` et en e2e |
+| D13 | Palette (2.7) | **Direction B « Encre »**, avec **parapente vermillon `#e4572e`** et **paramoteur azur `#2f6fe0`** (inversés par rapport à la proposition). Jetons : `web/design/tokens-B.json`. | §6 ; thème dans `web/src/theme/` |
+| D14 | Ordre du tableau de bord | **« Vue d'ensemble » (KPI) au-dessus de « Activité collective »** | §5.1 |
+| D15 | Fiche vol | Ajout de **« Ce site face aux autres »** : les vols du site comparés aux autres sites (durée, distance, plafond, vitesse, vario, vols, pilotes, part des disciplines), même langage visuel que « Ce vol face aux moyennes ». Agrégat réutilisé sur la page site. | §5.3, §5.5 |
+| D17 | Comparaison de sites par pilote ou groupe | **Oui** : « Ce site face aux autres » existe aussi pour un pilote (bascule « Tous / Ce pilote » sur la fiche vol, section « Ses sites face à face » sur la page pilote), et la page Comparer reçoit un **mode « Sites »** (2 à 4 sites côte à côte, calculés sur la sélection de pilotes des filtres globaux). Un seul module TS d'agrégats par site, réutilisé partout. | §5.3, §5.4, §5.5, §5.6 |
+| D16 | Projection de fin d'année et objectif personnel dans le Bilan (T31) | **Retirés** | §5.4 bis point 8 et 5B.8 supprimés |
 
 **Détail D8 : pourquoi un dépôt public suffit.**
 - Avec cette architecture, **le code** va sur GitHub et **les données** vont directement du Mac vers Cloudflare (`wrangler`). Elles ne passent jamais par GitHub. La `.gitignore` en liste blanche l'impose déjà.
@@ -899,17 +908,17 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - [ ] PR relue et fusionnée · **`/clear`**
 
 ### Phase 2 : Socle front et design
-- [ ] 2.1 Scaffold Vite, React, TS, outillage, versions épinglées
-- [ ] 2.2 Types générés depuis le schéma
-- [ ] 2.3 Couche données (meta, flights, sites, insights)
-- [ ] 2.4 Store des filtres et synchronisation de l'URL, cascades avec compteurs
-- [ ] 2.5 `stats.ts`, `metrics.ts`, `rhythm.ts`, `records.ts` ; non-régression contre `app_functions.py` **et** `report_data.py` au vert
-- [ ] 2.6 Formatage français (règles de `report_format.py`)
-- [ ] 2.7 Jetons (2 directions de palette), thèmes Mantine, ECharts et MapLibre ; 4 maquettes publiées (dont le Bilan)
-- [ ] 2.7b **Maquettes validées par Adrien**
-- [ ] 2.8 Gabarit, navigation, barre de filtres responsive, thème clair et sombre, 404
-- [ ] 2.9 `_redirects` et `_headers`
-- [ ] PR relue et fusionnée · **`/clear`**
+- [x] 2.1 Scaffold Vite, React, TS, outillage, versions épinglées
+- [x] 2.2 Types générés depuis le schéma
+- [x] 2.3 Couche données (meta, flights, sites, insights)
+- [x] 2.4 Store des filtres et synchronisation de l'URL, cascades avec compteurs
+- [x] 2.5 `stats.ts`, `metrics.ts`, `rhythm.ts`, `records.ts` ; non-régression contre `app_functions.py` **et** `report_data.py` au vert
+- [x] 2.6 Formatage français (règles de `report_format.py`)
+- [x] 2.7 Jetons (2 directions de palette), thèmes Mantine, ECharts et MapLibre ; 5 maquettes dans `web/design/` (dont le Bilan et Comparer en mode Sites), relues en local plutôt que publiées ; captures hors Git
+- [x] 2.7b **Maquettes validées par Adrien** (15/11/2026 : palette B « Encre » inversée, retouches D13 à D16)
+- [x] 2.8 Gabarit, navigation, barre de filtres responsive, thème clair et sombre, 404
+- [x] 2.9 `_redirects` et `_headers`
+- [x] PR relue (`/code-review` medium, 10 constats corrigés) et fusionnée · **`/clear`**
 
 ### Phase 3 : Tableau de bord
 - [ ] 3.0 Bloc « Activité collective » (saison du groupe, derniers vols, ce mois-ci, records récents)
@@ -952,7 +961,7 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - [ ] 5B.5 Courbe cumulée multi-années et blocs Rythme
 - [ ] 5B.6 Carte zonée, nouveaux sites, portée
 - [ ] 5B.7 Records battus, comparaison, haltères
-- [ ] 5B.8 Projection de fin d'année et jauge d'objectif
+- ~~5B.8 Projection de fin d'année et jauge d'objectif~~ (retiré, D16)
 - [ ] 5B.9 Actions : copier le lien, copier le résumé, CSV
 - [ ] 5B.10 Données et limites, glossaire
 - [ ] 5B.11 Recette croisée avec 3 rapports HTML : identiques ou écarts justifiés
