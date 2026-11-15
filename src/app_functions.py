@@ -58,8 +58,8 @@ def get_flight_params(df: pd.DataFrame) -> dict:
         f"{nb_tot_heures_pleines} heures et {nb_tot_minutes_pleines} minutes"
     )
 
-    # Nb sites de vol
-    nb_tot_sites = str(len(df["site"].unique()))
+    # Nb sites de vol (les vols sans site ne comptent pas comme un site)
+    nb_tot_sites = str(df["site"].nunique())
 
     # Nb de pilotes
     nb_tot_pilots = str(len(df["pilote"].unique()))
@@ -186,11 +186,14 @@ def create_grouped_df(df: pd.DataFrame, group_var: list[str]):
     """
     var_name = group_var[0]
 
+    df = df.copy()
+    df[FICHE_STATS] = df[FICHE_STATS].astype(float)
+    # Mesures <= 0 = valeur inconnue : ignorées dans les moyennes et max (même règle que
+    # get_flight_params et le rapport, `_positive`).
+    df[FICHE_STATS] = df[FICHE_STATS].where(df[FICHE_STATS] > 0)
     # Les vols incomplets comptent (nb de vols, durée...) mais pas dans les moyennes / max
     # des statistiques de la fiche, qu'ils ne connaissent pas encore.
     if "incomplet" in df.columns and df["incomplet"].any():
-        df = df.copy()
-        df[FICHE_STATS] = df[FICHE_STATS].astype(float)
         df.loc[df["incomplet"].astype(bool), FICHE_STATS] = np.nan
 
     df_grouped = df.groupby(by=group_var, as_index=False).agg(

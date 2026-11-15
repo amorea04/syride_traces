@@ -5,9 +5,9 @@
     "n_files": 3
   },
   "Accous-500": {
-    "latitude": 42.97914472222222,
-    "longitude": -0.5804339999999999,
-    "n_files": 18
+    "latitude": 42.978957066666666,
+    "longitude": -0.5795342,
+    "n_files": 15
   },
   "Accous-800": {
     "latitude": 42.9805204,
@@ -370,9 +370,9 @@
     "n_files": 2
   },
   "Chalais Aerodrome": {
-    "latitude": 45.26863316666667,
-    "longitude": 0.020655333333333335,
-    "n_files": 6
+    "latitude": 45.2685698,
+    "longitude": 0.0203564,
+    "n_files": 5
   },
   "Chalvet  Ouest": {
     "latitude": 43.97818255999999,
