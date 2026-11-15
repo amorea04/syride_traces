@@ -860,7 +860,7 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 ### Phase 0 : Cadrage
 - [x] 0.1 Décisions D1 à D11 tranchées et consignées au §11 (15/11/2026), puis D12
 - [x] 0.2 Conditions gratuites vérifiées et datées (Cloudflare Pages, OpenFreeMap) : `web/README.md`, 15/11/2026
-- [ ] 0.3 Compte Cloudflare créé **sans moyen de paiement**
+- [x] 0.3 Compte Cloudflare créé **sans moyen de paiement** (15/11/2026, par Adrien ; authentification future par `npx wrangler login`, aucun mot de passe stocké)
 - [x] 0.4 Hook pre-commit anti-données (pkl, db, .env, gpx, igc, kml, `web/public/data`, `<pilote>/traces/`, > 2 Mo) : `.githooks/pre-commit`, activé par `git config core.hooksPath .githooks`
 - [x] 0.4 bis `.gitignore` mise à jour (`web/`, `Makefile`, roadmap ; exclusions `node_modules`, `dist`, `public/data`)
 - [x] 0.5 `schema.json` v1 commité (`src/web_export/schema.json`, validé avec jsonschema 4.17, draft 2020-12)
