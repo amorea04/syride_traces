@@ -6,6 +6,7 @@ import {
   historyModeFor,
   isDefaultFilters,
   parseFilters,
+  resolveUrlFilters,
   writeFilters,
   type Filters,
 } from '@/lib/filters';
@@ -45,8 +46,14 @@ export function useFiltersUrlSync(): void {
       navigate({ search: writeFilters(location.search, current) }, { replace: true });
       return;
     }
-    synced.current = fromUrl;
-    replaceAll(fromUrl);
+    // Hors retour arrière, un paramètre invalide n'efface pas les autres filtres.
+    const next = navType === 'POP' ? fromUrl : resolveUrlFilters(location.search, current);
+    synced.current = next;
+    replaceAll(next);
+    // L'URL est corrigée pour refléter l'état réel (valeurs invalides retirées ou remplacées).
+    if (!filtersEqual(fromUrl, next)) {
+      navigate({ search: writeFilters(location.search, next) }, { replace: true });
+    }
     // `navigate` est stable ; on réagit aux changements de position uniquement.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);

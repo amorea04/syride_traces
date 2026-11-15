@@ -10,6 +10,7 @@
  * Les arrondis suivent `round()` de Python (arrondi au pair le plus proche sur les ex æquo).
  */
 import { weekdayOf } from '@/data/flight';
+import { pythonRound } from '@/lib/numeric';
 
 /** Espace insécable : entre un nombre et son unité. */
 export const NBSP = '\u00a0';
@@ -49,22 +50,8 @@ export const MONTHS_SHORT = [
 export const DAYS_LONG = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'] as const;
 export const DAYS_SHORT = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'] as const;
 
-/** Tolérance pour reconnaître un ex æquo malgré l'erreur de représentation flottante. */
-const TIE_EPSILON = 1e-9;
-
-/** Arrondi à l'entier le plus proche, ex æquo au pair (comme `round()` de Python). */
-export function roundHalfEven(value: number): number {
-  const floor = Math.floor(value);
-  const diff = value - floor;
-  if (Math.abs(diff - 0.5) < TIE_EPSILON) return floor % 2 === 0 ? floor : floor + 1;
-  return Math.round(value);
-}
-
-/** Arrondi à `digits` décimales, ex æquo au pair. */
-function roundDigits(value: number, digits: number): number {
-  const factor = 10 ** digits;
-  return roundHalfEven(value * factor) / factor;
-}
+/** Arrondi à `digits` décimales, ex æquo au pair (`round()` de Python, cf. `pythonRound`). */
+const roundDigits = pythonRound;
 
 const formatters = new Map<number, Intl.NumberFormat>();
 
@@ -88,7 +75,7 @@ function normalizeSeparators(text: string): string {
 
 /** Entier avec séparateur de milliers : 2450 → « 2 450 ». */
 export function fmtInt(value: number): string {
-  const rounded = roundHalfEven(value);
+  const rounded = pythonRound(value);
   return normalizeSeparators(formatter(0).format(Object.is(rounded, -0) ? 0 : rounded));
 }
 
@@ -100,7 +87,7 @@ export function fmtNum(value: number, digits = 1): string {
 
 /** Nombre « parlant » : une décimale sous 10 (sans « ,0 » inutile), entier au-dessus : 3,2 ; 4 ; 27. */
 export function fmtReadable(value: number): string {
-  if (value >= 10 || Math.abs(roundDigits(value, 1) - roundHalfEven(value)) < TIE_EPSILON) {
+  if (value >= 10 || roundDigits(value, 1) === pythonRound(value)) {
     return fmtInt(value);
   }
   return fmtNum(value, 1);
@@ -108,7 +95,7 @@ export function fmtReadable(value: number): string {
 
 /** Durée en minutes : « 42 h 18 min », « 35 min », « 3 h ». */
 export function fmtDuration(minutes: number): string {
-  const total = roundHalfEven(minutes);
+  const total = pythonRound(minutes);
   const hours = Math.floor(total / 60);
   const mins = total - hours * 60;
   if (hours === 0) return `${mins}${NBSP}min`;
@@ -118,7 +105,7 @@ export function fmtDuration(minutes: number): string {
 
 /** Durée en minutes au format compact « 2 096 h 01 » (heures, minutes sur deux chiffres). */
 export function fmtHm(minutes: number): string {
-  const total = roundHalfEven(minutes);
+  const total = pythonRound(minutes);
   const hours = Math.floor(total / 60);
   const mins = total - hours * 60;
   return `${fmtInt(hours)}${NBSP}h${NBSP}${String(mins).padStart(2, '0')}`;
@@ -137,7 +124,7 @@ export function fmtPercent(value: number, digits = 0): string {
 /** Variation en % avec signe : « +12 % », « −8 % », « = » si nulle, « – » si inconnue. */
 export function fmtSignedPct(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return EMPTY;
-  const rounded = roundHalfEven(value);
+  const rounded = pythonRound(value);
   if (rounded === 0) return '=';
   const sign = rounded > 0 ? '+' : '\u2212';
   return `${sign}${Math.abs(rounded)}${NBSP}%`;

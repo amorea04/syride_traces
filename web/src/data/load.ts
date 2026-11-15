@@ -24,6 +24,8 @@ export class DataLoadError extends Error {
     message: string,
     readonly url: string,
     readonly status?: number,
+    /** Fichier absent (404) ou remplacé par une page HTML de repli : le nom hashé est probablement périmé. */
+    readonly missing = false,
   ) {
     super(message);
     this.name = 'DataLoadError';
@@ -39,13 +41,33 @@ async function fetchJson<T>(relPath: string, init?: RequestInit): Promise<T> {
     throw new DataLoadError(`Impossible de joindre ${url}`, url);
   }
   if (!response.ok) {
-    throw new DataLoadError(`Chargement de ${relPath} : HTTP ${response.status}`, url, response.status);
+    throw new DataLoadError(
+      response.status === 404
+        ? `Fichier introuvable : ${relPath}`
+        : `Chargement de ${relPath} : HTTP ${response.status}`,
+      url,
+      response.status,
+      response.status === 404,
+    );
+  }
+  // Un repli SPA mal configuré répond 200 avec index.html pour un fichier absent.
+  if ((response.headers.get('content-type') ?? '').toLowerCase().includes('text/html')) {
+    throw new DataLoadError(`Fichier introuvable : ${relPath} (page HTML reçue)`, url, response.status, true);
   }
   try {
     return (await response.json()) as T;
   } catch {
     throw new DataLoadError(`${relPath} n'est pas un JSON valide`, url, response.status);
   }
+}
+
+type DataChangedListener = () => void;
+const dataChangedListeners = new Set<DataChangedListener>();
+
+/** Appelle `listener` quand `meta.json` annonce de nouvelles données (`generated_at` différent). */
+export function onDataChanged(listener: DataChangedListener): () => void {
+  dataChangedListeners.add(listener);
+  return () => dataChangedListeners.delete(listener);
 }
 
 /** Dernier meta chargé : sert à retrouver les noms hashés des insights. */
@@ -60,8 +82,12 @@ export async function loadMeta(): Promise<MetaFile> {
       `${dataBase()}meta.json`,
     );
   }
-  if (currentMeta && currentMeta.generated_at !== meta.generated_at) insightsCache.clear();
+  const changed = currentMeta !== null && currentMeta.generated_at !== meta.generated_at;
   currentMeta = meta;
+  if (changed) {
+    insightsCache.clear();
+    for (const listener of dataChangedListeners) listener();
+  }
   return meta;
 }
 
@@ -86,11 +112,22 @@ export function loadInsights(pilotSlug: string, year: number): Promise<InsightsF
   const cacheKey = `${pilotSlug}-${year}`;
   const cached = insightsCache.get(cacheKey);
   if (cached) return cached;
+  const fetchEntry = (meta: MetaFile): Promise<InsightsFile | null> => {
+    const entry = meta.insights.find((i) => i.pilot === pilotSlug && i.year === year);
+    return entry ? fetchJson<InsightsFile>(entry.file) : Promise.resolve(null);
+  };
   const promise = (async () => {
     const meta = currentMeta ?? (await loadMeta());
-    const entry = meta.insights.find((i) => i.pilot === pilotSlug && i.year === year);
-    if (!entry) return null;
-    return fetchJson<InsightsFile>(entry.file);
+    try {
+      return await fetchEntry(meta);
+    } catch (error) {
+      if (!(error instanceof DataLoadError) || !error.missing) throw error;
+      // Le nom hashé est peut-être périmé (nouveau déploiement) : on relit meta.json une seule fois.
+      // `loadMeta` invalide les caches et prévient les écouteurs si `generated_at` a changé.
+      const fresh = await loadMeta();
+      if (fresh.generated_at === meta.generated_at) throw error;
+      return fetchEntry(fresh);
+    }
   })();
   insightsCache.set(cacheKey, promise);
   promise.catch(() => {

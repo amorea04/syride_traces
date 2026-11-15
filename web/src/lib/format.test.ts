@@ -18,15 +18,24 @@ import {
   fmtReadable,
   fmtSignedPct,
   plural,
-  roundHalfEven,
 } from '@/lib/format';
+import { pythonRound } from '@/lib/numeric';
 
 // Les cas ci-dessous reprennent les docstrings et le comportement de report_format.py.
-describe('roundHalfEven (round Python)', () => {
+describe('pythonRound (round Python)', () => {
   it('arrondit les ex æquo au pair', () => {
-    expect([0.5, 1.5, 2.5, 3.5, -0.5, -1.5].map(roundHalfEven)).toEqual([0, 2, 2, 4, 0, -2]);
-    expect(roundHalfEven(2.4)).toBe(2);
-    expect(roundHalfEven(2.6)).toBe(3);
+    expect([0.5, 1.5, 2.5, 3.5, -0.5, -1.5].map((x) => pythonRound(x))).toEqual([0, 2, 2, 4, 0, -2]);
+    expect(pythonRound(2.4)).toBe(2);
+    expect(pythonRound(2.6)).toBe(3);
+  });
+
+  it('suit la valeur double exacte, comme round() de Python', () => {
+    expect(pythonRound(0.125, 2)).toBe(0.12);
+    expect(pythonRound(0.375, 2)).toBe(0.38);
+    expect(pythonRound(2.675, 2)).toBe(2.67);
+    expect(pythonRound(64.55, 1)).toBe(64.5);
+    expect(pythonRound(-2.5)).toBe(-2);
+    expect(pythonRound(1234.5)).toBe(1234);
   });
 });
 

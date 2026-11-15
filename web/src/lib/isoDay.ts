@@ -29,3 +29,13 @@ export function mondayOfEpochDay(day: number): number {
 export function daysInMonth(year: number, month: number): number {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
 }
+
+/** Jour de la semaine d'une date ISO, 0 = lundi … 6 = dimanche. */
+export function weekdayOfIso(iso: string): number {
+  return weekdayOfEpochDay(epochDay(iso));
+}
+
+/** Lendemain d'une date ISO. */
+export function nextIsoDay(iso: string): string {
+  return isoOfEpochDay(epochDay(iso) + 1);
+}

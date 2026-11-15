@@ -16,6 +16,7 @@
  */
 
 import type { Flight } from '@/data/flight';
+import { groupBy } from '@/lib/collections';
 import {
   distinctCount,
   max,
@@ -257,18 +258,6 @@ export interface WingRow extends CountMinutes {
 
 export interface InstrumentRow extends CountMinutes {
   instrument: string;
-}
-
-function groupBy(flights: readonly Flight[], keyOf: (f: Flight) => string | null): Map<string, Flight[]> {
-  const out = new Map<string, Flight[]>();
-  for (const f of flights) {
-    const key = keyOf(f);
-    if (key === null) continue;
-    const bucket = out.get(key);
-    if (bucket) bucket.push(f);
-    else out.set(key, [f]);
-  }
-  return out;
 }
 
 /** Tri du rapport : minutes décroissantes, puis vols décroissants, puis nom. */

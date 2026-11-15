@@ -1,9 +1,10 @@
 import { createReadStream, existsSync, statSync } from 'node:fs';
-import { extname, join, normalize, resolve } from 'node:path';
+import { extname, resolve } from 'node:path';
 import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { loadEnv, type Connect, type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
+import { resolveInside } from './vite.data-path.ts';
 
 const MIME: Record<string, string> = { '.json': 'application/json; charset=utf-8' };
 
@@ -17,8 +18,8 @@ function dataDirPlugin(dataDir: string | undefined): Plugin {
   const middleware: Connect.NextHandleFunction = (req, res, next) => {
     const url = (req.url ?? '').split('?')[0] ?? '';
     if (!root || !url.startsWith('/data/')) return next();
-    const file = normalize(join(root, decodeURIComponent(url.slice('/data/'.length))));
-    if (!file.startsWith(root) || !existsSync(file) || !statSync(file).isFile()) {
+    const file = resolveInside(root, url.slice('/data/'.length));
+    if (file === null || !existsSync(file) || !statSync(file).isFile()) {
       res.statusCode = 404;
       res.end('Not found');
       return;

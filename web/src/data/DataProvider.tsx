@@ -2,7 +2,7 @@ import { Alert, Button, Container, Group, Skeleton, Stack, Text } from '@mantine
 import { IconAlertTriangle } from '@tabler/icons-react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Flight } from '@/data/flight';
-import { loadFlights, loadInsights, loadMeta, loadSites, type Site } from '@/data/load';
+import { loadFlights, loadInsights, loadMeta, loadSites, onDataChanged, type Site } from '@/data/load';
 import type { InsightsFile, MetaFile } from '@/data/schema.gen';
 
 export interface AppData {
@@ -55,9 +55,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   if (status.state === 'ready')
-    return <DataContext.Provider value={status.data}>{children}</DataContext.Provider>;
+    return (
+      <DataContext.Provider value={status.data}>
+        <DataUpdatedBanner />
+        {children}
+      </DataContext.Provider>
+    );
   if (status.state === 'error') return <DataError error={status.error} onRetry={retry} />;
   return <DataSkeleton />;
+}
+
+/** Bandeau discret affiché quand `meta.json` annonce des données plus récentes que celles chargées. */
+function DataUpdatedBanner() {
+  const [updated, setUpdated] = useState(false);
+  useEffect(() => onDataChanged(() => setUpdated(true)), []);
+  if (!updated) return null;
+  return (
+    <Alert variant="light" color="gray" py={6} role="status" data-testid="data-updated">
+      <Group justify="space-between" gap="sm" wrap="nowrap">
+        <Text size="sm">Les données ont été mises à jour.</Text>
+        <Button variant="default" size="compact-xs" onClick={() => window.location.reload()}>
+          Recharger
+        </Button>
+      </Group>
+    </Alert>
+  );
 }
 
 function DataSkeleton() {

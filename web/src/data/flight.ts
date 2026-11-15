@@ -1,3 +1,4 @@
+import { weekdayOfIso } from '@/lib/isoDay';
 import type { Discipline, FlightsFile } from '@/data/schema.gen';
 
 export type { Discipline };
@@ -107,8 +108,7 @@ export function decimalHour(time: string | null): number | null {
 
 /** Jour de la semaine, 0 = lundi, d'une date ISO AAAA-MM-JJ (calcul en UTC, sans fuseau). */
 export function weekdayOf(isoDate: string): number {
-  const [y = 0, m = 1, d = 1] = isoDate.split('-').map(Number);
-  return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
+  return weekdayOfIso(isoDate);
 }
 
 function pick(table: readonly string[], index: number | null, what: string): string | null {

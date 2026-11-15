@@ -112,6 +112,36 @@ export function numpyRound(x: number, digits = 0): number {
   return rint(x * factor) / factor;
 }
 
+/**
+ * Arrondi du `round(valeur, n)` d'un `float` Python natif : demi au pair sur la valeur double EXACTE (donc
+ * `round(2.675, 2)` = 2,67, `round(0.125, 2)` = 0,12, `round(2.5)` = 2). Sert au formatage d'affichage
+ * (`format.ts`, port de `report_format.py`). À ne pas confondre avec `numpyRound` (résultats pandas/numpy).
+ */
+export function pythonRound(x: number, digits = 0): number {
+  const r = pythonRoundSigned(x, digits);
+  return r === 0 ? 0 : r; // pas de -0
+}
+
+function pythonRoundSigned(x: number, digits: number): number {
+  if (!Number.isFinite(x)) return x;
+  const sign = x < 0 ? -1 : 1;
+  const abs = Math.abs(x);
+  // `toFixed` donne l'arrondi exact (demi vers le haut) ; seuls les ex æquo exacts demandent un traitement.
+  const wide = abs.toFixed(Math.min(100, digits + EXACT_TIE_PROBE));
+  const tail = wide.slice(wide.indexOf('.') + 1 + digits);
+  if (!/^50*$/.test(tail)) return sign * Number(abs.toFixed(digits));
+  // Ex æquo exact : on garde la valeur tronquée si son dernier chiffre est pair, sinon on monte d'un cran.
+  const down = abs
+    .toFixed(digits + 1)
+    .slice(0, -1)
+    .replace(/\.$/, '');
+  if (Number(down.slice(-1)) % 2 === 0) return sign * Number(down);
+  return sign * Number((Number(down) + 10 ** -digits).toFixed(digits));
+}
+
+/** Nombre de décimales supplémentaires examinées pour reconnaître un ex æquo exact. */
+const EXACT_TIE_PROBE = 30;
+
 /** Comparaison de chaînes par point de code, comme le tri de pandas sur des `str`. */
 export function compareStrings(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;

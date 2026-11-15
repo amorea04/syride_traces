@@ -140,6 +140,10 @@ describe('applyFilters', () => {
     expect(r).toHaveLength(1);
     expect(r[0]?.date).toBe('2024-06-15');
   });
+  it('renvoie le tableau d’origine (même identité) sans filtre', () => {
+    expect(applyFilters(SAMPLE, defaultFilters())).toBe(SAMPLE);
+    expect(applyFilters(SAMPLE, f({ pilots: ['a'] }))).not.toBe(SAMPLE);
+  });
   it('ne modifie pas l’entrée', () => {
     const copy = [...SAMPLE];
     applyFilters(SAMPLE, f({ pilots: ['a'] }));
@@ -190,6 +194,18 @@ describe('cascadeOptions', () => {
       ['b', 2],
     ]);
     expect(o.activity.tout).toBe(3);
+  });
+  it('un pilote sélectionné sans vol restant garde son pseudo comme libellé', () => {
+    // Alice est sélectionnée mais l'activité « paramoteur » écarte tous ses vols.
+    const o = cascadeOptions(
+      SAMPLE.filter((x) => x.pilotSlug === 'a' && x.activity === 'parapente'),
+      f({ pilots: ['a'], activity: 'paramoteur' }),
+    );
+    expect(o.pilots).toEqual([{ value: 'a', label: 'Alice', count: 0 }]);
+  });
+  it('utilise la table de pseudos fournie pour un pilote absent des vols', () => {
+    const o = cascadeOptions(SAMPLE, f({ pilots: ['zoe'] }), new Map([['zoe', 'Zoé']]));
+    expect(o.pilots.find((p) => p.value === 'zoe')?.label).toBe('Zoé');
   });
   it('garde les valeurs sélectionnées même sans vol (compteur 0)', () => {
     const o = cascadeOptions(SAMPLE, f({ pilots: ['inconnu'], wings: ['Fantôme'], sites: [42] }));

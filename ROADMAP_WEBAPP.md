@@ -918,7 +918,7 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - [x] 2.7b **Maquettes validées par Adrien** (15/11/2026 : palette B « Encre » inversée, retouches D13 à D16)
 - [x] 2.8 Gabarit, navigation, barre de filtres responsive, thème clair et sombre, 404
 - [x] 2.9 `_redirects` et `_headers`
-- [ ] PR relue et fusionnée · **`/clear`**
+- [x] PR relue (`/code-review` medium, 10 constats corrigés) et fusionnée · **`/clear`**
 
 ### Phase 3 : Tableau de bord
 - [ ] 3.0 Bloc « Activité collective » (saison du groupe, derniers vols, ce mois-ci, records récents)

@@ -9,6 +9,7 @@ import {
   loadInsights,
   loadMeta,
   loadSites,
+  onDataChanged,
   resetDataCaches,
 } from '@/data/load';
 import { FIXTURES_DIR, fixtureMeta } from '../../tests/fixtures';
@@ -77,6 +78,21 @@ describe('chargement', () => {
     await expect(loadMeta()).rejects.toThrow(/JSON valide/);
   });
 
+  it('détecte une page HTML servie à la place d’un fichier (repli SPA)', async () => {
+    const meta = await loadMeta();
+    stubFetch({
+      [meta.files.sites]: () =>
+        new Response('<!doctype html>', {
+          status: 200,
+          headers: { 'content-type': 'text/html; charset=utf-8' },
+        }),
+    });
+    await expect(loadSites(meta)).rejects.toMatchObject({
+      missing: true,
+      message: expect.stringMatching(/introuvable/),
+    });
+  });
+
   it('refuse une version de schéma inconnue', async () => {
     const bad = { ...fixtureMeta(), schema_version: 2 };
     stubFetch({ 'meta.json': () => new Response(JSON.stringify(bad)) });
@@ -112,6 +128,38 @@ describe('loadInsights', () => {
     await expect(loadInsights(entry.pilot, entry.year)).rejects.toBeInstanceOf(DataLoadError);
     stubFetch();
     await expect(loadInsights(entry.pilot, entry.year)).resolves.not.toBeNull();
+  });
+
+  it('relit meta.json une fois si le fichier hashé a disparu, puis réessaie avec le nouveau nom', async () => {
+    const old = await loadMeta();
+    const entry = old.insights[0]!;
+    const fresh = {
+      ...old,
+      generated_at: '2099-01-01T00:00:00Z',
+      insights: [{ ...entry, file: 'insights-nouveau.json' }],
+    };
+    const changed = vi.fn();
+    const off = onDataChanged(changed);
+    stubFetch({
+      'meta.json': () => new Response(JSON.stringify(fresh)),
+      [entry.file]: () => new Response('', { status: 404 }),
+      'insights-nouveau.json': () => new Response(readFileSync(join(FIXTURES_DIR, entry.file), 'utf8')),
+    });
+    const result = await loadInsights(entry.pilot, entry.year);
+    off();
+    expect(result?.pilot).toBe(entry.pilot);
+    expect(calls.filter((c) => c.endsWith('meta.json'))).toHaveLength(2);
+    expect(calls.at(-1)).toBe('/data/insights-nouveau.json');
+    expect(changed).toHaveBeenCalledTimes(1);
+  });
+
+  it('ne boucle pas si meta.json est inchangé : l’erreur est propagée après une seule relecture', async () => {
+    const old = await loadMeta();
+    const entry = old.insights[0]!;
+    stubFetch({ [entry.file]: () => new Response('', { status: 404 }) });
+    await expect(loadInsights(entry.pilot, entry.year)).rejects.toMatchObject({ status: 404, missing: true });
+    expect(calls.filter((c) => c.endsWith('meta.json'))).toHaveLength(2);
+    expect(calls.filter((c) => c.endsWith(entry.file))).toHaveLength(1);
   });
 
   it('évince au-delà de la capacité (LRU)', async () => {

@@ -3,6 +3,7 @@
     "target": "ES2022",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
+    "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "strict": true,
@@ -18,5 +19,5 @@
     "types": ["vite/client", "node"],
     "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["src", "tests", "e2e", "scripts/*.d.ts", "vite.config.ts", "playwright.config.ts"]
+  "include": ["src", "tests", "e2e", "scripts/*.d.ts", "vite.config.ts", "vite.data-path.ts", "playwright.config.ts"]
 }

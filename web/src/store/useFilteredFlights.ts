@@ -5,7 +5,7 @@ import { applyFilters } from '@/lib/filters';
 import { useFiltersStore } from '@/store/filters';
 
 /** Vols qui passent les filtres globaux. */
-export function useFilteredFlights(): Flight[] {
+export function useFilteredFlights(): readonly Flight[] {
   const { flights } = useData();
   const filters = useFiltersStore((s) => s.filters);
   return useMemo(() => applyFilters(flights, filters), [flights, filters]);

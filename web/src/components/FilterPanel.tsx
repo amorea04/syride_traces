@@ -87,8 +87,8 @@ export function FilterPanel() {
 
   const options = useMemo(() => cascadeOptions(flights, filters), [flights, filters]);
   const years = useMemo(() => availableYears(flights), [flights]);
-  const today = useMemo(() => todayIso(), []);
-  const shortcuts = useMemo(() => periodShortcuts(today), [today]);
+  // Recalculés à chaque rendu (peu coûteux) : la date du jour ne reste pas figée si l'onglet reste ouvert.
+  const shortcuts = periodShortcuts(todayIso());
   const current = activeShortcut(filters, shortcuts);
   const hasPeriod = filters.dateFrom !== null || filters.dateTo !== null;
   const selectedYear = years.find((y) => {
@@ -160,7 +160,11 @@ export function FilterPanel() {
               size="compact-xs"
               variant={current?.id === s.id ? 'light' : 'default'}
               aria-pressed={current?.id === s.id}
-              onClick={() => setFilters({ dateFrom: s.dateFrom, dateTo: s.dateTo })}
+              onClick={() => {
+                // Date relue au clic : l'onglet a pu rester ouvert au-delà de minuit.
+                const fresh = periodShortcuts(todayIso()).find((x) => x.id === s.id) ?? s;
+                setFilters({ dateFrom: fresh.dateFrom, dateTo: fresh.dateTo });
+              }}
             >
               {s.label}
             </Button>

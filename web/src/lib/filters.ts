@@ -4,6 +4,7 @@
  */
 import type { Flight } from '@/data/flight';
 import type { DisciplineFilter } from '@/data/schema.gen';
+import { daysInMonth, nextIsoDay } from '@/lib/isoDay';
 
 export type ActivityFilter = DisciplineFilter;
 
@@ -87,7 +88,8 @@ export function flightMatches(flight: Flight, filters: Filters, omit?: FilterDim
 }
 
 /** Vols qui passent tous les filtres (ordre conservé). Renvoie le même tableau si rien n'est filtré. */
-export function applyFilters(flights: readonly Flight[], filters: Filters): Flight[] {
+export function applyFilters(flights: readonly Flight[], filters: Filters): readonly Flight[] {
+  if (isDefaultFilters(filters)) return flights;
   return flights.filter((f) => flightMatches(f, filters));
 }
 
@@ -145,13 +147,20 @@ function tally<T extends string | number>(
  * les autres filtres sauf celui de la dimension. Pilotes triés par nom, voiles et sites par
  * nombre de vols décroissant.
  */
-export function cascadeOptions(flights: readonly Flight[], filters: Filters): CascadeOptions {
+export function cascadeOptions(
+  flights: readonly Flight[],
+  filters: Filters,
+  pilotNames?: ReadonlyMap<string, string>,
+): CascadeOptions {
   const activity: Record<ActivityFilter, number> = { tout: 0, parapente: 0, paramoteur: 0 };
   for (const f of flights) {
     if (!flightMatches(f, filters, 'activity')) continue;
     activity.tout += 1;
     activity[f.activity] += 1;
   }
+  // Pseudo de chaque pilote : table fournie (fichier de vols complet) complétée par les vols reçus.
+  const pseudoOf = new Map<string, string>(pilotNames);
+  for (const f of flights) if (!pseudoOf.has(f.pilotSlug)) pseudoOf.set(f.pilotSlug, f.pilot);
   const siteName = new Map<number, string>();
   for (const f of flights) if (f.siteId !== null && f.site !== null) siteName.set(f.siteId, f.site);
 
@@ -164,7 +173,7 @@ export function cascadeOptions(flights: readonly Flight[], filters: Filters): Ca
       (f) => f.pilotSlug,
       (f) => f.pilot,
       filters.pilots,
-      (v) => v,
+      (v) => pseudoOf.get(v) ?? v,
     ).sort(byLabel),
     wings: tally(
       flights,
@@ -200,28 +209,16 @@ export interface PeriodShortcut {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const isoOf = (y: number, m: number, d: number) => `${y}-${pad(m)}-${pad(d)}`;
-const MS_PER_DAY = 86_400_000;
 
 function parseIsoParts(iso: string): [number, number, number] {
   const [y = 0, m = 1, d = 1] = iso.split('-').map(Number);
   return [y, m, d];
 }
 
-function daysInMonth(year: number, month: number): number {
-  return new Date(Date.UTC(year, month, 0)).getUTCDate();
-}
-
-/** Lendemain d'une date ISO. */
-function nextDay(iso: string): string {
-  const [y, m, d] = parseIsoParts(iso);
-  const t = new Date(Date.UTC(y, m - 1, d) + MS_PER_DAY);
-  return isoOf(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate());
-}
-
 /** Du lendemain d'il y a un an jusqu'à `today` inclus : « 12 derniers mois ». */
 export function lastTwelveMonths(today: string): PeriodShortcut {
   const [y, m, d] = parseIsoParts(today);
-  const from = nextDay(isoOf(y - 1, m, Math.min(d, daysInMonth(y - 1, m))));
+  const from = nextIsoDay(isoOf(y - 1, m, Math.min(d, daysInMonth(y - 1, m))));
   return { id: '12m', label: '12 derniers mois', dateFrom: from, dateTo: today };
 }
 
@@ -308,6 +305,29 @@ export function parseFilters(search: string): Filters {
     dateTo: parseIsoDate(params.get(PARAM.dateTo)),
     wings: unique(params.getAll(PARAM.wings).filter((s) => s !== '')),
     sites: unique(sites),
+  };
+}
+
+/**
+ * Filtres à adopter pour une navigation (hors retour arrière) dont l'URL porte des paramètres de
+ * filtre : l'URL fait foi pour chaque dimension dont les valeurs sont valides ; une dimension
+ * absente de l'URL revient à son défaut ; une dimension présente mais entièrement invalide est
+ * ignorée (on garde la valeur courante), pour qu'un seul paramètre erroné n'efface pas le reste.
+ */
+export function resolveUrlFilters(search: string, current: Filters): Filters {
+  const params = new URLSearchParams(search);
+  const parsed = parseFilters(search);
+  const has = (name: string) => params.has(name);
+  return {
+    pilots: has(PARAM.pilots) && parsed.pilots.length === 0 ? current.pilots : parsed.pilots,
+    activity:
+      has(PARAM.activity) && !ACTIVITY_VALUES.includes(params.get(PARAM.activity) as ActivityFilter)
+        ? current.activity
+        : parsed.activity,
+    dateFrom: has(PARAM.dateFrom) && parsed.dateFrom === null ? current.dateFrom : parsed.dateFrom,
+    dateTo: has(PARAM.dateTo) && parsed.dateTo === null ? current.dateTo : parsed.dateTo,
+    wings: has(PARAM.wings) && parsed.wings.length === 0 ? current.wings : parsed.wings,
+    sites: has(PARAM.sites) && parsed.sites.length === 0 ? current.sites : parsed.sites,
   };
 }
 

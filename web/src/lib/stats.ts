@@ -12,6 +12,8 @@
  */
 
 import type { Flight } from '@/data/flight';
+import { groupBy } from '@/lib/collections';
+import { hourOf } from '@/lib/rhythm';
 import { METRICS, type MetricId } from '@/lib/metrics';
 import {
   compareStrings,
@@ -190,7 +192,10 @@ export const AXES: Readonly<Record<AxisId, AxisDef>> = {
   heure: {
     id: 'heure',
     label: 'Heure de décollage',
-    keyOf: (f) => (f.time === null ? null : String(Number(f.time.slice(0, 2)))),
+    keyOf: (f) => {
+      const hour = hourOf(f);
+      return hour === null ? null : String(hour);
+    },
     labelOf: (key) => `${key.padStart(2, '0')} h`,
     order: 'ascending',
   },
@@ -229,14 +234,7 @@ export function computeMetrics(flights: readonly Flight[]): Record<MetricId, num
  */
 export function groupFlights(flights: readonly Flight[], axisId: AxisId): GroupRow[] {
   const axis = AXES[axisId];
-  const groups = new Map<string, Flight[]>();
-  for (const f of flights) {
-    const key = axis.keyOf(f);
-    if (key === null) continue;
-    const bucket = groups.get(key);
-    if (bucket) bucket.push(f);
-    else groups.set(key, [f]);
-  }
+  const groups = groupBy(flights, axis.keyOf);
   return [...groups.keys()]
     .sort((a, b) => compareKeys(axis, a, b))
     .map((key) => ({

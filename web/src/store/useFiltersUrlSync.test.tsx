@@ -44,6 +44,19 @@ describe('synchronisation filtres ↔ URL', () => {
     expect(loc()).toBe('/');
   });
 
+  it('un paramètre invalide dans un lien n’efface pas les autres filtres, et l’URL est corrigée', async () => {
+    mount('/');
+    act(() => useFiltersStore.getState().setFilters({ activity: 'parapente', pilots: ['a'] }));
+    await act(() => router.navigate('/sites?site=3&activite=bidon&du=pas-une-date'));
+    expect(useFiltersStore.getState().filters).toMatchObject({
+      activity: 'parapente',
+      pilots: [],
+      sites: [3],
+      dateFrom: null,
+    });
+    expect(loc()).toBe('/sites?activite=parapente&site=3');
+  });
+
   it('un lien sans paramètres conserve les filtres (réinjectés dans l’URL)', async () => {
     mount('/');
     act(() => useFiltersStore.getState().setFilters({ pilots: ['a'] }));
