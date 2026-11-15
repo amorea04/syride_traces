@@ -1,0 +1,8 @@
+dist
+node_modules
+public/data
+playwright-report
+test-results
+package-lock.json
+src/data/schema.gen.ts
+tests/fixtures
