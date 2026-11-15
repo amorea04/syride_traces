@@ -5,9 +5,8 @@
  * (`make expected-stats`) ; tolérance 1e-6.
  *
  * Écarts volontaires, voir les en-têtes de `stats.ts`, `records.ts` et `metrics.ts` :
- *   - `nbSites` : Python compte un site de plus s'il existe des vols sans site (`nbSitesPython` le garde) ;
  *   - `highlights.bestDay` : `n` et `sites` corrigés côté attendu (`nPython` garde la valeur brute) ;
- *   - mesures <= 0 : déjà `null` dans l'export, donc identiques (le pkl brut les compterait dans `create_grouped_df`).
+ *   - mesures <= 0 : ignorées des deux côtés (`null` dans l'export, masquées dans `create_grouped_df`).
  */
 
 import { readFileSync, readdirSync } from 'node:fs';
@@ -71,7 +70,7 @@ interface Dataset {
 const expected = readJson<{ datasets: Dataset[] }>(join(import.meta.dirname, 'fixtures/expected_stats.json'));
 
 /** Clés ajoutées côté Python pour garder la valeur brute d'un écart assumé : non comparées. */
-const IGNORED_KEYS = new Set(['nbSitesPython', 'nPython']);
+const IGNORED_KEYS = new Set(['nPython']);
 
 /** Différences entre une valeur calculée et la valeur attendue ; chaque clé attendue doit exister côté TS. */
 function diff(actual: unknown, wanted: unknown, path: string, out: string[] = []): string[] {
@@ -245,15 +244,6 @@ for (const ds of expected.datasets) {
     });
   });
 }
-
-describe('écarts assumés avec le Python', () => {
-  it('nbSites ignore les vols sans site, que get_flight_params compte comme un site de plus', () => {
-    for (const ds of expected.datasets) {
-      const c = ds.cases[0] as Case;
-      expect(c.params.nbSitesPython).toBe((c.params.nbSites as number) + 1);
-    }
-  });
-});
 
 // Empêche l'oubli d'un jeu de test vide.
 it('les jeux attendus ne sont pas vides', () => {

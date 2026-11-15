@@ -166,9 +166,7 @@ def expected_params(df):
     return {
         "nbVols": int(p["nb_tot_vols"]),
         "totalMinutes": h * 60 + m, "hours": h, "minutes": m,
-        # len(unique()) compte les NaN comme un site : on le corrige (voir stats.ts) et on garde la valeur brute.
-        "nbSites": int(p["nb_tot_sites"]) - (1 if df["site"].isna().any() else 0),
-        "nbSitesPython": int(p["nb_tot_sites"]),
+        "nbSites": int(p["nb_tot_sites"]),
         "nbPilots": int(p["nb_tot_pilots"]),
         "speedAvg": {"mean": speeds[0], "max": speeds[1]},
         "speedMax": {"mean": speeds[2], "max": speeds[3]},

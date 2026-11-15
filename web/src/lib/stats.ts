@@ -2,8 +2,7 @@
  * Portage de `get_flight_params` et `create_grouped_df` (src/app_functions.py).
  *
  * Écarts assumés avec le Python (documentés, testés dans tests/stats.regression.test.ts) :
- *   - `nbSites` ne compte pas les vols sans site ; `get_flight_params` fait `len(unique())`, qui compte les NaN
- *     comme un site de plus (bug : un vol sans site faisait « 1 site » en trop).
+ *   - `nbSites` ne compte pas les vols sans site (corrigé aussi côté Python, `nunique()`).
  *   - `get_flight_params` ne retire pas les mesures de fiche des vols incomplets, contrairement à
  *     `create_grouped_df`. Dans le pkl elles sont vides pour ces vols : sans effet sur les vraies données. Le port
  *     garde les deux comportements (ici : on prend les valeurs exportées telles quelles).
