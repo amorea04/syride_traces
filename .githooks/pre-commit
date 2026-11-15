@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Garde-fou anti-données (ROADMAP_WEBAPP.md §11 D8, phase 0.4).
+# Refuse tout commit qui contient des données réelles ou des secrets :
+#   *.pkl, *.db, *.sqlite*, .env (sauf .env.template), *.gpx, *.igc, *.kml,
+#   web/public/data/**, dossiers de traces des pilotes (<pilote>/traces/**),
+#   et tout fichier de plus de 2 Mo.
+# Activation (une fois par clone) :  git config core.hooksPath .githooks
+# Contournement exceptionnel et volontaire : git commit --no-verify
+set -euo pipefail
+
+MAX_BYTES=$((2 * 1024 * 1024))
+blocked=()
+
+while IFS= read -r -d '' path; do
+  base="${path##*/}"
+  case "$path" in
+    *.pkl|*.db|*.sqlite|*.sqlite3|*.gpx|*.GPX|*.igc|*.IGC|*.kml|*.KML) blocked+=("$path  (fichier de données)") ; continue ;;
+    web/public/data/*) blocked+=("$path  (données générées de la webapp)") ; continue ;;
+    */traces/*) blocked+=("$path  (dossier de traces d'un pilote)") ; continue ;;
+  esac
+  if [[ "$base" == ".env" || ( "$base" == .env.* && "$base" != ".env.template" ) ]]; then
+    blocked+=("$path  (secrets)") ; continue
+  fi
+  size=$(git cat-file -s ":$path" 2>/dev/null || echo 0)
+  if (( size > MAX_BYTES )); then
+    blocked+=("$path  ($((size / 1024)) Ko > 2 Mo)")
+  fi
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+if (( ${#blocked[@]} > 0 )); then
+  echo "pre-commit : commit refusé, fichiers interdits dans l'index :" >&2
+  printf '  - %s\n' "${blocked[@]}" >&2
+  echo "Retirez-les avec : git restore --staged <fichier>" >&2
+  exit 1
+fi

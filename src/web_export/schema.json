@@ -1,0 +1,314 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://syride-analyse.pages.dev/schema/v1.json",
+  "title": "Contrat de données de la webapp « Analyse traces de vol », version 1",
+  "description": "Source unique du contrat (ROADMAP_WEBAPP.md §4). L'export Python est validé contre ce schéma (jsonschema) et les types TypeScript en sont générés (json-schema-to-typescript). Règle D12 : aucune géométrie de vol (ni trace, ni coordonnée par vol). Valider un fichier avec {\"$ref\": \"…#/$defs/<Fichier>\"}.",
+  "$defs": {
+    "SchemaVersion": { "const": 1 },
+    "Date": {
+      "type": "string",
+      "pattern": "^(19[89]\\d|20\\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$",
+      "description": "Date ISO AAAA-MM-JJ (1980 ou après : la date sentinelle 1901 est refusée)."
+    },
+    "Time": {
+      "type": "string",
+      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+      "description": "Heure de décollage HH:MM."
+    },
+    "Slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Identifiant d'URL : minuscules ASCII, chiffres, tirets (accents translittérés)."
+    },
+    "FlightKey": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*-\\d+$",
+      "description": "Clé stable d'un vol : \"<pilote_slug>-<num_activite>\", utilisée dans /vol/:key."
+    },
+    "Index": { "type": "integer", "minimum": 0, "description": "Index dans la liste correspondante de FlightsFile.dict." },
+    "NullableIndex": { "type": ["integer", "null"], "minimum": 0 },
+    "PositiveMeasure": {
+      "type": ["number", "null"],
+      "exclusiveMinimum": 0,
+      "description": "Mesure strictement positive, ou null si inconnue. Les valeurs ≤ 0 du pkl sont exportées en null : c'est équivalent à la règle `_positive` du rapport et de l'app (moyennes, max, sommes et « vols mesurés » ignorent les valeurs ≤ 0)."
+    },
+    "Discipline": { "enum": ["parapente", "paramoteur"] },
+    "DisciplineFilter": { "enum": ["tout", "parapente", "paramoteur"] },
+
+    "MetaFile": {
+      "title": "data/meta.json",
+      "description": "Petit fichier d'amorce, jamais mis en cache (Cache-Control: no-cache). Donne les noms hashés des autres fichiers.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "generated_at", "data_updated_at", "counts", "files", "insights"],
+      "properties": {
+        "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "generated_at": { "type": "string", "format": "date-time", "description": "Horodatage UTC de l'export." },
+        "data_updated_at": { "$ref": "#/$defs/Date", "description": "Date du vol le plus récent (ou de la dernière mise à jour du pkl)." },
+        "counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["flights", "pilots", "sites", "wings", "excluded_flights"],
+          "properties": {
+            "flights": { "type": "integer", "minimum": 0 },
+            "pilots": { "type": "integer", "minimum": 0 },
+            "sites": { "type": "integer", "minimum": 0 },
+            "wings": { "type": "integer", "minimum": 0 },
+            "excluded_flights": { "type": "integer", "minimum": 0, "description": "Vols du pkl écartés de l'export (ex. date sentinelle 1901), affichés dans « Qualité des données »." }
+          }
+        },
+        "files": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["flights", "sites"],
+          "properties": {
+            "flights": { "type": "string", "pattern": "^flights\\.[0-9a-f]{6,}\\.json$" },
+            "sites": { "type": "string", "pattern": "^sites\\.[0-9a-f]{6,}\\.json$" }
+          }
+        },
+        "insights": {
+          "type": "array",
+          "description": "Couples (pilote, année) pour lesquels un fichier insights/<pilote_slug>-<année>.json existe.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["pilot", "year", "file"],
+            "properties": {
+              "pilot": { "$ref": "#/$defs/Slug" },
+              "year": { "type": "integer", "minimum": 2000, "maximum": 2100 },
+              "file": { "type": "string", "pattern": "^insights/[a-z0-9-]+-\\d{4}\\.[0-9a-f]{6,}\\.json$" }
+            }
+          }
+        }
+      }
+    },
+
+    "FlightsFile": {
+      "title": "data/flights.<hash>.json (format colonnaire)",
+      "description": "Une ligne par vol, dans l'ordre de `columns`. Les catégories sont des index dans `dict`. Champs dérivés (année, mois, jour, saison, heure entière) non exportés : recalculés côté front depuis `date` et `time`.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "columns", "dict", "pilot_slugs", "rows"],
+      "properties": {
+        "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "columns": {
+          "const": ["key", "pilot", "activity", "date", "time", "site", "wing", "instrument", "mode",
+                    "duration_min", "dist_km", "dist_cum_km", "speed_avg", "speed_max", "ceiling_m", "gain_m",
+                    "vario_max", "g_max", "incomplete", "source", "syride_num"]
+        },
+        "dict": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pilot", "activity", "site", "wing", "instrument", "mode", "source"],
+          "properties": {
+            "pilot": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true, "description": "Pseudo Syride exact (sert à construire les liens syride.com)." },
+            "activity": { "const": ["parapente", "paramoteur"] },
+            "site": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true, "description": "L'index d'un site est aussi son `id` dans sites.json." },
+            "wing": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+            "instrument": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+            "mode": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true, "description": "Libellés courts de `mode_of` (report_data.py) : Site, Treuil, Rando, Bord de mer, Moteur, puis éventuels inconnus." },
+            "source": { "const": ["gpx", "fiche", "aucune"] }
+          }
+        },
+        "pilot_slugs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Slug" },
+          "uniqueItems": true,
+          "description": "Aligné sur dict.pilot : slug d'URL du pilote (calculé une seule fois, en Python)."
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 21,
+            "maxItems": 21,
+            "prefixItems": [
+              { "$ref": "#/$defs/FlightKey" },
+              { "$ref": "#/$defs/Index", "description": "pilot" },
+              { "$ref": "#/$defs/Index", "description": "activity" },
+              { "oneOf": [{ "$ref": "#/$defs/Date" }, { "type": "null" }], "description": "date (null si inconnue, jamais 1901)" },
+              { "oneOf": [{ "$ref": "#/$defs/Time" }, { "type": "null" }], "description": "time" },
+              { "$ref": "#/$defs/NullableIndex", "description": "site" },
+              { "$ref": "#/$defs/NullableIndex", "description": "wing" },
+              { "$ref": "#/$defs/NullableIndex", "description": "instrument" },
+              { "$ref": "#/$defs/NullableIndex", "description": "mode" },
+              { "type": ["number", "null"], "minimum": 0, "description": "duration_min (minutes, 1 décimale)" },
+              { "$ref": "#/$defs/PositiveMeasure", "description": "dist_km : colonne `distance`, référence (1 décimale)" },
+              { "$ref": "#/$defs/PositiveMeasure", "description": "dist_cum_km : `distance_cumulee` (1 décimale)" },
+              { "$ref": "#/$defs/PositiveMeasure", "description": "speed_avg km/h (1 décimale)" },
+              { "$ref": "#/$defs/PositiveMeasure", "description": "speed_max km/h (1 décimale)" },
+              { "$ref": "#/$defs/PositiveMeasure", "description": "ceiling_m : plafond (entier)" },
+              { "$ref": "#/$defs/PositiveMeasure", "description": "gain_m (entier)" },
+              { "$ref": "#/$defs/PositiveMeasure", "description": "vario_max m/s (1 décimale)" },
+              { "$ref": "#/$defs/PositiveMeasure", "description": "g_max (1 décimale)" },
+              { "type": "boolean", "description": "incomplete" },
+              { "$ref": "#/$defs/Index", "description": "source des stats : index dans dict.source" },
+              { "type": ["integer", "null"], "minimum": 1, "description": "syride_num = num_activite ; lien https://www.syride.com/fr/pilotes/<pseudo>/<num>" }
+            ]
+          }
+        }
+      }
+    },
+
+    "SitesFile": {
+      "title": "data/sites.<hash>.json",
+      "description": "Un objet par site, `id` = index dans FlightsFile.dict.site. Coordonnées = moyenne du site (jamais celles d'un vol). Clé vide de sites_coordinates.json exclue.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "sites"],
+      "properties": {
+        "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "sites": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "lat", "lon", "flights", "pilots", "activities"],
+            "properties": {
+              "id": { "$ref": "#/$defs/Index" },
+              "name": { "type": "string", "minLength": 1 },
+              "lat": { "type": ["number", "null"], "minimum": -90, "maximum": 90 },
+              "lon": { "type": ["number", "null"], "minimum": -180, "maximum": 180 },
+              "flights": { "type": "integer", "minimum": 0 },
+              "pilots": { "type": "integer", "minimum": 0 },
+              "activities": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["parapente", "paramoteur"],
+                "properties": {
+                  "parapente": { "type": "integer", "minimum": 0 },
+                  "paramoteur": { "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "InsightsFile": {
+      "title": "data/insights/<pilote_slug>-<année>.<hash>.json",
+      "description": "Récit précalculé par src/web_export/insights.py en appelant src/rapport/report_data.py. Textes déjà rendus (moteur de report_textes.md, tirage crc32). Le détail des sous-objets sera resserré en phase 1.5 bis ; `v` versionne ce fichier.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["v", "pilot", "year", "cutoff", "by_disc"],
+      "properties": {
+        "v": { "const": 1 },
+        "pilot": { "$ref": "#/$defs/Slug" },
+        "year": { "type": "integer", "minimum": 2000, "maximum": 2100 },
+        "cutoff": { "$ref": "#/$defs/Date" },
+        "by_disc": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tout", "parapente", "paramoteur"],
+          "properties": {
+            "tout": { "$ref": "#/$defs/Story" },
+            "parapente": { "$ref": "#/$defs/Story" },
+            "paramoteur": { "$ref": "#/$defs/Story" }
+          }
+        }
+      }
+    },
+
+    "FlightRef": { "oneOf": [{ "$ref": "#/$defs/FlightKey" }, { "type": "null" }] },
+
+    "Story": {
+      "description": "Récit d'une discipline ; null si le pilote n'a aucun vol dans cette discipline cette année.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["persona", "gap", "milestones", "records_beaten", "equivalences", "new_sites", "new_wings", "map_zones", "reach", "texts"],
+          "properties": {
+            "persona": {
+              "oneOf": [{ "type": "null" }, {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["main", "secondary", "label", "why"],
+                "properties": {
+                  "main": { "type": "string" },
+                  "secondary": { "type": "array", "items": { "type": "string" } },
+                  "label": { "type": "string" },
+                  "why": { "type": "string" }
+                }
+              }]
+            },
+            "gap": {
+              "oneOf": [{ "type": "null" }, {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["status", "minutes", "flights", "text"],
+                "properties": {
+                  "status": { "enum": ["avance", "retard", "egalite"] },
+                  "minutes": { "type": "number" },
+                  "flights": { "type": "integer" },
+                  "text": { "type": "string" }
+                }
+              }]
+            },
+            "milestones": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["date", "kind", "gold", "text"],
+                "properties": {
+                  "date": { "$ref": "#/$defs/Date" },
+                  "kind": { "type": "string" },
+                  "value": { "type": ["number", "string", "null"] },
+                  "gold": { "type": "boolean", "description": "Or = records et nouveautés uniquement." },
+                  "text": { "type": "string" },
+                  "flight": { "$ref": "#/$defs/FlightRef" }
+                }
+              }
+            },
+            "records_beaten": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["metric", "value", "previous", "flight"],
+                "properties": {
+                  "metric": { "enum": ["plafond", "vitesse_max", "distance", "vario", "g", "duree"] },
+                  "value": { "type": "number" },
+                  "previous": { "type": ["number", "null"] },
+                  "flight": { "$ref": "#/$defs/FlightRef" }
+                }
+              }
+            },
+            "equivalences": { "type": "array", "items": { "type": "string" } },
+            "new_sites": { "type": "array", "items": { "type": "string" } },
+            "new_wings": { "type": "array", "items": { "type": "string" } },
+            "map_zones": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "sites", "bbox"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "sites": { "type": "array", "items": { "type": "string" } },
+                  "bbox": { "type": "array", "items": { "type": "number" }, "minItems": 4, "maxItems": 4, "description": "[lon_min, lat_min, lon_max, lat_max] des sites de la zone (pas de géométrie de vol)." }
+                }
+              }
+            },
+            "reach": {
+              "oneOf": [{ "type": "null" }, {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["farthest_site", "km", "main_share"],
+                "properties": {
+                  "farthest_site": { "type": "string" },
+                  "km": { "type": "number", "minimum": 0 },
+                  "main_share": { "type": "number", "minimum": 0, "maximum": 1 }
+                }
+              }]
+            },
+            "texts": { "type": "object", "additionalProperties": { "type": "string" } }
+          }
+        }
+      ]
+    }
+  }
+}
