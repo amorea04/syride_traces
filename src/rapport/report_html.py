@@ -987,6 +987,22 @@ class ReportBuilder:
         return self.text("phrase_meilleure_journee", {
             "vols": plural(best["n"], "vol"), "duree": fmt_duration(best["minutes"]), "sites": sites}, block=False)
 
+    def typical_day_sentence(self, disc: str) -> str:
+        """Phrase de la « journée type » (carte de faits) ; « » si trop peu de vols ou de données."""
+        d = self.main(disc)
+        if d["empty"]:
+            return ""
+        k, hl = d["kpis"], d["highlights"]
+        if not (k["n_flights"] >= FACT_MIN_FLIGHTS and hl["busiest_weekday"] and d["sites"] and d["wings"]):
+            return ""
+        hours = [h for h in range(24) for _ in range(d["hours"]["flights"][h])]
+        site = max(d["sites"], key=lambda r: (r["n"], r["minutes"]))["site"]
+        wing = max(d["wings"], key=lambda r: (r["n"], r["minutes"]))["voile"]
+        return self.text("phrase_journee_type", {
+            "jour": DAYS_LONG[hl["busiest_weekday"]["index"]],
+            "heure": f"{int(round(float(np.median(hours))))}{NBSP}h" if hours else "",
+            "site": site, "voile": wing}, block=False)
+
     def facts(self, disc: str) -> str:
         """Trois cartes : meilleure journée, journée type, vol de l'année (par discipline)."""
         if not self.has_disc(disc):
@@ -1001,14 +1017,8 @@ class ReportBuilder:
             cards.append(self._fact("meilleure", "Ta meilleure journée",
                                     _e(fmt_date(best["date"], weekday=True)), f'<p class="fact-txt">{sentence}</p>'))
 
-        if k["n_flights"] >= FACT_MIN_FLIGHTS and hl["busiest_weekday"] and d["sites"] and d["wings"]:
-            hours = [h for h in range(24) for _ in range(d["hours"]["flights"][h])]
-            site = max(d["sites"], key=lambda r: (r["n"], r["minutes"]))["site"]
-            wing = max(d["wings"], key=lambda r: (r["n"], r["minutes"]))["voile"]
-            sentence = self.text("phrase_journee_type", {
-                "jour": DAYS_LONG[hl["busiest_weekday"]["index"]],
-                "heure": f"{int(round(float(np.median(hours))))}{NBSP}h" if hours else "",
-                "site": site, "voile": wing}, block=False)
+        sentence = self.typical_day_sentence(disc)
+        if sentence:
             cards.append(self._fact("typique", "Ta journée type", "Le plus souvent", f'<p class="fact-txt">{sentence}</p>'))
 
         longest = d["records"]["duree"][:1]

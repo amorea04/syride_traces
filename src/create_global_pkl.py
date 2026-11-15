@@ -131,6 +131,7 @@ def create_gobal_flight_data(
                 .pipe(analyze_functions.transform_dates)
                 .pipe(analyze_functions.get_season)
                 .pipe(analyze_functions.delete_zero_min_flights)
+                .pipe(analyze_functions.remove_duplicate_flights)
                 .pipe(analyze_functions.replace_values, dict_values=JOURS_REPLACE)
                 .pipe(
                     analyze_functions.replace_values,
