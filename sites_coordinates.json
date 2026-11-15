@@ -1,0 +1,2222 @@
+{
+  "": {
+    "latitude": 46.16480000000001,
+    "longitude": -0.014299999999999998,
+    "n_files": 3
+  },
+  "Accous-500": {
+    "latitude": 42.97914472222222,
+    "longitude": -0.5804339999999999,
+    "n_files": 18
+  },
+  "Accous-800": {
+    "latitude": 42.9805204,
+    "longitude": -0.57213716,
+    "n_files": 25
+  },
+  "Adeje": {
+    "latitude": 28.12495,
+    "longitude": -16.73345,
+    "n_files": 1
+  },
+  "Aero-Focus Ul Le Thou": {
+    "latitude": 46.085905000000004,
+    "longitude": -0.9427811428571429,
+    "n_files": 7
+  },
+  "Aerodrome Coltines": {
+    "latitude": 45.07425,
+    "longitude": 2.9857,
+    "n_files": 1
+  },
+  "Aeroport Neufchateau": {
+    "latitude": 48.359933,
+    "longitude": 5.718633,
+    "n_files": 1
+  },
+  "Ager": {
+    "latitude": 42.04579716666667,
+    "longitude": 0.7466111666666667,
+    "n_files": 6
+  },
+  "Aglou": {
+    "latitude": 29.845694333333338,
+    "longitude": -9.803913000000001,
+    "n_files": 9
+  },
+  "Aglou Village": {
+    "latitude": 29.788057666666667,
+    "longitude": -9.837233266666665,
+    "n_files": 15
+  },
+  "Agudes 600": {
+    "latitude": 42.7996085,
+    "longitude": 0.49094575,
+    "n_files": 4
+  },
+  "Aiguille Du Calvaire": {
+    "latitude": 45.88865,
+    "longitude": 6.471917,
+    "n_files": 1
+  },
+  "Aiguille Du Midi": {
+    "latitude": 45.87979694117647,
+    "longitude": 6.893005882352941,
+    "n_files": 17
+  },
+  "Aillons Station": {
+    "latitude": 45.610217,
+    "longitude": 6.098033,
+    "n_files": 1
+  },
+  "Algodonales - Levante": {
+    "latitude": 36.897,
+    "longitude": -5.3896999999999995,
+    "n_files": 2
+  },
+  "Alpe D'Huez : Le Signal": {
+    "latitude": 45.10043866666666,
+    "longitude": 6.059772,
+    "n_files": 3
+  },
+  "An'Air": {
+    "latitude": 43.080633,
+    "longitude": 0.466383,
+    "n_files": 1
+  },
+  "Anil": {
+    "latitude": 29.760083,
+    "longitude": -9.0424,
+    "n_files": 1
+  },
+  "Antécime Du Mont Mirantin": {
+    "latitude": 45.682417,
+    "longitude": 6.4935,
+    "n_files": 1
+  },
+  "Arbas": {
+    "latitude": 42.970011166666666,
+    "longitude": 0.8860833333333332,
+    "n_files": 6
+  },
+  "Arbre À Jacques": {
+    "latitude": 44.2247415,
+    "longitude": 5.4740335,
+    "n_files": 2
+  },
+  "Artouan": {
+    "latitude": 45.783166333333334,
+    "longitude": -1.065262,
+    "n_files": 3
+  },
+  "Arête Margeriaz": {
+    "latitude": 45.62773336,
+    "longitude": 6.036003920000001,
+    "n_files": 25
+  },
+  "Atero Accous Départ M V": {
+    "latitude": 42.976117,
+    "longitude": -0.60205,
+    "n_files": 2
+  },
+  "Aubas": {
+    "latitude": 45.088716700000006,
+    "longitude": 1.2151334,
+    "n_files": 10
+  },
+  "Aubeville": {
+    "latitude": 45.49739336,
+    "longitude": -0.02365,
+    "n_files": 25
+  },
+  "Aunac": {
+    "latitude": 45.92700422222222,
+    "longitude": 0.26142599999999994,
+    "n_files": 9
+  },
+  "Auphilduvent": {
+    "latitude": 45.77168992,
+    "longitude": -0.39000928,
+    "n_files": 25
+  },
+  "Aussois": {
+    "latitude": 45.257158499999996,
+    "longitude": 6.742291499999999,
+    "n_files": 4
+  },
+  "Aussois 2600": {
+    "latitude": 45.25895,
+    "longitude": 6.748333,
+    "n_files": 1
+  },
+  "Autrans Bellecombe": {
+    "latitude": 45.174767,
+    "longitude": 5.578033,
+    "n_files": 1
+  },
+  "Aérodrome d'Ussel Thalamy": {
+    "latitude": 45.53640907142857,
+    "longitude": 2.420271,
+    "n_files": 14
+  },
+  "Baigura": {
+    "latitude": 43.292061,
+    "longitude": -1.2918556666666667,
+    "n_files": 3
+  },
+  "Balanzac N": {
+    "latitude": 45.73069057142857,
+    "longitude": -0.8441094285714287,
+    "n_files": 7
+  },
+  "Ballerand": {
+    "latitude": 45.604889625,
+    "longitude": 0.7836855,
+    "n_files": 8
+  },
+  "Balsac": {
+    "latitude": 44.414033,
+    "longitude": 2.436,
+    "n_files": 1
+  },
+  "Bande Ouest": {
+    "latitude": 45.471375,
+    "longitude": 5.771422875000001,
+    "n_files": 8
+  },
+  "Banon Grou De Bane": {
+    "latitude": 44.04984811111112,
+    "longitude": 5.63578711111111,
+    "n_files": 9
+  },
+  "Barbezieux": {
+    "latitude": 45.451233,
+    "longitude": -0.146233,
+    "n_files": 1
+  },
+  "Barcelonnette 2": {
+    "latitude": 44.4097195,
+    "longitude": 6.675438833333334,
+    "n_files": 6
+  },
+  "Barzan": {
+    "latitude": 45.520111,
+    "longitude": -0.86368,
+    "n_files": 1
+  },
+  "Base  Ulm Pulss": {
+    "latitude": 47.096633499999996,
+    "longitude": -0.07385024999999999,
+    "n_files": 4
+  },
+  "Base Paramoteur Gong Pontouvre": {
+    "latitude": 45.689870000000006,
+    "longitude": 0.16691233333333333,
+    "n_files": 3
+  },
+  "Benijo": {
+    "latitude": 28.573483500000002,
+    "longitude": -16.1834665,
+    "n_files": 2
+  },
+  "Bergies Ouest": {
+    "latitude": 44.202883,
+    "longitude": 5.510383,
+    "n_files": 1
+  },
+  "Bisanne": {
+    "latitude": 45.746529,
+    "longitude": 6.507177,
+    "n_files": 1
+  },
+  "Blaignan": {
+    "latitude": 45.318633,
+    "longitude": -0.8496,
+    "n_files": 1
+  },
+  "Bocca Di Capannella": {
+    "latitude": 42.021117000000004,
+    "longitude": 8.754691999999999,
+    "n_files": 2
+  },
+  "Bois": {
+    "latitude": 45.49935,
+    "longitude": -0.589517,
+    "n_files": 1
+  },
+  "Boissiere 01": {
+    "latitude": 45.5948165,
+    "longitude": 0.2215415,
+    "n_files": 2
+  },
+  "Boistizon": {
+    "latitude": 45.86770825,
+    "longitude": 0.43656675,
+    "n_files": 4
+  },
+  "Bolino": {
+    "latitude": 44.1149,
+    "longitude": 6.418683,
+    "n_files": 1
+  },
+  "Bonneval 3000": {
+    "latitude": 45.3497732,
+    "longitude": 7.0556168,
+    "n_files": 5
+  },
+  "Bonneval Sur Arc": {
+    "latitude": 45.37935,
+    "longitude": 7.046017,
+    "n_files": 1
+  },
+  "Bordas Calif": {
+    "latitude": 45.036417,
+    "longitude": 0.629583,
+    "n_files": 1
+  },
+  "Bordas Sud": {
+    "latitude": 45.0477166,
+    "longitude": 0.6676165999999999,
+    "n_files": 5
+  },
+  "Bords": {
+    "latitude": 45.911533,
+    "longitude": -0.86635,
+    "n_files": 1
+  },
+  "Bosse Sous L'Alpage Sous La Croix": {
+    "latitude": 45.6048665,
+    "longitude": 5.9612,
+    "n_files": 2
+  },
+  "Brûlain1": {
+    "latitude": 46.1924866,
+    "longitude": -0.33490204,
+    "n_files": 25
+  },
+  "Buc Intermédiaire": {
+    "latitude": 44.2100415,
+    "longitude": 5.4793085,
+    "n_files": 2
+  },
+  "Cabanac Et Villagrains": {
+    "latitude": 44.614239,
+    "longitude": -0.5779055555555556,
+    "n_files": 9
+  },
+  "Cabariot": {
+    "latitude": 45.91178076,
+    "longitude": -0.8664139599999998,
+    "n_files": 25
+  },
+  "Calci Aire": {
+    "latitude": 46.872684047619046,
+    "longitude": -0.1968707142857143,
+    "n_files": 21
+  },
+  "Calciaire": {
+    "latitude": 46.858383239999995,
+    "longitude": -0.18554463999999998,
+    "n_files": 25
+  },
+  "Cambalhota": {
+    "latitude": 37.11565,
+    "longitude": -8.9311415,
+    "n_files": 2
+  },
+  "Canazei": {
+    "latitude": 46.46225,
+    "longitude": 11.7529665,
+    "n_files": 2
+  },
+  "Carcan": {
+    "latitude": 45.088,
+    "longitude": -1.1913,
+    "n_files": 1
+  },
+  "Castillo De Loarre": {
+    "latitude": 42.3323585,
+    "longitude": -0.6090585,
+    "n_files": 2
+  },
+  "Ceillac": {
+    "latitude": 44.66716666666667,
+    "longitude": 6.785194333333334,
+    "n_files": 3
+  },
+  "Ceillac Haut": {
+    "latitude": 44.66698546666667,
+    "longitude": 6.785705533333334,
+    "n_files": 15
+  },
+  "Cenes De La Vega": {
+    "latitude": 37.14267707692307,
+    "longitude": -3.518698692307692,
+    "n_files": 13
+  },
+  "Chabre Sud": {
+    "latitude": 44.298458499999995,
+    "longitude": 5.7668085,
+    "n_files": 2
+  },
+  "Chafreliere": {
+    "latitude": 45.56725942857143,
+    "longitude": 0.6586761428571428,
+    "n_files": 7
+  },
+  "Chailloux": {
+    "latitude": 45.913908500000005,
+    "longitude": 6.8098665,
+    "n_files": 2
+  },
+  "Chalais Aerodrome": {
+    "latitude": 45.26863316666667,
+    "longitude": 0.020655333333333335,
+    "n_files": 6
+  },
+  "Chalvet  Ouest": {
+    "latitude": 43.97818255999999,
+    "longitude": 6.47939728,
+    "n_files": 25
+  },
+  "Chamoux": {
+    "latitude": 45.52938639999999,
+    "longitude": 6.25243168,
+    "n_files": 25
+  },
+  "Champ79": {
+    "latitude": 46.200917,
+    "longitude": -0.329017,
+    "n_files": 1
+  },
+  "Charmont-sous-Barbuise": {
+    "latitude": 48.391682,
+    "longitude": 4.154051,
+    "n_files": 1
+  },
+  "Chavagnac": {
+    "latitude": 45.86611675,
+    "longitude": 0.419339625,
+    "n_files": 8
+  },
+  "Chazelles Le Luquet": {
+    "latitude": 45.64343074999999,
+    "longitude": 0.3313528,
+    "n_files": 20
+  },
+  "Cheminer La Clapouse": {
+    "latitude": 44.3356915,
+    "longitude": 6.7963249999999995,
+    "n_files": 2
+  },
+  "Chenac": {
+    "latitude": 45.50915733333333,
+    "longitude": -0.8383223333333333,
+    "n_files": 6
+  },
+  "Chenac St Seurin D'Uzet": {
+    "latitude": 45.50915,
+    "longitude": -0.814883,
+    "n_files": 1
+  },
+  "Chenaumoine": {
+    "latitude": 45.5844208,
+    "longitude": -0.9422366,
+    "n_files": 5
+  },
+  "Chez Landry": {
+    "latitude": 46.2178625,
+    "longitude": -0.3387105,
+    "n_files": 8
+  },
+  "Chez Redeau": {
+    "latitude": 46.09716,
+    "longitude": 0.311062,
+    "n_files": 1
+  },
+  "Club Aéreo Tabernas": {
+    "latitude": 37.088633,
+    "longitude": -2.330567,
+    "n_files": 1
+  },
+  "Col Agnel": {
+    "latitude": 44.683483,
+    "longitude": 6.979167,
+    "n_files": 1
+  },
+  "Col Bel": {
+    "latitude": 46.4462415,
+    "longitude": 11.7369915,
+    "n_files": 2
+  },
+  "Col De Balme": {
+    "latitude": 46.028783,
+    "longitude": 6.965317,
+    "n_files": 1
+  },
+  "Col De Balme Speedriding": {
+    "latitude": 46.020067,
+    "longitude": 6.970667,
+    "n_files": 1
+  },
+  "Col De Bataille 1100m": {
+    "latitude": 42.54945,
+    "longitude": 9.002533,
+    "n_files": 1
+  },
+  "Col De Chamoussière": {
+    "latitude": 44.678033,
+    "longitude": 6.95965,
+    "n_files": 1
+  },
+  "Col De La Cochette": {
+    "latitude": 45.640717,
+    "longitude": 6.112317,
+    "n_files": 1
+  },
+  "Col De La Courade - Niclade": {
+    "latitude": 42.9980835,
+    "longitude": 0.1683915,
+    "n_files": 2
+  },
+  "Col De La Gardette": {
+    "latitude": 44.58865,
+    "longitude": 6.307733,
+    "n_files": 1
+  },
+  "Col De La Pourrachière": {
+    "latitude": 44.616083,
+    "longitude": 6.27535,
+    "n_files": 1
+  },
+  "Col De San Bastiano": {
+    "latitude": 42.0246835,
+    "longitude": 8.7310585,
+    "n_files": 2
+  },
+  "Col De Saverne": {
+    "latitude": 44.37365,
+    "longitude": 6.40225,
+    "n_files": 1
+  },
+  "Col Des Frêtes": {
+    "latitude": 45.855933500000006,
+    "longitude": 6.2461375,
+    "n_files": 4
+  },
+  "Col Des Posettes Sud": {
+    "latitude": 46.01705,
+    "longitude": 6.9417085,
+    "n_files": 2
+  },
+  "Col Des Prés": {
+    "latitude": 45.583804533333335,
+    "longitude": 6.053838799999999,
+    "n_files": 15
+  },
+  "Col Des Ruillans": {
+    "latitude": 45.009717,
+    "longitude": 6.264133,
+    "n_files": 1
+  },
+  "Col Du Belvedere": {
+    "latitude": 45.9849,
+    "longitude": 6.8744,
+    "n_files": 1
+  },
+  "Col Du Joly": {
+    "latitude": 45.787066749999994,
+    "longitude": 6.670770999999999,
+    "n_files": 4
+  },
+  "Col Du Midi": {
+    "latitude": 45.868017,
+    "longitude": 6.880033,
+    "n_files": 1
+  },
+  "Col Du Noyer": {
+    "latitude": 44.690733,
+    "longitude": 5.984917,
+    "n_files": 1
+  },
+  "Col Du Sapenay": {
+    "latitude": 45.822593399999995,
+    "longitude": 5.86605204,
+    "n_files": 25
+  },
+  "Col Rodella 3 Rifugio": {
+    "latitude": 46.49425879999999,
+    "longitude": 11.749243266666669,
+    "n_files": 15
+  },
+  "Col Servenne": {
+    "latitude": 45.568167,
+    "longitude": 6.055417,
+    "n_files": 1
+  },
+  "Collet D Allevard - Malatrait": {
+    "latitude": 45.393733,
+    "longitude": 6.106217,
+    "n_files": 1
+  },
+  "Collet D'Allevard - Pré Rond": {
+    "latitude": 45.407017,
+    "longitude": 6.128183,
+    "n_files": 1
+  },
+  "Collet D'Allevard - Sud": {
+    "latitude": 45.392125,
+    "longitude": 6.114974999999999,
+    "n_files": 2
+  },
+  "Colombis": {
+    "latitude": 44.4923415,
+    "longitude": 6.2157585,
+    "n_files": 2
+  },
+  "Corbara": {
+    "latitude": 42.61675,
+    "longitude": 8.9033,
+    "n_files": 1
+  },
+  "Cordes Saint Marcel De Campes": {
+    "latitude": 44.06335,
+    "longitude": 1.97505,
+    "n_files": 1
+  },
+  "Cormet De Roselend": {
+    "latitude": 45.68815,
+    "longitude": 6.693533,
+    "n_files": 1
+  },
+  "Courchon": {
+    "latitude": 43.8431585,
+    "longitude": 6.2298415,
+    "n_files": 2
+  },
+  "Courtet": {
+    "latitude": 44.77022022222222,
+    "longitude": 5.79812,
+    "n_files": 18
+  },
+  "Courçon Eol'Aunis": {
+    "latitude": 46.24920328,
+    "longitude": -0.832104,
+    "n_files": 25
+  },
+  "Craon": {
+    "latitude": 46.770146000000004,
+    "longitude": 0.03772525,
+    "n_files": 4
+  },
+  "Croix D'Allant": {
+    "latitude": 45.658275,
+    "longitude": 6.202775,
+    "n_files": 2
+  },
+  "Croix De St Sandoux": {
+    "latitude": 45.63141675,
+    "longitude": 3.1166374999999995,
+    "n_files": 4
+  },
+  "Croix De Tormery": {
+    "latitude": 45.5174665,
+    "longitude": 6.031158,
+    "n_files": 2
+  },
+  "Crète Sous La Croix": {
+    "latitude": 45.6127085,
+    "longitude": 5.969525,
+    "n_files": 2
+  },
+  "Crêt Du Loup": {
+    "latitude": 45.8909665,
+    "longitude": 6.4511330000000005,
+    "n_files": 2
+  },
+  "Crêt Lognan": {
+    "latitude": 45.350117,
+    "longitude": 6.396033,
+    "n_files": 1
+  },
+  "Crêtes De La Blavette": {
+    "latitude": 44.677833,
+    "longitude": 6.846683,
+    "n_files": 1
+  },
+  "Cuges Sud Ouest": {
+    "latitude": 43.2821,
+    "longitude": 5.694283,
+    "n_files": 1
+  },
+  "Côte De Jord": {
+    "latitude": 45.016890000000004,
+    "longitude": 1.07104328,
+    "n_files": 25
+  },
+  "Dans Les Prérie": {
+    "latitude": 42.775817,
+    "longitude": 0.4454,
+    "n_files": 1
+  },
+  "Deco Bouilloux": {
+    "latitude": 45.8001165,
+    "longitude": 5.867100000000001,
+    "n_files": 4
+  },
+  "Dent De Crolles": {
+    "latitude": 45.308657374999996,
+    "longitude": 5.854826375,
+    "n_files": 8
+  },
+  "Dent De Pleuven": {
+    "latitude": 45.672233,
+    "longitude": 6.187233,
+    "n_files": 1
+  },
+  "Dormillouse Nord": {
+    "latitude": 44.408233,
+    "longitude": 6.3825,
+    "n_files": 1
+  },
+  "Double Cornu": {
+    "latitude": 42.958283,
+    "longitude": 0.890617,
+    "n_files": 1
+  },
+  "Douelle": {
+    "latitude": 44.46376442857143,
+    "longitude": 1.3723118571428572,
+    "n_files": 7
+  },
+  "Dune Du Pilat - Grande Dune": {
+    "latitude": 44.593662125,
+    "longitude": -1.21248075,
+    "n_files": 8
+  },
+  "Dune Du Pilat - La Corniche": {
+    "latitude": 44.598245750000004,
+    "longitude": -1.20912925,
+    "n_files": 4
+  },
+  "Dune Du Pilat - Petit Nice": {
+    "latitude": 44.575289,
+    "longitude": -1.2263833333333334,
+    "n_files": 3
+  },
+  "Dune du Pilat - Les Gaillouneys": {
+    "latitude": 44.56513475,
+    "longitude": -1.236289125,
+    "n_files": 8
+  },
+  "Dune du Pilat - Waggas School": {
+    "latitude": 44.57923589473685,
+    "longitude": -1.2211807894736844,
+    "n_files": 19
+  },
+  "Déco Du Chêne Semnoz": {
+    "latitude": 45.8061,
+    "longitude": 6.092667,
+    "n_files": 1
+  },
+  "Déco Ne Brunas-Plateforme D'Observation Du Viaduc": {
+    "latitude": 44.071325,
+    "longitude": 3.059246,
+    "n_files": 4
+  },
+  "Déco Surprise De Tafraoute": {
+    "latitude": 29.723217,
+    "longitude": -8.996667,
+    "n_files": 1
+  },
+  "Echappée Du Rocher Du Vent": {
+    "latitude": 45.7036415,
+    "longitude": 6.669008,
+    "n_files": 2
+  },
+  "El Grado": {
+    "latitude": 42.1536165,
+    "longitude": 0.254475,
+    "n_files": 2
+  },
+  "El Tanque": {
+    "latitude": 28.3601825,
+    "longitude": -16.785795388888893,
+    "n_files": 18
+  },
+  "Entrevernes": {
+    "latitude": 45.788845,
+    "longitude": 6.194109,
+    "n_files": 1
+  },
+  "Epurdie": {
+    "latitude": 45.682983,
+    "longitude": 0.7552,
+    "n_files": 1
+  },
+  "Estivol À Blond": {
+    "latitude": 46.015733499999996,
+    "longitude": 0.9979165,
+    "n_files": 2
+  },
+  "Etre": {
+    "latitude": 45.6613665,
+    "longitude": 6.171142,
+    "n_files": 2
+  },
+  "Fayards": {
+    "latitude": 45.56119235999999,
+    "longitude": 0.17210768,
+    "n_files": 25
+  },
+  "Flégère": {
+    "latitude": 45.963754249999994,
+    "longitude": 6.874493875000001,
+    "n_files": 8
+  },
+  "Flégère Bas": {
+    "latitude": 45.952733499999994,
+    "longitude": 6.884458,
+    "n_files": 2
+  },
+  "Fort De La Platte": {
+    "latitude": 45.637167,
+    "longitude": 6.7451,
+    "n_files": 1
+  },
+  "Fribaud - Les Pommes": {
+    "latitude": 45.729998,
+    "longitude": -0.8057313333333334,
+    "n_files": 9
+  },
+  "Gabrielo": {
+    "latitude": 42.031272333333334,
+    "longitude": 0.769428,
+    "n_files": 3
+  },
+  "Gamby": {
+    "latitude": 44.06285,
+    "longitude": 5.67865,
+    "n_files": 1
+  },
+  "Garat": {
+    "latitude": 45.646139500000004,
+    "longitude": 0.420017,
+    "n_files": 2
+  },
+  "Genac": {
+    "latitude": 45.787717533333335,
+    "longitude": 0.022167666666666662,
+    "n_files": 15
+  },
+  "Glacier Superieur Des Agneaux": {
+    "latitude": 44.969967,
+    "longitude": 6.337617,
+    "n_files": 1
+  },
+  "Glandieu": {
+    "latitude": 45.671517,
+    "longitude": 5.615033,
+    "n_files": 1
+  },
+  "Gourdon": {
+    "latitude": 43.725233,
+    "longitude": 6.947833,
+    "n_files": 1
+  },
+  "Grand Aréa": {
+    "latitude": 44.979217,
+    "longitude": 6.572783,
+    "n_files": 1
+  },
+  "Grand Roc Y'S": {
+    "latitude": 45.5859835,
+    "longitude": 6.0754079999999995,
+    "n_files": 2
+  },
+  "Grand Schuss": {
+    "latitude": 45.40565,
+    "longitude": 6.371755666666668,
+    "n_files": 3
+  },
+  "Grands Montets": {
+    "latitude": 45.947083,
+    "longitude": 6.960017,
+    "n_files": 1
+  },
+  "Grands Moulins": {
+    "latitude": 45.4068,
+    "longitude": 6.19885,
+    "n_files": 1
+  },
+  "Granier": {
+    "latitude": 45.466825,
+    "longitude": 5.9277999999999995,
+    "n_files": 2
+  },
+  "Gretel": {
+    "latitude": 44.643292,
+    "longitude": 6.2247915,
+    "n_files": 2
+  },
+  "Haut Du Comte   Les Bruches": {
+    "latitude": 47.96015,
+    "longitude": 6.797083,
+    "n_files": 1
+  },
+  "Idikel": {
+    "latitude": 29.691222111111113,
+    "longitude": -8.883456444444445,
+    "n_files": 9
+  },
+  "Ifonche": {
+    "latitude": 28.125638079999998,
+    "longitude": -16.692971439999997,
+    "n_files": 25
+  },
+  "Intermédiaire Sud Margériaz": {
+    "latitude": 45.625417,
+    "longitude": 6.0489,
+    "n_files": 1
+  },
+  "Izana": {
+    "latitude": 28.329745100000004,
+    "longitude": -16.4918465,
+    "n_files": 10
+  },
+  "Izana Est": {
+    "latitude": 28.322127000000002,
+    "longitude": -16.490414625,
+    "n_files": 8
+  },
+  "Jabalcon West": {
+    "latitude": 37.565961333333334,
+    "longitude": -2.820522333333333,
+    "n_files": 3
+  },
+  "Jardin Des Copains": {
+    "latitude": 45.73625,
+    "longitude": -0.068883,
+    "n_files": 1
+  },
+  "Jarnalet": {
+    "latitude": 45.315225,
+    "longitude": 6.222225,
+    "n_files": 2
+  },
+  "Jarzay": {
+    "latitude": 46.75557777777778,
+    "longitude": 0.03864066666666666,
+    "n_files": 9
+  },
+  "Jas D'Oris": {
+    "latitude": 44.9285085,
+    "longitude": 5.8862000000000005,
+    "n_files": 2
+  },
+  "Javerlhac": {
+    "latitude": 45.55365560869566,
+    "longitude": 0.5634423913043478,
+    "n_files": 23
+  },
+  "Kristiania": {
+    "latitude": 46.48125,
+    "longitude": 11.796667,
+    "n_files": 1
+  },
+  "L'Allier": {
+    "latitude": 44.02391311111111,
+    "longitude": 6.451855444444444,
+    "n_files": 9
+  },
+  "L'Alpette": {
+    "latitude": 45.392908500000004,
+    "longitude": 5.899792,
+    "n_files": 2
+  },
+  "L'Entreposte De Cuguret": {
+    "latitude": 44.42636100000001,
+    "longitude": 6.757322333333334,
+    "n_files": 3
+  },
+  "L'Epine - Lac D'Aiguebelette": {
+    "latitude": 45.60177136,
+    "longitude": 5.806923319999999,
+    "n_files": 25
+  },
+  "L'Orbi": {
+    "latitude": 47.937183,
+    "longitude": 6.88545,
+    "n_files": 1
+  },
+  "La Bergerie": {
+    "latitude": 44.809717,
+    "longitude": 6.480283,
+    "n_files": 1
+  },
+  "La Bourgeoise": {
+    "latitude": 46.115067,
+    "longitude": 6.7199,
+    "n_files": 1
+  },
+  "La Charvaz": {
+    "latitude": 45.731067,
+    "longitude": 5.822683,
+    "n_files": 1
+  },
+  "La Couronne1": {
+    "latitude": 45.583283,
+    "longitude": 0.101867,
+    "n_files": 1
+  },
+  "La Era": {
+    "latitude": 28.119972333333333,
+    "longitude": -16.694471999999998,
+    "n_files": 3
+  },
+  "La Peyrouse Connex": {
+    "latitude": 44.991617,
+    "longitude": 5.724717,
+    "n_files": 1
+  },
+  "La Rochebeaucourt": {
+    "latitude": 45.46681512,
+    "longitude": 0.38804788,
+    "n_files": 25
+  },
+  "La Scia": {
+    "latitude": 45.345379599999994,
+    "longitude": 5.8458098,
+    "n_files": 5
+  },
+  "La Tanière": {
+    "latitude": 44.216937,
+    "longitude": 5.478003666666666,
+    "n_files": 9
+  },
+  "Lac Du Pontet": {
+    "latitude": 45.049283,
+    "longitude": 6.356233,
+    "n_files": 1
+  },
+  "Langlardie": {
+    "latitude": 45.62611,
+    "longitude": 0.60091,
+    "n_files": 1
+  },
+  "Lanslevillard": {
+    "latitude": 45.266817,
+    "longitude": 6.931233,
+    "n_files": 1
+  },
+  "Lapiaz Du Col Du Pré De La Roche Y'S": {
+    "latitude": 45.60455,
+    "longitude": 6.05585,
+    "n_files": 1
+  },
+  "Larouco North": {
+    "latitude": 41.916835666666664,
+    "longitude": -7.715369,
+    "n_files": 3
+  },
+  "Larouco Sud": {
+    "latitude": 41.760168,
+    "longitude": -7.7495165,
+    "n_files": 2
+  },
+  "Lavaud": {
+    "latitude": 45.76792157142858,
+    "longitude": 0.3655022857142857,
+    "n_files": 7
+  },
+  "Le Banchet": {
+    "latitude": 45.567314,
+    "longitude": 5.7311153333333325,
+    "n_files": 3
+  },
+  "Le Brévent": {
+    "latitude": 45.930733,
+    "longitude": 6.844267,
+    "n_files": 1
+  },
+  "Le Chalvet Sud": {
+    "latitude": 43.976866599999994,
+    "longitude": 6.492231066666667,
+    "n_files": 15
+  },
+  "Le Champs De Bouse": {
+    "latitude": 44.25042725,
+    "longitude": 6.05589975,
+    "n_files": 8
+  },
+  "Le Chat": {
+    "latitude": 45.663072875,
+    "longitude": 5.821304125,
+    "n_files": 8
+  },
+  "Le Chauvet": {
+    "latitude": 44.6613632,
+    "longitude": 5.8343834,
+    "n_files": 5
+  },
+  "Le Château": {
+    "latitude": 45.82605625,
+    "longitude": 0.435327125,
+    "n_files": 8
+  },
+  "Le Colombier - Bauges": {
+    "latitude": 45.644061333333326,
+    "longitude": 6.118355333333334,
+    "n_files": 3
+  },
+  "Le Cuchon D'Ancelle": {
+    "latitude": 44.63512766666667,
+    "longitude": 6.221894333333334,
+    "n_files": 3
+  },
+  "Le Cuchon d'Ancelle": {
+    "latitude": 44.633900000000004,
+    "longitude": 6.217983333333334,
+    "n_files": 9
+  },
+  "Le Dôme": {
+    "latitude": 44.348933,
+    "longitude": 6.728717,
+    "n_files": 1
+  },
+  "Le Fort - Sud": {
+    "latitude": 44.237375,
+    "longitude": 5.48215,
+    "n_files": 2
+  },
+  "Le Grand Bornand": {
+    "latitude": 45.958392,
+    "longitude": 6.4764,
+    "n_files": 2
+  },
+  "Le Grand Mont": {
+    "latitude": 45.631617,
+    "longitude": 6.536967,
+    "n_files": 1
+  },
+  "Le Menil": {
+    "latitude": 47.903633,
+    "longitude": 6.804517,
+    "n_files": 1
+  },
+  "Le Nid D'Aigle": {
+    "latitude": 29.701452000000003,
+    "longitude": -9.93097247826087,
+    "n_files": 23
+  },
+  "Le Nid d'Aigle": {
+    "latitude": 29.70169652,
+    "longitude": -9.93071804,
+    "n_files": 25
+  },
+  "Le Paillaret": {
+    "latitude": 45.50799000000001,
+    "longitude": 2.8237255,
+    "n_files": 2
+  },
+  "Le Palastre": {
+    "latitude": 44.694883,
+    "longitude": 6.207917,
+    "n_files": 1
+  },
+  "Le Perrier": {
+    "latitude": 45.15069335,
+    "longitude": 0.5533066,
+    "n_files": 20
+  },
+  "Le Plomb Du Cantal": {
+    "latitude": 45.0622,
+    "longitude": 2.7603,
+    "n_files": 1
+  },
+  "Le Point De Vue": {
+    "latitude": 44.40169407142857,
+    "longitude": 6.6666655,
+    "n_files": 14
+  },
+  "Le Roc Site Ouest": {
+    "latitude": 44.873417,
+    "longitude": 1.450367,
+    "n_files": 1
+  },
+  "Le Sire": {
+    "latitude": 45.63042464,
+    "longitude": 5.965626680000001,
+    "n_files": 25
+  },
+  "Le Sire Nord": {
+    "latitude": 45.634734095238095,
+    "longitude": 5.9621532380952385,
+    "n_files": 21
+  },
+  "Legzira": {
+    "latitude": 29.441935,
+    "longitude": -10.101337666666666,
+    "n_files": 12
+  },
+  "Legzira - Déco Est": {
+    "latitude": 29.438383,
+    "longitude": -10.099483,
+    "n_files": 1
+  },
+  "Legzira - L'Arche": {
+    "latitude": 29.4396366,
+    "longitude": -10.1214866,
+    "n_files": 5
+  },
+  "Les Antennes-cuchon": {
+    "latitude": 44.633075000000005,
+    "longitude": 6.2149375,
+    "n_files": 4
+  },
+  "Les Arcs": {
+    "latitude": 45.5654,
+    "longitude": 6.7956,
+    "n_files": 1
+  },
+  "Les Arcs - Clocheret": {
+    "latitude": 45.580233,
+    "longitude": 6.808033,
+    "n_files": 1
+  },
+  "Les Charmettes - Les Arcs": {
+    "latitude": 45.56889514285715,
+    "longitude": 6.762464285714286,
+    "n_files": 7
+  },
+  "Les Chenets": {
+    "latitude": 45.8067928125,
+    "longitude": -0.1194459375,
+    "n_files": 16
+  },
+  "Les Chevaliers Du Serre": {
+    "latitude": 44.37865,
+    "longitude": 6.772108,
+    "n_files": 2
+  },
+  "Les Flores": {
+    "latitude": 45.71446725,
+    "longitude": 0.24851425,
+    "n_files": 4
+  },
+  "Les Fées": {
+    "latitude": 45.625267,
+    "longitude": 6.069133,
+    "n_files": 1
+  },
+  "Les Houches - Prarion": {
+    "latitude": 45.88602542857142,
+    "longitude": 6.7521912380952385,
+    "n_files": 21
+  },
+  "Les Houches Prarion Ne": {
+    "latitude": 45.8846065,
+    "longitude": 6.752525888888889,
+    "n_files": 18
+  },
+  "Les Jambons": {
+    "latitude": 44.598817,
+    "longitude": 6.271667,
+    "n_files": 1
+  },
+  "Les Magnants Jausiers": {
+    "latitude": 44.418947333333335,
+    "longitude": 6.747063999999999,
+    "n_files": 6
+  },
+  "Les Mottes": {
+    "latitude": 45.77560561111111,
+    "longitude": -0.8353417777777777,
+    "n_files": 18
+  },
+  "Les Mottes   Le Mur": {
+    "latitude": 45.77261458333333,
+    "longitude": -0.8530369166666666,
+    "n_files": 24
+  },
+  "Les Mottes Nord": {
+    "latitude": 45.75367059999999,
+    "longitude": -0.8299806,
+    "n_files": 25
+  },
+  "Les Myrtilles": {
+    "latitude": 42.7771835,
+    "longitude": 0.3797335,
+    "n_files": 2
+  },
+  "Les Pallis": {
+    "latitude": 47.2203436875,
+    "longitude": 1.282055125,
+    "n_files": 16
+  },
+  "Les Plagnes": {
+    "latitude": 45.383844333333336,
+    "longitude": 6.148910999999999,
+    "n_files": 3
+  },
+  "Les Prés Hauts": {
+    "latitude": 44.39447233333333,
+    "longitude": 6.79345,
+    "n_files": 3
+  },
+  "Les Richards": {
+    "latitude": 44.68084988888889,
+    "longitude": 6.231433333333333,
+    "n_files": 9
+  },
+  "Lf1660": {
+    "latitude": 45.580837360000004,
+    "longitude": 0.42327064,
+    "n_files": 25
+  },
+  "Lf2452": {
+    "latitude": 45.252477666666664,
+    "longitude": 0.7628833333333334,
+    "n_files": 3
+  },
+  "Libaileul": {
+    "latitude": 44.701533,
+    "longitude": -0.782167,
+    "n_files": 1
+  },
+  "Ligne Électrique": {
+    "latitude": 46.865155869565235,
+    "longitude": -0.1700269130434783,
+    "n_files": 23
+  },
+  "Los Marcos": {
+    "latitude": 28.1427835,
+    "longitude": -16.7166415,
+    "n_files": 2
+  },
+  "Loudenvielle Sud": {
+    "latitude": 42.79902327999999,
+    "longitude": 0.38346660000000005,
+    "n_files": 25
+  },
+  "Loulé": {
+    "latitude": 37.113083,
+    "longitude": -8.0617835,
+    "n_files": 2
+  },
+  "Lusignac": {
+    "latitude": 45.374443,
+    "longitude": 0.32086,
+    "n_files": 1
+  },
+  "Magnac Lavalette": {
+    "latitude": 45.4877922,
+    "longitude": 0.25155648,
+    "n_files": 25
+  },
+  "Mainfonds": {
+    "latitude": 45.51368515789474,
+    "longitude": -0.0027482631578947367,
+    "n_files": 19
+  },
+  "Maquis Master": {
+    "latitude": 44.078433,
+    "longitude": 6.406933,
+    "n_files": 1
+  },
+  "Marennes": {
+    "latitude": 45.8251835,
+    "longitude": -1.0749835,
+    "n_files": 2
+  },
+  "Marlens": {
+    "latitude": 45.77725592857143,
+    "longitude": 6.339601285714285,
+    "n_files": 14
+  },
+  "Massognes": {
+    "latitude": 46.7423665,
+    "longitude": 0.07855,
+    "n_files": 2
+  },
+  "Massognes-Jarzay": {
+    "latitude": 46.742095875000004,
+    "longitude": 0.07900625,
+    "n_files": 8
+  },
+  "Menez-Hom": {
+    "latitude": 48.220583,
+    "longitude": -4.236483,
+    "n_files": 1
+  },
+  "Metry": {
+    "latitude": 45.84038128,
+    "longitude": 0.463146,
+    "n_files": 25
+  },
+  "Millau - Brunas": {
+    "latitude": 44.07443941666667,
+    "longitude": 3.06326525,
+    "n_files": 12
+  },
+  "Millau - Pic D'Andan": {
+    "latitude": 44.135662,
+    "longitude": 3.062724,
+    "n_files": 1
+  },
+  "Millau - Puncho D Agast": {
+    "latitude": 44.110497960000004,
+    "longitude": 3.1023594399999994,
+    "n_files": 25
+  },
+  "Millau - Puncho d'Agast": {
+    "latitude": 44.11014547999999,
+    "longitude": 3.1020541600000002,
+    "n_files": 25
+  },
+  "Monedieres-Fournaise": {
+    "latitude": 45.467842454545455,
+    "longitude": 1.8508431818181819,
+    "n_files": 22
+  },
+  "Mont Blanc": {
+    "latitude": 45.838867,
+    "longitude": 6.8676165000000005,
+    "n_files": 2
+  },
+  "Mont Gros": {
+    "latitude": 43.765244,
+    "longitude": 7.442614,
+    "n_files": 1
+  },
+  "Mont Morbié": {
+    "latitude": 45.59745,
+    "longitude": 6.11515,
+    "n_files": 1
+  },
+  "Mont Pelat": {
+    "latitude": 45.5933335,
+    "longitude": 6.113575,
+    "n_files": 2
+  },
+  "Mont Peney": {
+    "latitude": 45.59752075,
+    "longitude": 5.98732925,
+    "n_files": 4
+  },
+  "Mont St-Michel": {
+    "latitude": 45.550883,
+    "longitude": 6.001567,
+    "n_files": 1
+  },
+  "Montagne De Bange": {
+    "latitude": 45.7191585,
+    "longitude": 6.0292585,
+    "n_files": 2
+  },
+  "Montagne De Bonvillard Est Y'S": {
+    "latitude": 45.592283,
+    "longitude": 6.05325,
+    "n_files": 1
+  },
+  "Montagne De Tejina": {
+    "latitude": 28.190942,
+    "longitude": -16.75535,
+    "n_files": 2
+  },
+  "Montaud": {
+    "latitude": 45.245018,
+    "longitude": 5.574294,
+    "n_files": 1
+  },
+  "Montbasin": {
+    "latitude": 45.612033,
+    "longitude": 5.952667,
+    "n_files": 1
+  },
+  "Montclar": {
+    "latitude": 44.402999875,
+    "longitude": 6.370968625,
+    "n_files": 8
+  },
+  "Monte Baldo": {
+    "latitude": 45.7749,
+    "longitude": 10.863133,
+    "n_files": 1
+  },
+  "Montlambert": {
+    "latitude": 45.55264932,
+    "longitude": 6.10497796,
+    "n_files": 25
+  },
+  "Montlouby": {
+    "latitude": 45.07565,
+    "longitude": 2.992833,
+    "n_files": 1
+  },
+  "Montmin": {
+    "latitude": 45.81383844,
+    "longitude": 6.2454704,
+    "n_files": 25
+  },
+  "Monédières Déco Nord": {
+    "latitude": 45.48667332,
+    "longitude": 1.83996144,
+    "n_files": 25
+  },
+  "Mt Lachat": {
+    "latitude": 45.870817,
+    "longitude": 6.793833,
+    "n_files": 1
+  },
+  "Nid D'Aigle - Nord": {
+    "latitude": 29.7045085,
+    "longitude": -9.927792,
+    "n_files": 2
+  },
+  "Nivolet Grands Prés": {
+    "latitude": 45.605875,
+    "longitude": 5.968125000000001,
+    "n_files": 2
+  },
+  "Nogaro": {
+    "latitude": 43.767630583333336,
+    "longitude": -0.03407358333333333,
+    "n_files": 12
+  },
+  "Olhette": {
+    "latitude": 43.3740045,
+    "longitude": -1.7182085,
+    "n_files": 2
+  },
+  "Orcières Cairn": {
+    "latitude": 44.69812385714285,
+    "longitude": 6.304304571428572,
+    "n_files": 7
+  },
+  "Organya": {
+    "latitude": 42.228355666666666,
+    "longitude": 1.3242446666666667,
+    "n_files": 3
+  },
+  "Oups": {
+    "latitude": 46.206479,
+    "longitude": -0.33250425,
+    "n_files": 4
+  },
+  "Palluaud": {
+    "latitude": 45.34203,
+    "longitude": 0.328699,
+    "n_files": 1
+  },
+  "Paramoteur Poitou-Charentes Arvert": {
+    "latitude": 45.746441833333336,
+    "longitude": -1.0979333333333334,
+    "n_files": 6
+  },
+  "Parves": {
+    "latitude": 45.739267,
+    "longitude": 5.727975000000001,
+    "n_files": 2
+  },
+  "Passy - Plaine Joux": {
+    "latitude": 45.949096,
+    "longitude": 6.7391125,
+    "n_files": 4
+  },
+  "Pature J C": {
+    "latitude": 45.580799999999996,
+    "longitude": 0.423617,
+    "n_files": 2
+  },
+  "Pegalajar": {
+    "latitude": 37.752383,
+    "longitude": -3.6463,
+    "n_files": 2
+  },
+  "Pelvoux Station - Sommet": {
+    "latitude": 44.857583500000004,
+    "longitude": 6.4600165,
+    "n_files": 2
+  },
+  "Pena De Los Buitres": {
+    "latitude": 37.743867,
+    "longitude": -3.657933,
+    "n_files": 1
+  },
+  "Pendant": {
+    "latitude": 45.949739,
+    "longitude": 6.943822,
+    "n_files": 3
+  },
+  "Pertuiset - Mieussy": {
+    "latitude": 46.14191133333333,
+    "longitude": 6.545678,
+    "n_files": 3
+  },
+  "Petit Drumont": {
+    "latitude": 47.898583,
+    "longitude": 6.91915,
+    "n_files": 1
+  },
+  "Petit Som": {
+    "latitude": 45.387983,
+    "longitude": 5.80565,
+    "n_files": 2
+  },
+  "Pey Gros": {
+    "latitude": 43.271330375000005,
+    "longitude": 5.66925975,
+    "n_files": 8
+  },
+  "Peyragudes": {
+    "latitude": 42.78085736,
+    "longitude": 0.44155528,
+    "n_files": 25
+  },
+  "Peyragudescabanou": {
+    "latitude": 42.77988571428572,
+    "longitude": 0.44333557142857144,
+    "n_files": 7
+  },
+  "Peyraude": {
+    "latitude": 42.78019805882353,
+    "longitude": 0.44191176470588234,
+    "n_files": 17
+  },
+  "Pic De Buc": {
+    "latitude": 44.20705,
+    "longitude": 5.4783,
+    "n_files": 1
+  },
+  "Pic Saint Michel": {
+    "latitude": 45.090317,
+    "longitude": 5.6192,
+    "n_files": 1
+  },
+  "Pierrier": {
+    "latitude": 44.39965,
+    "longitude": 6.792783,
+    "n_files": 1
+  },
+  "Pigibert": {
+    "latitude": 44.0736915,
+    "longitude": 6.42465,
+    "n_files": 2
+  },
+  "Pioupiou Du Grand Moiré": {
+    "latitude": 46.866356679999996,
+    "longitude": -0.183228,
+    "n_files": 25
+  },
+  "Plan De L Aiguille": {
+    "latitude": 45.90222752941176,
+    "longitude": 6.883462588235294,
+    "n_files": 17
+  },
+  "Plan De La Boutte": {
+    "latitude": 45.64929433333334,
+    "longitude": 6.761872,
+    "n_files": 3
+  },
+  "Plan De La Limace": {
+    "latitude": 45.664714000000004,
+    "longitude": 6.210530666666667,
+    "n_files": 6
+  },
+  "Planfait": {
+    "latitude": 45.85311930769231,
+    "longitude": 6.222707615384615,
+    "n_files": 13
+  },
+  "Planpraz": {
+    "latitude": 45.937052720000004,
+    "longitude": 6.85158676,
+    "n_files": 25
+  },
+  "Plassac Rouffiac": {
+    "latitude": 45.523633,
+    "longitude": 0.150417,
+    "n_files": 1
+  },
+  "Plat D'Adet": {
+    "latitude": 42.8134,
+    "longitude": 0.298408,
+    "n_files": 2
+  },
+  "Plateau Des Lauzes": {
+    "latitude": 45.383833,
+    "longitude": 7.0667,
+    "n_files": 1
+  },
+  "Plateforme": {
+    "latitude": 29.607717,
+    "longitude": -8.960017,
+    "n_files": 1
+  },
+  "Plateforme Dirac": {
+    "latitude": 45.60921936,
+    "longitude": 0.21631923999999997,
+    "n_files": 25
+  },
+  "Plateforme Treuil Massognes-Jarzay": {
+    "latitude": 46.760882,
+    "longitude": 0.04496408,
+    "n_files": 25
+  },
+  "Pointe De La Galopaz": {
+    "latitude": 45.568090999999995,
+    "longitude": 6.069089454545455,
+    "n_files": 11
+  },
+  "Pointe De La Sauge": {
+    "latitude": 45.55060424999999,
+    "longitude": 6.057697875000001,
+    "n_files": 8
+  },
+  "Pointe Fine": {
+    "latitude": 44.437,
+    "longitude": 6.701717,
+    "n_files": 1
+  },
+  "Pompignan 02": {
+    "latitude": 43.900483,
+    "longitude": 3.896183,
+    "n_files": 1
+  },
+  "Pompignan Paramoteur": {
+    "latitude": 43.90882233333334,
+    "longitude": 3.860999666666667,
+    "n_files": 3
+  },
+  "Prade": {
+    "latitude": 45.15746879166667,
+    "longitude": 0.554722125,
+    "n_files": 24
+  },
+  "Praia Da Cordoama": {
+    "latitude": 37.10692766666667,
+    "longitude": -8.938741666666667,
+    "n_files": 6
+  },
+  "Praia Dos Tomates": {
+    "latitude": 37.07865566666666,
+    "longitude": -8.141194333333333,
+    "n_files": 3
+  },
+  "Praia Rocha Baixinha": {
+    "latitude": 37.080522333333334,
+    "longitude": -8.148011,
+    "n_files": 3
+  },
+  "Pravouta": {
+    "latitude": 45.311125000000004,
+    "longitude": 5.834849999999999,
+    "n_files": 2
+  },
+  "Priaia Falaisia": {
+    "latitude": 37.083967,
+    "longitude": -8.159833,
+    "n_files": 1
+  },
+  "Prive Puyauzard": {
+    "latitude": 45.131242952380944,
+    "longitude": 0.5659341428571428,
+    "n_files": 21
+  },
+  "Privé Puyauzard": {
+    "latitude": 45.131242952380944,
+    "longitude": 0.5659341428571428,
+    "n_files": 21
+  },
+  "Puncho": {
+    "latitude": 44.111833250000004,
+    "longitude": 3.09837525,
+    "n_files": 4
+  },
+  "Puncho D'Agast": {
+    "latitude": 44.10963339999999,
+    "longitude": 3.1034897999999997,
+    "n_files": 5
+  },
+  "Puy Aillaud": {
+    "latitude": 44.84996859999999,
+    "longitude": 6.479062680000001,
+    "n_files": 25
+  },
+  "Puy Aillaud Alpages": {
+    "latitude": 44.85412766666666,
+    "longitude": 6.4577610000000005,
+    "n_files": 3
+  },
+  "Puy De La Tache": {
+    "latitude": 45.5924,
+    "longitude": 2.845617,
+    "n_files": 1
+  },
+  "Raudoral": {
+    "latitude": 42.03498333333333,
+    "longitude": 0.736039,
+    "n_files": 3
+  },
+  "Refuge Des Cosmiques": {
+    "latitude": 45.8734,
+    "longitude": 6.8862,
+    "n_files": 1
+  },
+  "Restaurant Altitude": {
+    "latitude": 42.781975,
+    "longitude": 0.43704200000000004,
+    "n_files": 2
+  },
+  "Revard": {
+    "latitude": 45.68329532,
+    "longitude": 5.9746406799999985,
+    "n_files": 25
+  },
+  "Ribérac Lfik": {
+    "latitude": 45.2684862,
+    "longitude": 0.019746599999999996,
+    "n_files": 5
+  },
+  "Rivieres": {
+    "latitude": 45.767821,
+    "longitude": 0.365279,
+    "n_files": 4
+  },
+  "Roc Rouge": {
+    "latitude": 45.43205,
+    "longitude": 6.342667,
+    "n_files": 1
+  },
+  "Roche De Minuit": {
+    "latitude": 47.9887,
+    "longitude": 6.859483,
+    "n_files": 1
+  },
+  "Rocher De La Badaz": {
+    "latitude": 45.630267,
+    "longitude": 6.108617,
+    "n_files": 1
+  },
+  "Rodella": {
+    "latitude": 46.49570395999999,
+    "longitude": 11.751522560000002,
+    "n_files": 25
+  },
+  "Rom": {
+    "latitude": 45.823733,
+    "longitude": -0.596367,
+    "n_files": 1
+  },
+  "Roque Del Conde": {
+    "latitude": 28.103979,
+    "longitude": -16.6997,
+    "n_files": 4
+  },
+  "Roullet": {
+    "latitude": 45.606352,
+    "longitude": 0.030171750000000004,
+    "n_files": 4
+  },
+  "Rupt Sur Moselle": {
+    "latitude": 47.922317,
+    "longitude": 6.6855,
+    "n_files": 1
+  },
+  "Sabeyrol": {
+    "latitude": 45.64912404,
+    "longitude": 0.6239786,
+    "n_files": 25
+  },
+  "Sailhan": {
+    "latitude": 42.810183,
+    "longitude": 0.3336,
+    "n_files": 1
+  },
+  "Saint Hilaire": {
+    "latitude": 45.308718160000005,
+    "longitude": 5.8898368,
+    "n_files": 25
+  },
+  "Saint Hilaire Pistes": {
+    "latitude": 45.31403866666667,
+    "longitude": 5.8752,
+    "n_files": 3
+  },
+  "Saint Jean De Sault": {
+    "latitude": 44.0411835,
+    "longitude": 5.4033915,
+    "n_files": 2
+  },
+  "Saint Meme Les Carrieres": {
+    "latitude": 45.63232604000001,
+    "longitude": -0.15925784,
+    "n_files": 25
+  },
+  "Saint-Hilaire": {
+    "latitude": 45.308388679999986,
+    "longitude": 5.88983852,
+    "n_files": 25
+  },
+  "Saint-Véran Station": {
+    "latitude": 44.711117,
+    "longitude": 6.878817,
+    "n_files": 1
+  },
+  "Sainte Victoire": {
+    "latitude": 43.6521795,
+    "longitude": 5.528233500000001,
+    "n_files": 2
+  },
+  "Sainte- Gemme": {
+    "latitude": 45.7821434,
+    "longitude": -0.8448464,
+    "n_files": 5
+  },
+  "Salvi": {
+    "latitude": 42.5522,
+    "longitude": 8.862667,
+    "n_files": 1
+  },
+  "Samoens 1600": {
+    "latitude": 46.05407590909092,
+    "longitude": 6.697279181818183,
+    "n_files": 11
+  },
+  "Sas Pordoï": {
+    "latitude": 46.50105,
+    "longitude": 11.805833,
+    "n_files": 1
+  },
+  "Saurier-Creste": {
+    "latitude": 45.545589,
+    "longitude": 3.039996,
+    "n_files": 1
+  },
+  "Secondigne-Sur-Belle 02": {
+    "latitude": 46.1552208125,
+    "longitude": -0.3318270625,
+    "n_files": 16
+  },
+  "Secondigne-Sur-Belle 03": {
+    "latitude": 46.144934166666665,
+    "longitude": -0.3379277222222222,
+    "n_files": 18
+  },
+  "Semnoz": {
+    "latitude": 45.8050791875,
+    "longitude": 6.092749,
+    "n_files": 16
+  },
+  "Serpaton": {
+    "latitude": 44.912938999999994,
+    "longitude": 5.592361333333334,
+    "n_files": 3
+  },
+  "Sidi Ifni": {
+    "latitude": 29.386217,
+    "longitude": -10.151525,
+    "n_files": 2
+  },
+  "Sidifni": {
+    "latitude": 29.409117,
+    "longitude": -10.1324,
+    "n_files": 1
+  },
+  "Site Secondigne Sur Belle 01": {
+    "latitude": 46.15404532,
+    "longitude": -0.32166195999999997,
+    "n_files": 25
+  },
+  "Soleil Boeuf": {
+    "latitude": 44.419311857142866,
+    "longitude": 6.651421571428571,
+    "n_files": 7
+  },
+  "Sommet De Jouere": {
+    "latitude": 44.268924999999996,
+    "longitude": 6.1188085,
+    "n_files": 2
+  },
+  "Sommet Du Puy De Dome": {
+    "latitude": 45.7717932,
+    "longitude": 2.9631466000000004,
+    "n_files": 5
+  },
+  "Soubise": {
+    "latitude": 45.96148878571429,
+    "longitude": -1.0053441428571428,
+    "n_files": 14
+  },
+  "Soulac Nord": {
+    "latitude": 45.541466500000006,
+    "longitude": -1.09988325,
+    "n_files": 4
+  },
+  "Soulignone": {
+    "latitude": 45.801500000000004,
+    "longitude": -0.8110999999999999,
+    "n_files": 4
+  },
+  "Sous L'Observatoire Sqint Veran": {
+    "latitude": 44.688125,
+    "longitude": 6.8995335,
+    "n_files": 2
+  },
+  "Sous Rocher Du Vent": {
+    "latitude": 45.706833,
+    "longitude": 6.67435,
+    "n_files": 1
+  },
+  "Spot À Glissade": {
+    "latitude": 44.698817,
+    "longitude": 6.975433,
+    "n_files": 1
+  },
+  "St Antonin La Marche": {
+    "latitude": 44.145042000000004,
+    "longitude": 1.7796665,
+    "n_files": 2
+  },
+  "St Geniez": {
+    "latitude": 44.24880242857143,
+    "longitude": 6.065704785714286,
+    "n_files": 14
+  },
+  "St Germain Sur Meuse": {
+    "latitude": 48.647617,
+    "longitude": 5.677733,
+    "n_files": 1
+  },
+  "St Pardoux La Riviere": {
+    "latitude": 45.51071099999999,
+    "longitude": 0.7321056666666667,
+    "n_files": 3
+  },
+  "St Pierre D Allevard": {
+    "latitude": 45.38498685714285,
+    "longitude": 6.0397035,
+    "n_files": 14
+  },
+  "St Savinien": {
+    "latitude": 45.870970039999996,
+    "longitude": -0.6531926,
+    "n_files": 25
+  },
+  "St Vincent Les Forts": {
+    "latitude": 44.44371796,
+    "longitude": 6.371375320000001,
+    "n_files": 25
+  },
+  "Stèle Bonaparte": {
+    "latitude": 48.706208000000004,
+    "longitude": -2.922742,
+    "n_files": 2
+  },
+  "Superbagneres - Luchon": {
+    "latitude": 42.76795,
+    "longitude": 0.580167,
+    "n_files": 1
+  },
+  "Séderon-Mévouillon : Bergies Nord": {
+    "latitude": 44.203721782608696,
+    "longitude": 5.510607217391305,
+    "n_files": 23
+  },
+  "Séderon-Mévouillon : Bergies Sud": {
+    "latitude": 44.202777250000004,
+    "longitude": 5.510898,
+    "n_files": 8
+  },
+  "Séderon-Mévouillon : Buc": {
+    "latitude": 44.21358481818181,
+    "longitude": 5.477636363636363,
+    "n_files": 11
+  },
+  "Séderon-Mévouillon : La Trappe": {
+    "latitude": 44.25288866666667,
+    "longitude": 5.504994666666668,
+    "n_files": 3
+  },
+  "Séderon-Mévouillon : Le Fort Est": {
+    "latitude": 44.237467,
+    "longitude": 5.4822,
+    "n_files": 1
+  },
+  "Séderon-Mévouillon : Le Fort Ouest": {
+    "latitude": 44.237767,
+    "longitude": 5.48125,
+    "n_files": 1
+  },
+  "Tafraote": {
+    "latitude": 29.71040566666667,
+    "longitude": -8.846066666666665,
+    "n_files": 3
+  },
+  "Tafraout": {
+    "latitude": 29.71159175,
+    "longitude": -8.90077925,
+    "n_files": 4
+  },
+  "Talmont": {
+    "latitude": 45.546676500000004,
+    "longitude": -0.901804,
+    "n_files": 2
+  },
+  "Tamaimo": {
+    "latitude": 28.2488051,
+    "longitude": -16.818209900000003,
+    "n_files": 10
+  },
+  "Taucho - Tenerife": {
+    "latitude": 28.144381444444445,
+    "longitude": -16.735826,
+    "n_files": 9
+  },
+  "Teleski Granier": {
+    "latitude": 45.580283,
+    "longitude": 6.6475,
+    "n_files": 1
+  },
+  "Terrain Strictement Privé": {
+    "latitude": 45.16295,
+    "longitude": 0.15635,
+    "n_files": 1
+  },
+  "Tete Des Pras Arnaud": {
+    "latitude": 44.621917,
+    "longitude": 5.896917,
+    "n_files": 1
+  },
+  "Thoirz'Ânerie Y'S": {
+    "latitude": 45.5875585,
+    "longitude": 6.051183,
+    "n_files": 2
+  },
+  "Tifnit": {
+    "latitude": 30.16396,
+    "longitude": -9.64315075,
+    "n_files": 4
+  },
+  "Tifnit Nord": {
+    "latitude": 29.8550835,
+    "longitude": -9.7932825,
+    "n_files": 2
+  },
+  "Top De La Croix De L'Alpe": {
+    "latitude": 44.364333,
+    "longitude": 6.738617,
+    "n_files": 1
+  },
+  "Tourriers": {
+    "latitude": 45.8060408,
+    "longitude": 0.20619559999999998,
+    "n_files": 5
+  },
+  "Tout Blanc": {
+    "latitude": 45.657591499999995,
+    "longitude": -0.340325,
+    "n_files": 2
+  },
+  "Trainon": {
+    "latitude": 44.252617,
+    "longitude": 6.0715085,
+    "n_files": 2
+  },
+  "Trefuntec": {
+    "latitude": 48.123317,
+    "longitude": -4.28285,
+    "n_files": 1
+  },
+  "Treh Markstein": {
+    "latitude": 47.92545283333334,
+    "longitude": 7.0110470000000005,
+    "n_files": 6
+  },
+  "Ténérife Taucho": {
+    "latitude": 28.144594,
+    "longitude": -16.73607068,
+    "n_files": 25
+  },
+  "Tête D'Orionde": {
+    "latitude": 45.64685,
+    "longitude": 5.9647165,
+    "n_files": 2
+  },
+  "Tête De Rasinière": {
+    "latitude": 44.43335,
+    "longitude": 6.6543,
+    "n_files": 1
+  },
+  "Tête du Véleray": {
+    "latitude": 45.8028,
+    "longitude": 6.670483,
+    "n_files": 1
+  },
+  "Ulm-Chenay": {
+    "latitude": 46.34561068,
+    "longitude": -0.01742256,
+    "n_files": 25
+  },
+  "Usseau": {
+    "latitude": 46.17400352941177,
+    "longitude": -0.6100355294117649,
+    "n_files": 17
+  },
+  "Val D'Azun Couraduque": {
+    "latitude": 42.989558280000004,
+    "longitude": -0.19583667999999999,
+    "n_files": 25
+  },
+  "Val Louron": {
+    "latitude": 42.80742943999999,
+    "longitude": 0.3776942,
+    "n_files": 25
+  },
+  "Val Pelouse": {
+    "latitude": 45.419992857142866,
+    "longitude": 6.169734571428572,
+    "n_files": 14
+  },
+  "Valbeleix": {
+    "latitude": 45.466049999999996,
+    "longitude": 2.9979750000000003,
+    "n_files": 2
+  },
+  "Vallandry": {
+    "latitude": 45.5598085,
+    "longitude": 6.766469333333333,
+    "n_files": 6
+  },
+  "Vallandry- Le Grizzly": {
+    "latitude": 45.5482634,
+    "longitude": 6.7880998,
+    "n_files": 5
+  },
+  "Verel Pragondran": {
+    "latitude": 45.626990000000006,
+    "longitude": 5.94610204,
+    "n_files": 25
+  },
+  "Vero": {
+    "latitude": 42.072,
+    "longitude": 8.907367,
+    "n_files": 1
+  },
+  "Village Top Y'S": {
+    "latitude": 45.5853335,
+    "longitude": 6.0390250000000005,
+    "n_files": 2
+  },
+  "Vindelle-vars": {
+    "latitude": 45.738851076923076,
+    "longitude": 0.12669992307692307,
+    "n_files": 13
+  },
+  "Volcan": {
+    "latitude": 28.320333,
+    "longitude": -16.486467,
+    "n_files": 1
+  }
+}

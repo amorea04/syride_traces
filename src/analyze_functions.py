@@ -1,11 +1,23 @@
+"""
+Fonctions de lecture et de préparation des données de vol (pipeline appliqué avant le pkl).
+
+  - lecture des fichiers d'un vol : get_json_files, extract_json_data, get_first_coordinates
+  - étapes du pipeline pandas      : valeurs_manquantes ... get_mean_site_coordinates
+  - analyses annexes               : get_data_by_wing, prepare_data
+"""
+
 import datetime as dt
-import os
-import pandas as pd
-import numpy as np
 import json
+import os
+import xml.etree.ElementTree as ET
+
+import numpy as np
+import pandas as pd
 from fastkml import kml
 
-# from datetime import datetime, timedelta
+
+# Détail de chaque étape du pipeline (durée, taille) : SYRIDE_DEBUG=1 pour l'afficher
+VERBOSE = os.getenv("SYRIDE_DEBUG", "0") == "1"
 
 
 def log_func(f):
@@ -13,7 +25,8 @@ def log_func(f):
         tic = dt.datetime.now()
         result = f(df, *args, **kwargs)
         toc = dt.datetime.now()
-        print(f"{f.__name__} took {toc - tic}, shape={result.shape}")
+        if VERBOSE:
+            print(f"{f.__name__} took {toc - tic}, shape={result.shape}")
         return result
 
     return wrapper
@@ -33,28 +46,6 @@ def get_json_files(directory: str):
     return json_files
 
 
-def get_kml_files(directory: str) -> dict:
-    """
-    Fonction qui itère l'ensemble des dossiers
-    dans le dossier d'un pilote et qui recherhe tous les
-    fichiers .kml
-
-    arguments:
-        directory: str = chemin du dossier dans lequel
-        se trouvent les traces.
-
-    return:
-        dict de toutes les traces kml pour un pilote donné, avec :
-            * key = le numéro de la trace
-            * value = le chemin de la trace
-
-    """
-    kml_files = {}
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".kml") and file[:-5].isdigit():
-                kml_files[file[:-4]] = os.path.join(root, file)
-    return kml_files
 
 
 def extract_json_data(json_file):
@@ -65,70 +56,74 @@ def extract_json_data(json_file):
 
 def get_first_coordinates(kml_file_path: str) -> list:
     """
-    Fonction permettant l'ouverture des fichiers kml et de l'extraction
+    Fonction permettant l'ouverture des fichiers kml/gpx et de l'extraction
     des premières coordonnées longitude/latitude.
 
     arguments:
-        kml_file_path: str = chemin du dossier d'un fichier kml.
+       kml_file_path: str = chemin du dossier d'un fichier kml/gpx.
 
     return:
-        liste des premières coordonnées longitude/latitude de la trace.
+       liste des premières coordonnées longitude/latitude de la trace.
 
     """
+    if kml_file_path.lower().endswith(".gpx"):
+        try:
+            tree = ET.parse(kml_file_path)
+            root = tree.getroot()
+            for elem in root.iter():
+                if elem.tag.endswith('trkpt') or elem.tag.endswith('wpt'):
+                    lat = float(elem.attrib.get('lat', 0.0))
+                    lon = float(elem.attrib.get('lon', 0.0))
+                    return [lon, lat]
+        except Exception as e:
+            print(f"Erreur lors de la lecture du fichier GPX {kml_file_path}: {e}")
+        return [0.0, 0.0]
+
     # Ouverture du fichier KML et lecture du contenu
-    with open(kml_file_path, "rb") as kml_file:
-        kml_document = kml_file.read()
-        k = kml.KML()
-        k.from_string(kml_document)
+    try:
+        with open(kml_file_path, "rb") as kml_file:
+            kml_document = kml_file.read()
+            k = kml.KML()
+            k.from_string(kml_document)
 
-        for feature0 in k.features():
-            for feature in feature0.features():
-                if isinstance(feature, kml.Placemark):
-                    geometry = feature.geometry
-                    if geometry:
-                        coords = list(geometry.coords)
-                    else:
-                        coords = [(0, 0, 0)]
+            coords = None
+            for feature0 in k.features():
+                for feature in feature0.features():
+                    if isinstance(feature, kml.Placemark):
+                        geometry = feature.geometry
+                        if geometry and hasattr(geometry, 'coords'):
+                            coords = list(geometry.coords)
+                            break
+                if coords:
+                    break
 
-    longitude = coords[0][0]
-    latitude = coords[0][1]
+            if coords and len(coords) > 0:
+                longitude = coords[0][0]
+                latitude = coords[0][1]
+                return [longitude, latitude]
+    except Exception as e:
+        print(f"Erreur lors de la lecture du fichier KML {kml_file_path}: {e}")
 
-    return [longitude, latitude]
-
-
-def create_dataframe_from_json(directory: str) -> pd.DataFrame:
-    json_files = get_json_files(directory=directory)
-    data_list = [extract_json_data(json_file=file) for file in json_files]
-    df = pd.DataFrame(data_list)
-    return df
-
-
-def create_dataframe_from_all_kml(directory: str) -> pd.DataFrame:
-    """
-    Fonction permettant de créer une dataframe avec l'ensemble des coordonnées
-    longitude, latitude pour toutes les traces kml contenues dans le dossier d'un pilote.
-
-    arguments:
-        directory:str = le chemin du dossier contenant tous les dossiers / traces kml.
+    return [0.0, 0.0]
 
 
-    return:
-        df contenant pour chaque trace les longitudes, latitude du premier point.
 
-    """
-    dict_kml_files = get_kml_files(directory=directory)
 
-    dict_first_coordinates = {
-        flight: get_first_coordinates(kml_file_path)
-        for flight, kml_file_path in dict_kml_files.items()
-    }
 
-    df = pd.DataFrame(dict_first_coordinates)
-    df = df.transpose()
-    df = df.reset_index(drop=False)
-    df.columns = ["num_activite", "longitude", "latitude"]
 
-    return df
+# Statistiques numériques d'un vol. Valeur inconnue = NaN (et non plus 0) : elle est
+# ignorée automatiquement par les moyennes, maxima et filtres « > 0 » de l'app.
+NUMERIC_STATS = [
+    "distance",
+    "distance_activite",
+    "distance_cumulee",
+    "vitesse_max",
+    "vitesse_moyenne",
+    "plafond",
+    "gain",
+    "vario_max",
+    "g_max",
+]
 
 
 @log_func
@@ -140,34 +135,19 @@ def valeurs_manquantes(df: pd.DataFrame) -> pd.DataFrame:
     ]
     df[col_fillna_00] = df[col_fillna_00].fillna("00:00:00")
 
-    col_fillna_01 = [
-        "distance",
-        "distance_activite",
-        "distance_cumulee",
-        "vitesse_max",
-        "vitesse_moyenne",
-        "plafond",
-        "gain",
-        "duree_vol",
-        "vario_max",
-        "g_max",
-    ]
-    df[col_fillna_01] = df[col_fillna_01].fillna(0)
+    # Statistiques numériques et duree_vol : laissées vides (NaN / NaT) si inconnues.
 
     col_fillna_02 = [
         "instrument",
         "site_activite",
-        "adresse_zip",
         "types",
         "site",
     ]
     df[col_fillna_02] = df[col_fillna_02].fillna("None")
 
-    col_fillna_03 = [
-        "date_activite",
-        "date",
-    ]
-    df[col_fillna_03] = df[col_fillna_03].fillna("01/01/2000")
+    # date (page liste) est toujours connue ; date_activite (fiche) reste vide (NaT) si
+    # inconnue, au lieu d'un faux 01/01/2000.
+    df["date"] = df["date"].fillna("01/01/2000")
 
     return df
 
@@ -175,12 +155,15 @@ def valeurs_manquantes(df: pd.DataFrame) -> pd.DataFrame:
 @log_func
 def remove_too_low_flights(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Supression des vols dont le pladond est inferieur à 50 metres
+    Supression des vols dont le plafond est inferieur à 50 metres.
+    Les vols « incomplets » (fiche non lue) sont conservés : leur plafond est inconnu,
+    ils seront filtrés normalement une fois la fiche récupérée.
     """
 
-    df["plafond"] = df["plafond"].astype(int)
+    df["plafond"] = pd.to_numeric(df["plafond"], errors="coerce")
 
-    df = df[df["plafond"] > 50]
+    # Plafond inconnu (NaN) : vol conservé
+    df = df[(df["plafond"] > 50) | df["plafond"].isna()]
 
     return df
 
@@ -194,69 +177,74 @@ def assign_data_types(df: pd.DataFrame) -> pd.DataFrame:
         "voile",
         "instrument",
         "site_activite",
-        "adresse_zip",
+        "source_stats",
     ]
 
-    int_features = [
-        "num_activite",
-        "distance",
-        "distance_activite",
-        "distance_cumulee",
-        "vitesse_max",
-        "plafond",
-        "gain",
-    ]
-
-    flt_features = [
-        "vitesse_moyenne",
-        "vario_max",
-        "g_max",
-    ]
+    int_features = ["num_activite"]
 
     date_features = ["date", "date_activite"]
     hour_features = ["heure"]
 
     duration_features = ["flight_time", "duree_vol"]
 
-    df = df.fillna("-1")
+    # Les coordonnées restent NaN quand elles sont inconnues (vol sans GPX, ex. vol incomplet) :
+    # un "-1" fausserait les moyennes par site.
+    # Les statistiques numériques, date_activite et duree_vol restent vides si inconnues.
+    keep_empty = {"longitude", "latitude", "date_activite", "duree_vol", *NUMERIC_STATS}
+    df = df.fillna({col: "-1" for col in df.columns if col not in keep_empty})
     df[str_features] = df[str_features].astype(str)
     df[int_features] = df[int_features].astype(int)
-    df[flt_features] = df[flt_features].astype(float)
+    for col in NUMERIC_STATS:
+        # Nombres décimaux : un entier ne peut pas contenir de valeur vide (NaN)
+        df[col] = pd.to_numeric(df[col], errors="coerce").astype(float)
     for col in date_features:
-        df[col] = pd.to_datetime(df[col], format="%d/%m/%Y")
+        df[col] = pd.to_datetime(df[col], format="%d/%m/%Y", errors="coerce")
     for col in hour_features:
         df[col] = pd.to_datetime(df[col], format="%Hh%M", errors="coerce").dt.time
     for col in duration_features:
-        df[col] = pd.to_timedelta(df[col])
+        df[col] = pd.to_timedelta(df[col], errors="coerce")
 
     df["duree_vol_minutes"] = df["flight_time"].dt.total_seconds() / 60
 
     return df
 
 
+def load_uniformisation(path: str) -> dict:
+    """Règles d'uniformisation (uniformisation.json : voiles, sites, type de vol forcé,
+    voiles exclues)."""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f"Fichier de règles d'uniformisation introuvable : {path}"
+        ) from None
+
+
+def _variants_to_target(groups: dict) -> dict:
+    """{"nom retenu": [variantes]} -> {variante: nom retenu}"""
+    return {variant: target for target, variants in groups.items() for variant in variants}
+
+
 @log_func
-def remove_biplan_flights(df: pd.DataFrame) -> pd.DataFrame:
+def remove_plane_flights(df: pd.DataFrame, rules: dict) -> pd.DataFrame:
     """
-    Supression des vols réalisés en biplan
+    Supression des vols autres que parapente / paramoteur (voiles_exclues des règles)
     """
 
-    df = df[~(df["voile"] == "biplan celebri")]
+    df = df[~(df["voile"].isin(rules.get("voiles_exclues", [])))]
     df = df.reset_index(drop=True)
 
     return df
 
 
 @log_func
-def flight_type(df: pd.DataFrame) -> pd.DataFrame:
-    df["type_vol"] = np.where(df["types"] == "Vol moteur", "paramoteur", "parapente")
-    df.loc[
-        df["voile"].isin(["piper", "piper tandem"]),
-        "type_vol",
-    ] = "paramoteur"
-    df.loc[
-        df["voile"].isin(["savage", "leaf 2", "leaf 3 light", "taska", "artik"]),
-        "type_vol",
-    ] = "parapente"
+def flight_type(df: pd.DataFrame, rules: dict = None) -> pd.DataFrame:
+    # « moteur » dans le type de vol Syride -> paramoteur, sinon parapente ;
+    # puis type forcé pour certaines voiles (type_vol_force des règles)
+    df["type_vol"] = np.where(df["types"].str.lower().str.contains("moteur", na=False), "paramoteur", "parapente")
+    for type_vol, voiles in (rules or {}).get("type_vol_force", {}).items():
+        df.loc[df["voile"].isin(voiles), "type_vol"] = type_vol
 
     return df
 
@@ -285,9 +273,7 @@ def replace_values(
     """
     Fonction permettant de remplacer des valeurs en fonction d'un dictionnaire.
     """
-    df[var_interest] = df[var_interest].astype(str)
-    for key, value in dict_values.items():
-        df.loc[df[var_interest] == key, var_interest] = value
+    df[var_interest] = df[var_interest].astype(str).replace(dict_values)
     return df
 
 
@@ -301,35 +287,14 @@ def delete_zero_min_flights(df: pd.DataFrame) -> pd.DataFrame:
 
 
 @log_func
-def uniformize_data(df: pd.DataFrame) -> pd.DataFrame:
+def uniformize_data(df: pd.DataFrame, rules: dict) -> pd.DataFrame:
     """
-    Fonction pour uniformiser les données.
+    Uniformise les noms de voiles (en minuscules) et de sites selon les règles
+    (uniformisation.json).
     """
-    # transform variable "voile"
     df.loc[:, "voile"] = df["voile"].str.lower()
-    df.loc[df["voile"].isin(["boxer", "boxer j mou", "boxer pascal"]), "voile"] = (
-        "boxer"
-    )
-    df.loc[df["voile"].isin(["boxer gt", "boxer gt 16um"]), "voile"] = "boxer gt"
-    df.loc[df["voile"].isin(["buldog", "bulldog bi 16wl", "bulld"]), "voile"] = "buldog"
-    df.loc[df["voile"].isin(["daytona", "daytona yellow airrace"]), "voile"] = "daytona"
-    df.loc[df["voile"].isin(["démo", "non renseig"]), "voile"] = "inconnue"
-    df.loc[df["voile"].isin(["piper", "pipper"]), "voile"] = "piper"
-    df.loc[df["voile"].isin(["dolpo 3 katia"]), "voile"] = "dolpo 3"
-
-    # Uniformisation site
-    df.loc[df["site"].isin(["Idikel", "Idikl"]), "site"] = "Idikel"
-    df.loc[df["site"].isin(["Fayard", "Fayards"]), "site"] = "Fayards"
-    df.loc[
-        df["site"].isin(
-            ["Magnac Lavalette Paramoteur", "Magnac Lavalette Treuil", "Magnac"]
-        ),
-        "site",
-    ] = "Magnac Lavalette"
-    df.loc[df["site"].isin(["Accous - 500", "Accous-500", "Accous 500"]), "site"] = (
-        "Accous-500"
-    )
-
+    df.loc[:, "voile"] = df["voile"].replace(_variants_to_target(rules.get("voile", {})))
+    df.loc[:, "site"] = df["site"].replace(_variants_to_target(rules.get("site", {})))
     return df
 
 
@@ -340,6 +305,10 @@ def get_mean_site_coordinates(df: pd.DataFrame) -> pd.DataFrame:
     et des colonnes longitude/latitude, calcule les longitudes/latitudes
     moyennes pour chaque sites.
     """
+
+    # Coordonnées inconnues (vol sans GPX) : NaN, ignorées par la moyenne.
+    df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
+    df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
 
     df_long_lat_by_site = (
         df[["site", "longitude", "latitude"]].groupby("site", as_index=False).mean()
@@ -417,11 +386,11 @@ def get_data_by_wing(df: pd.DataFrame, spec_feat: list) -> pd.DataFrame:
     return df_wing_moy, df_wing_max
 
 
-def prepare_data(df: pd.DataFrame) -> pd.DataFrame:
+def prepare_data(df: pd.DataFrame, rules: dict = None) -> pd.DataFrame:
     df_prep = (
         df.pipe(start_pipeline)
         .pipe(assign_data_types)
-        .pipe(flight_type)
+        .pipe(flight_type, rules=rules)
         .pipe(transform_dates)
         .pipe(get_season)
     )

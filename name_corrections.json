@@ -1,0 +1,805 @@
+{
+  "_aide": "Pour chaque valeur tronquée, écris le nom complet dans 'remplacer_par'. Vide = pas de changement. 'suggestion' n'est qu'un indice à vérifier.",
+  "voile": [
+    {
+      "valeur": "Non renseig",
+      "vols": 1915,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "PIPER",
+      "vols": 573,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Daytona",
+      "vols": 545,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "elan 3",
+      "vols": 441,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Leaf 2 Light",
+      "vols": 339,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "BOXER GT",
+      "vols": 285,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "step",
+      "vols": 277,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "BOXER 2",
+      "vols": 268,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Base 2 lite Moon",
+      "vols": 265,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "taska",
+      "vols": 265,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Billy",
+      "vols": 250,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "JEDI 2",
+      "vols": 245,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "savage",
+      "vols": 245,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Eona 3",
+      "vols": 238,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "wasabi",
+      "vols": 228,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Jedi 2",
+      "vols": 212,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "dual",
+      "vols": 211,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Buldog",
+      "vols": 199,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Step x",
+      "vols": 185,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Leaf 3 light",
+      "vols": 180,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "billy",
+      "vols": 165,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Masala 3",
+      "vols": 141,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "BILLY",
+      "vols": 135,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Piper",
+      "vols": 135,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "autre voi",
+      "vols": 126,
+      "suggestion": "",
+      "remplacer_par": "autre voile"
+    },
+    {
+      "valeur": "Leaf 3",
+      "vols": 121,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Viper xc",
+      "vols": 107,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Eden 8",
+      "vols": 102,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "LEAF 2",
+      "vols": 94,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Piper tandem",
+      "vols": 81,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Verve",
+      "vols": 65,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "revo 2",
+      "vols": 60,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Boxer GT 16UM",
+      "vols": 60,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Artik 2",
+      "vols": 57,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "koyot 4",
+      "vols": 53,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Dual 3",
+      "vols": 53,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "elan light",
+      "vols": 52,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Dolpo 3",
+      "vols": 50,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Artik",
+      "vols": 48,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "ufo",
+      "vols": 45,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Flex-One",
+      "vols": 44,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "leaf 3",
+      "vols": 41,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Sigma 10",
+      "vols": 39,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "inkuma 3p",
+      "vols": 32,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Awak 3 tandem",
+      "vols": 31,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "PiBi Dany",
+      "vols": 29,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Pi 3 Pirate",
+      "vols": 29,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Pi 3",
+      "vols": 27,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "EONA 3",
+      "vols": 25,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Artik 7 Pépita",
+      "vols": 24,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "BOXER",
+      "vols": 23,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "piper",
+      "vols": 23,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "rodéo",
+      "vols": 21,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Zulu",
+      "vols": 18,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "EPIC motor",
+      "vols": 18,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Savage 2",
+      "vols": 17,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "LEAF 2 LIGHT",
+      "vols": 15,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Base 2 lite",
+      "vols": 12,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Dolpo",
+      "vols": 11,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Base 3",
+      "vols": 10,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Mentor 7 light",
+      "vols": 10,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Taska",
+      "vols": 9,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "raptor",
+      "vols": 8,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Dual 2",
+      "vols": 7,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Fury 20",
+      "vols": 7,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "biplan celebri",
+      "vols": 7,
+      "suggestion": "",
+      "remplacer_par": "biplan celebrity"
+    },
+    {
+      "valeur": "Volt 3",
+      "vols": 7,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Elan light seconde du nom",
+      "vols": 7,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Autre bipla",
+      "vols": 6,
+      "suggestion": "",
+      "remplacer_par": "Autre biplace"
+    },
+    {
+      "valeur": "Boxer 2",
+      "vols": 5,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Mullet",
+      "vols": 5,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "awak 3",
+      "vols": 5,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "LEAF",
+      "vols": 4,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Eden 7",
+      "vols": 4,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Démo",
+      "vols": 4,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Dé",
+      "vols": 4,
+      "suggestion": "",
+      "remplacer_par": "Démo"
+    },
+    {
+      "valeur": "BOXER J MOU",
+      "vols": 4,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Alpina",
+      "vols": 4,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Maestro light xalp",
+      "vols": 3,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "DOLPO 2",
+      "vols": 3,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Suzi",
+      "vols": 3,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Ikuma",
+      "vols": 3,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Bulldog BI 16WL",
+      "vols": 3,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Boxer Pascal",
+      "vols": 3,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Dolpo 3 katia",
+      "vols": 3,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "artik",
+      "vols": 3,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Flex-one",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Viper xc essai",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Photon essai",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Leaf 2",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Mullet 15",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Sigma 12 DLS",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Breeze",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Magnum",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Artik 7 P",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Eden 5",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Rodeo",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Ufo 16",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "DAYTONA yellow AirRace",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "PRENIUM",
+      "vols": 2,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Freedom 2",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Piper essai",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Warp essai",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Plane",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Boxer essai",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Flex-race rc 20",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Jester essai",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Cosy",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "PIPPER",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Elan Light",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Geo 7",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Alpina 3",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Ufo 18",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Takoo 5",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Rush 6",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Arak Loïc",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Kode P",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Soar 2",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Ikuma 3P",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Ronan",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "EPIC 1",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Pace",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Wasabi",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "bulld",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Eon3",
+      "vols": 1,
+      "suggestion": "",
+      "remplacer_par": ""
+    }
+  ],
+  "instrument": [
+    {
+      "valeur": "Nav",
+      "vols": 4249,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Nav X",
+      "vols": 1983,
+      "suggestion": "Nav XL",
+      "remplacer_par": "Nav XL"
+    },
+    {
+      "valeur": "Evolution",
+      "vols": 1934,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Nav XL",
+      "vols": 633,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "Na",
+      "vols": 564,
+      "suggestion": "Nav",
+      "remplacer_par": "Nav"
+    },
+    {
+      "valeur": "Evolutio",
+      "vols": 344,
+      "suggestion": "Evolution",
+      "remplacer_par": "Evolution"
+    },
+    {
+      "valeur": "GPS",
+      "vols": 44,
+      "suggestion": "",
+      "remplacer_par": ""
+    },
+    {
+      "valeur": "GP",
+      "vols": 7,
+      "suggestion": "GPS",
+      "remplacer_par": "GPS"
+    }
+  ]
+}

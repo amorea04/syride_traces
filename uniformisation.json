@@ -1,0 +1,191 @@
+{
+  "_aide": "Règles appliquées à la construction du pkl. voile : comparaison en minuscules ; site : nom exact. Format : {\"nom retenu\": [\"variantes\", ...]}.",
+  "voile": {
+    "boxer": [
+      "boxer",
+      "boxer j mou",
+      "boxer pascal"
+    ],
+    "boxer gt": [
+      "boxer gt",
+      "boxer gt 16um"
+    ],
+    "buldog": [
+      "buldog",
+      "bulldog bi 16wl",
+      "bulld"
+    ],
+    "daytona": [
+      "daytona",
+      "daytona yellow airrace"
+    ],
+    "inconnue": [
+      "démo",
+      "non renseig",
+      "non renseigné"
+    ],
+    "piper": [
+      "piper",
+      "pipper"
+    ],
+    "dolpo 3": [
+      "dolpo 3 katia"
+    ]
+  },
+  "site": {
+    "Idikel": [
+      "Idikel",
+      "Idikl"
+    ],
+    "Fayards": [
+      "Fayard",
+      "Fayards"
+    ],
+    "Magnac Lavalette": [
+      "Magnac Lavalette Paramoteur",
+      "Magnac Lavalette Treuil",
+      "Magnac",
+      "Magnac Lavalette",
+      "Magnac-Lavalette-Villars ( 16320 )"
+    ],
+    "Accous-500": [
+      "Accous - 500",
+      "Accous-500",
+      "Accous 500"
+    ],
+    "Saint-Hilaire": [
+      "Saint Hilaire",
+      "Saint-Hilaire"
+    ],
+    "Ténérife Taucho": [
+      "Ténérife Taucho",
+      "Taucho - Tenerife"
+    ],
+    "Calciaire": [
+      "Calciaire",
+      "Calci Aire"
+    ],
+    "Millau - Puncho d'Agast": [
+      "Millau - Puncho D Agast",
+      "Puncho D'Agast",
+      "Pouncho D'Agast",
+      "Puncho"
+    ],
+    "Privé Puyauzard": [
+      "Prive Puyauzard",
+      "Privé Puyauzard"
+    ],
+    "Côte Sauvage": [
+      "Côte Sauvage",
+      "Cote sauvage"
+    ],
+    "Ulm-Chenay": [
+      "Ulm-Chenay",
+      "ULM Chenay"
+    ],
+    "Bordas Sud": [
+      "Bordas Sud",
+      "Bordas sud"
+    ],
+    "Sidi Ifni": [
+      "Sidi Ifni",
+      "Sidifni"
+    ],
+    "Tafraout": [
+      "Tafraout",
+      "Tafraote"
+    ],
+    "Massognes-Jarzay": [
+      "Massognes-Jarzay",
+      "Massognes"
+    ],
+    "Le Sire": [
+      "Le Sire",
+      "Sire"
+    ],
+    "Dune du Pilat": [
+      "Dune du Pilat",
+      "Pyla",
+      "La dune du pyla",
+      "La Teste-de-Buch",
+      "La test"
+    ],
+    "Peyragudes": [
+      "Peyragudes",
+      "Peyraude",
+      "Peyragudescabanou"
+    ],
+    "Ceillac Haut": [
+      "Ceillac Haut",
+      "Ceillac"
+    ],
+    "Semnoz": [
+      "Semnoz",
+      "Déco Du Chêne Semnoz"
+    ],
+    "Les Houches - Prarion": [
+      "Les Houches - Prarion",
+      "Les Houches Prarion Ne"
+    ],
+    "Le Nid d'Aigle": [
+      "Le Nid D'Aigle",
+      "Nid D'Aigle - Nord"
+    ],
+    "Rodella": [
+      "Rodella",
+      "Col Rodella 3 Rifugio"
+    ],
+    "Aussois": [
+      "Aussois",
+      "Aussois 2600"
+    ],
+    "Cabariot": [
+      "Cabariot",
+      "Bords"
+    ],
+    "Lf1660": [
+      "Lf1660",
+      "Pature J C"
+    ],
+    "Lavaud": [
+      "Lavaud",
+      "Rivieres"
+    ],
+    "Le Cuchon d'Ancelle": [
+      "Le Cuchon D'Ancelle",
+      "Les Antennes-cuchon"
+    ],
+    "Montclar": [
+      "Montclar",
+      "Station Ski Montclar"
+    ],
+    "Loudenvielle Sud": [
+      "Loudenvielle Sud",
+      "Loudenvielle"
+    ],
+    "Balanzac N": [
+      "Balanzac N",
+      "Balanzac"
+    ],
+    "Saint-Aubin": [
+      "Sainit-Aubin"
+    ]
+  },
+  "type_vol_force": {
+    "paramoteur": [
+      "piper",
+      "piper tandem"
+    ],
+    "parapente": [
+      "savage",
+      "leaf 2",
+      "leaf 3 light",
+      "taska",
+      "artik"
+    ]
+  },
+  "voiles_exclues": [
+    "Plane",
+    "biplan celebri"
+  ]
+}

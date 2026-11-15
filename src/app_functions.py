@@ -1,35 +1,50 @@
 """
-Functions for the app
+Fonctions de l'application Dash (statistiques de vol) :
+  - get_flight_params   : chiffres clés affichés dans les cartes
+  - get_selected_df     : filtrage selon les menus de la barre latérale
+  - create_grouped_df   : agrégations par année / pilote / mois / voile / jour / saison / site
+  - create_graph, create_all_plots : graphiques
 """
 
-# %% imports
-
+import numpy as np
 import pandas as pd
 import plotly.express as px
 
-# %% functions
+# Statistiques issues de la fiche de vol : inconnues (vides dans le pkl) pour un vol « incomplet »
+FICHE_STATS = [
+    "vitesse_moyenne", "vitesse_max", "distance_cumulee",
+    "vario_max", "g_max", "plafond",
+]
+
+# Ordre d'affichage des catégories (le tri alphabétique n'aurait pas de sens)
+CATEGORY_ORDERS = {
+    "jour_semaine": ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"],
+    "mois": [
+        "janvier", "fevrier", "mars", "avril", "mai", "juin",
+        "juillet", "aout", "septembre", "octobre", "novembre", "decembre",
+    ],
+    "saison": ["hiver", "printemps", "été", "automne"],
+}
 
 
 def get_flight_params(df: pd.DataFrame) -> dict:
     """
-    Function used to get all the flight parameters
-    from a dataframe
+    Calcule les chiffres clés d'un ensemble de vols.
 
     arguments:
-        df: a pandas.DataFrame containing flight parameters
+        df: DataFrame de vols (format du pkl)
 
-    retrurns:
-        a dict containing:
-            - nb_tot_vols : le nombre total de vols
-            - tot_heures_vol : le nombre total d'heures de vol
-            - nb_tot_sites : le nombre de sites visités
-            - print_speed_tot : les vitesses moyennes et max
-            - mean_max_flight_duration_tot_str : la durée moyenne et max de vol
-            - mean_max_flight_distance_tot_str : le distance moyenne et max de vol
-            - mean_max_flight_ceiling_tot_str : le plafond moyen et max de vol
-            - mean_max_flight_vario_tot_str : le vario max moyen et maximum
-            - mean_max_flight_g_tot_str : le facteur g moyen et maximum
-
+    retourne un dict de textes prêts à afficher :
+        - nb_tot_vols                      : nombre total de vols
+        - tot_heures_vol                   : nombre total d'heures de vol
+        - nb_tot_sites                     : nombre de sites visités
+        - nb_tot_pilots                    : nombre de pilotes
+        - print_speed_tot                  : vitesses moyennes et max
+        - mean_max_flight_duration_tot_str : durée moyenne et max de vol
+        - mean_max_flight_distance_tot_str : distance moyenne et max de vol
+        - mean_max_flight_ceiling_tot_str  : plafond moyen et max de vol
+        - mean_max_flight_vario_tot_str    : vario max moyen et maximum
+        - mean_max_flight_g_tot_str        : facteur g moyen et maximum
     """
 
     # Nb tot vols
@@ -100,91 +115,83 @@ def get_flight_params(df: pd.DataFrame) -> dict:
         f"{mean_flight_vario_tot} ({max_flight_vario_tot}) m/s."
     )
 
-    # g_max moyen / mingcute:download-3-fill
+    # g_max moyen
     mean_flight_g_tot = str(round(df[df["g_max"] > 0]["g_max"].mean(), 1))
     max_flight_g_tot = str(round(df[df["g_max"] > 0]["g_max"].max(), 1))
     mean_max_flight_g_tot_str = f"{mean_flight_g_tot} ({max_flight_g_tot}) g."
 
-    # Construction du dictionnaire final
-    flight_params = {}
-    flight_params["nb_tot_vols"] = nb_tot_vols
-    flight_params["tot_heures_vol"] = tot_heures_vol
-    flight_params["nb_tot_sites"] = nb_tot_sites
-    flight_params["nb_tot_pilots"] = nb_tot_pilots
-    flight_params["print_speed_tot"] = print_speed_tot
-    flight_params["mean_max_flight_duration_tot_str"] = mean_max_flight_duration_tot_str
-    flight_params["mean_max_flight_distance_tot_str"] = mean_max_flight_distance_tot_str
-    flight_params["mean_max_flight_ceiling_tot_str"] = mean_max_flight_ceiling_tot_str
-    flight_params["mean_max_flight_vario_tot_str"] = mean_max_flight_vario_tot_str
-    flight_params["mean_max_flight_g_tot_str"] = mean_max_flight_g_tot_str
-
-    return flight_params
+    return {
+        "nb_tot_vols": nb_tot_vols,
+        "tot_heures_vol": tot_heures_vol,
+        "nb_tot_sites": nb_tot_sites,
+        "nb_tot_pilots": nb_tot_pilots,
+        "print_speed_tot": print_speed_tot,
+        "mean_max_flight_duration_tot_str": mean_max_flight_duration_tot_str,
+        "mean_max_flight_distance_tot_str": mean_max_flight_distance_tot_str,
+        "mean_max_flight_ceiling_tot_str": mean_max_flight_ceiling_tot_str,
+        "mean_max_flight_vario_tot_str": mean_max_flight_vario_tot_str,
+        "mean_max_flight_g_tot_str": mean_max_flight_g_tot_str,
+    }
 
 
 def get_selected_df(df: pd.DataFrame, dict_parameters: dict) -> pd.DataFrame:
     """
-    Fonction permettant de sélectionner les données
-    souhaitées dans un dataframe à partir du dataframe initial
+    Sélectionne les vols correspondant aux menus de la barre latérale.
+    Un menu vide signifie « tout sélectionner ».
 
     arguments :
-        - df:pd.DataFrame
-            * dataframe complète initiale contenant toutes les données de vol,
-        - dict_parameters: dict
-            * dictoinnaire contenant les données nécessaire à filtrer la dataframe
-            selon les données des reseignées dans les dorpdown de la navbar.
-                * pilots_list -> liste de pilotes,
-                * activity_list -> liste d'activités,
-                * year_list -> liste d'années sélectionnées,
-                * year_possibilities -> liste des années possibles,
-                * wing_list -> liste de voiles sélectionnées,
-                * site_list -> liste de sites sélectionnés
+        - df : DataFrame complet de tous les vols
+        - dict_parameters : dict contenant
+            * pilots_list        -> pilotes sélectionnés (ou "Tous les pilotes"),
+            * activity_list      -> activité : "paramoteur", "parapente" ou "Toutes",
+            * year_list          -> années sélectionnées,
+            * year_possibilities -> années possibles (utilisées si year_list est vide),
+            * wing_list          -> voiles sélectionnées,
+            * site_list          -> sites sélectionnés
 
-    returns :
-        df_selected:pd.DataFrame
-            * données sélectionnées selon les critères précédemment indiqués.
-
+    retourne le DataFrame filtré.
     """
-    if (len(dict_parameters["pilots_list"]) == 0) or (
-        "Tous les pilotes" in dict_parameters["pilots_list"]
-    ):
-        dict_parameters["pilots_list"] = list(df["pilote"].unique())
+    pilots = dict_parameters["pilots_list"]
+    if len(pilots) == 0 or "Tous les pilotes" in pilots:
+        pilots = list(df["pilote"].unique())
 
-    type_list = []
-    type_list.append(dict_parameters["activity_list"])
-    if "Toutes" in type_list:
-        type_list = ["paramoteur", "parapente"]
+    activity = dict_parameters["activity_list"]
+    activities = ["paramoteur", "parapente"] if activity == "Toutes" else [activity]
 
-    year_list = [int(x) for x in dict_parameters["year_list"]]
-    if len(year_list) == 0:
-        year_list = [int(x) for x in dict_parameters["year_possibilities"]]
+    years = [int(x) for x in dict_parameters["year_list"]]
+    if len(years) == 0:
+        years = [int(x) for x in dict_parameters["year_possibilities"]]
 
-    wing_list = dict_parameters["wing_list"].copy()
-    if len(wing_list) == 0:
-        wing_list = list(df["voile"].unique())
-        wing_list.sort()
+    wings = list(dict_parameters["wing_list"])
+    if len(wings) == 0:
+        wings = sorted(df["voile"].unique())
 
-    site_list = dict_parameters["site_list"].copy()
-    if len(site_list) == 0:
-        site_list = list(df["site"].unique())
-        site_list.sort()
+    sites = list(dict_parameters["site_list"])
+    if len(sites) == 0:
+        sites = sorted(df["site"].unique())
 
-    # create the filtered df
-    df_selected = df[
-        df["pilote"].isin(dict_parameters["pilots_list"])
-        & df["type_vol"].isin(type_list)
-        & df["annee"].isin(year_list)
-        & df["voile"].isin(wing_list)
-        & df["site"].isin(site_list)
+    return df[
+        df["pilote"].isin(pilots)
+        & df["type_vol"].isin(activities)
+        & df["annee"].isin(years)
+        & df["voile"].isin(wings)
+        & df["site"].isin(sites)
     ]
-    return df_selected
 
 
 def create_grouped_df(df: pd.DataFrame, group_var: list[str]):
     """
-    Fonction utilisée afin de créer les df specifiques pour
-    la creation des graphiques
+    Agrège les vols par la variable group_var[0] (année, pilote, mois, voile, jour, saison
+    ou site) : une ligne par valeur, avec les statistiques utilisées par les graphiques.
     """
     var_name = group_var[0]
+
+    # Les vols incomplets comptent (nb de vols, durée...) mais pas dans les moyennes / max
+    # des statistiques de la fiche, qu'ils ne connaissent pas encore.
+    if "incomplet" in df.columns and df["incomplet"].any():
+        df = df.copy()
+        df[FICHE_STATS] = df[FICHE_STATS].astype(float)
+        df.loc[df["incomplet"].astype(bool), FICHE_STATS] = np.nan
 
     df_grouped = df.groupby(by=group_var, as_index=False).agg(
         nb_vols=(var_name, "count"),
@@ -207,41 +214,11 @@ def create_grouped_df(df: pd.DataFrame, group_var: list[str]):
         moyenne_plafond=("plafond", "mean"),
         max_plafond=("plafond", "max"),
     )
-    if var_name == "jour_semaine":
-        sorter = [
-            "lundi",
-            "mardi",
-            "mercredi",
-            "jeudi",
-            "vendredi",
-            "samedi",
-            "dimanche",
-        ]
+
+    if var_name in CATEGORY_ORDERS:
+        order = CATEGORY_ORDERS[var_name]
         df_grouped = df_grouped.sort_values(
-            by=var_name, key=lambda column: column.map(lambda e: sorter.index(e))
-        )
-    elif var_name == "mois":
-        sorter = [
-            "janvier",
-            "fevrier",
-            "mars",
-            "avril",
-            "mai",
-            "juin",
-            "juillet",
-            "aout",
-            "septembre",
-            "octobre",
-            "novembre",
-            "decembre",
-        ]
-        df_grouped = df_grouped.sort_values(
-            by=var_name, key=lambda column: column.map(lambda e: sorter.index(e))
-        )
-    elif var_name == "saison":
-        sorter = ["hiver", "printemps", "été", "automne"]
-        df_grouped = df_grouped.sort_values(
-            by=var_name, key=lambda column: column.map(lambda e: sorter.index(e))
+            by=var_name, key=lambda column: column.map(order.index)
         )
     elif var_name in ["pilote", "voile", "site"]:
         df_grouped = df_grouped.sort_values(by=var_name, ascending=True)
@@ -257,9 +234,7 @@ def create_grouped_df(df: pd.DataFrame, group_var: list[str]):
 def create_graph(
     df: pd.DataFrame, group_variable: str, count_variable: list[str], color: str
 ):
-    """
-    Creation du graphique
-    """
+    """Diagramme en barres d'une statistique par catégorie."""
     fig = px.bar(data_frame=df, x=group_variable, y=count_variable)
     fig.update_traces(marker_color=color)
     fig.update_layout(showlegend=False)
@@ -270,21 +245,19 @@ def create_all_plots(
     df_for_group: pd.DataFrame, dict_variables: dict, dict_color: dict
 ):
     """
-    Fonction utilisee pour créer l'ensemble des graphiques
+    Crée l'ensemble des graphiques : un diagramme par variable de dict_variables
+    ({variable: statistique à afficher}), plus la carte des sites de vol.
+    Retourne {"fig_<variable>": figure, ..., "fig_map_sites": figure}.
     """
-
     dict_figures = {}
-    for variable, variable_graph in dict_variables.items():
-        globals()[f"df_{variable}"] = create_grouped_df(
-            df=df_for_group, group_var=[variable]
-        )
-        fig = create_graph(
-            df=globals()[f"df_{variable}"],
+    for variable, statistic in dict_variables.items():
+        df_grouped = create_grouped_df(df=df_for_group, group_var=[variable])
+        dict_figures[f"fig_{variable}"] = create_graph(
+            df=df_grouped,
             group_variable=variable,
-            count_variable=variable_graph,
+            count_variable=statistic,
             color=dict_color[f"color_{variable}"][1],
         )
-        dict_figures[f"fig_{variable}"] = fig
 
     df_coord_sites = (
         df_for_group[["site", "longitude", "latitude", "pilote"]]
@@ -318,7 +291,6 @@ def create_all_plots(
         },
     )
     map_sites.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
-    # map_sites.update_traces(marker={"size": 20})
     dict_figures["fig_map_sites"] = map_sites
 
     return dict_figures

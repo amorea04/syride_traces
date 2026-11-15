@@ -1,68 +1,92 @@
 """
-Fichier de paramètres.
-Informations nécessaires pour faire fonctionner
-les scripts :
-    - main.py
-    - create_global_pkl.py
+Fichier de paramètres du projet.
+
+Utilisé par : main.py, browser_session.py, create_global_pkl.py, fix_truncated_names.py, app.py
 """
 
-# main path in which the pilot's folder will be created
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# ------------------------ Chemins ------------------------
+
+# Dossier racine : un sous-dossier par pilote, contenant traces/<numéro>/<numéro>.json|gpx|igc
 main_path = "/Users/Adrien/Documents/paramoteur/syride/analyze_traces/syride_traces/"
 
-# list of pilots
-pilots = [
-    "AdrienM",
-    # "j2f",
-    # "Thomas16",
-    # "air race pro",
-    # "Nico16",
-    # "Jerome A",
-    # "AUGRY",
-    # "Souille",
-    # "Au_Phil_du_vent",
-    # "JJvole",
-    # "chami",
-    # "DavidParatrucs79",
-    # "ToriVsUke",
-    # "Tof Torsac",
-    # "Florent_Essar",
-    # "fabrice_f",
-    # "Rémydu24",
-    # "Julien16",
-    # "Kams16",
-    # "jeanlouisksu",
-    # "WIL24",
-]
+# pkl utilisé par l'application (en local, puis en ligne sur PythonAnywhere)
+pkl_path = os.path.join(main_path, "global_flights_data.pkl")
+pkl_path_online = "/home/amoreau/mysite/docs/global_flights_data.pkl"
 
+# 1 = application déployée en ligne, 0 = en local
+online = 0
 
-# list of pilots
-dict_pilotes = {
-    "amo": "AdrienM",
-    "arp": "air race pro",
-    "j2f": "j2f",
-    "thomas": "Thomas16",
-    "nico": "Nico16",
-    "jerome": "Jerome A",
-    "augry": "AUGRY",
-    "souille": "Souille",
-    "tof_torsac": "Tof Torsac",
-    "Philippe": "Au_Phil_du_vent",
-    "fabrice": "fabrice_f",
-    "remy": "Rémydu24",
-    "julien": "Julien16",
-    "florent": "Florent_Essar",
-    "jean_louis": "jeanlouisksu",
-    "jean_jacques": "JJvole",
-    "Kams16": "Kams16",
-    "william": "WIL24",
-    "David": "DavidParatrucs79",
-    "Alban": "ToriVsUke",
-    "Rui": "chami",
+# ------------------------ Pilotes ------------------------
+
+# LISTE UNIQUE des pilotes : nom court -> (nom du dossier = pseudo Syride, à scraper ?)
+#   - tous les pilotes de cette liste sont inclus dans le pkl ;
+#   - seuls ceux marqués True sont scrapés par défaut (sinon : --pilots en ligne de commande).
+# Pour ajouter un pilote : une ligne ici, c'est tout.
+PILOTES = {
+    "amo": ("AdrienM", True),
+    "j2f": ("j2f", True),
+    "thomas": ("Thomas16", True),
+    "Philippe": ("Au_Phil_du_vent", True),
+    "David": ("DavidParatrucs79", True),
+    "Alban": ("ToriVsUke", True),
+    "florent": ("Florent_Essar", True),
+    "lili": ("LiLi06", True),
+    "yanis": ("yanis", True),
+    "Rui": ("chami", True),
+    "tof_torsac": ("Tof Torsac", True),
+    "jean_jacques": ("JJvole", True),
+    "jean_louis": ("jeanlouisksu", True),
+    "jerome": ("Jerome A", False),
+    "augry": ("AUGRY", False),
+    "souille": ("Souille", False),
+    "fabrice": ("fabrice_f", False),
+    "remy": ("Rémydu24", False),
+    "julien": ("Julien16", False),
+    "Kams16": ("Kams16", False),
+    "william": ("WIL24", False),
+    "arp": ("air race pro", False),
+    "nico": ("Nico16", False),
+    # "francois_s": ("Fran&ccedil;ois%20S", False),
 }
 
+# Dérivés (ne pas modifier : utilisés par main.py et create_global_pkl.py)
+# Pilotes scrapés par défaut (nom du dossier)
+pilots = [folder for folder, scrape in PILOTES.values() if scrape]
+# Tous les pilotes connus {nom court: dossier} : le pkl est construit à partir de ceux-ci
+dict_pilotes = {name: folder for name, (folder, _) in PILOTES.items()}
 
-# Chemin menant au pkl des données
-pkl_path = "/Users/Adrien/Documents/paramoteur/syride/analyze_traces/syride_traces/global_flights_data.pkl"
+# Coordonnées de sites saisies à la main {site: (longitude, latitude)}, utilisées seulement
+# pour les sites dont AUCUN vol n'a de fichier GPX/KML (les coordonnées des fichiers priment).
+# Le nom doit correspondre à la colonne "site" du pkl (après uniformisation).
+known_site_coordinates = {
+    # "Idikel": (-0.1234, 43.5678),
+}
 
-# Paramètre si en ligne ou non
-online = 0
+# ------------------------ Identifiants Syride ------------------------
+
+# Chargés depuis le fichier .env (SYRIDE_EMAIL, SYRIDE_PASSWORD) : ne jamais les écrire ici.
+syride_email = os.getenv("SYRIDE_EMAIL", "")
+syride_password = os.getenv("SYRIDE_PASSWORD", "")
+
+# Plusieurs comptes Syride (ex. un compte parapente et un compte paramoteur).
+# Dans .env :
+#   SYRIDE_EMAIL=...            SYRIDE_PASSWORD=...          <- compte « default » (historique)
+#   SYRIDE_ACCOUNTS=parapente,paramoteur                     <- noms des comptes supplémentaires
+#   SYRIDE_EMAIL_PARAPENTE=...  SYRIDE_PASSWORD_PARAPENTE=...
+#   SYRIDE_EMAIL_PARAMOTEUR=... SYRIDE_PASSWORD_PARAMOTEUR=...
+# Utilisation : python main.py --accounts parapente | parapente,paramoteur | all
+# {nom du compte: (email, mot de passe)}, dans l'ordre : default d'abord, puis la liste.
+syride_accounts = {}
+if syride_email:
+    syride_accounts["default"] = (syride_email, syride_password)
+for _name in [n.strip() for n in os.getenv("SYRIDE_ACCOUNTS", "").split(",") if n.strip()]:
+    _suffix = _name.upper().replace("-", "_").replace(" ", "_")
+    _email = os.getenv(f"SYRIDE_EMAIL_{_suffix}", "")
+    if _email:
+        syride_accounts[_name] = (_email, os.getenv(f"SYRIDE_PASSWORD_{_suffix}", ""))

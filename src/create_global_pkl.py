@@ -1,110 +1,184 @@
 """
 Script used to create a uniformed pkl grouping all flights
 from all pilots indicated in the param file.
+
+Les données sont lues depuis l'index SQLite (flights_db), mis à jour à chaque lancement en
+parcourant les dossiers : les coordonnées de départ (lecture des GPX/KML) ne sont plus
+recalculées pour tous les vols à chaque fois. Le DataFrame produit est identique à celui de
+l'ancienne version, donc le pkl a le même format.
 """
 
 ###########  IMPORTS  ################
 
+import os
 import pickle
+import traceback
 import pandas as pd
 import datetime
 
 import analyze_functions
+import flights_db
+import sites_coordinates
 import params_scrap_syride as params
 
+################  CONSTANTS  ################
+
+JOURS_REPLACE = {
+    "Monday": "lundi",
+    "Tuesday": "mardi",
+    "Wednesday": "mercredi",
+    "Thursday": "jeudi",
+    "Friday": "vendredi",
+    "Saturday": "samedi",
+    "Sunday": "dimanche",
+}
+
+MOIS_REPLACE = {
+    "1": "janvier",
+    "2": "fevrier",
+    "3": "mars",
+    "4": "avril",
+    "5": "mai",
+    "6": "juin",
+    "7": "juillet",
+    "8": "aout",
+    "9": "septembre",
+    "10": "octobre",
+    "11": "novembre",
+    "12": "decembre",
+}
 
 ################  SCRIPT  ################
 
 
-def create_gobal_flight_data(common_filename: str, dict_filenames: str) -> None:
-    df_names_raw = []
+UNIFORMISATION_NAME = "uniformisation.json"
+PKL_NAME = "global_flights_data.pkl"
 
-    # Import d'une df par pilote
-    for name, foldername in dict_filenames.items():
-        full_filename = f"{common_filename}{foldername}/"
-        print(f"Collecting data for {name}...")
-        df_data = analyze_functions.create_dataframe_from_json(directory=full_filename)
-        print(f"Data for {name} collected.")
-        print(f"Collecting site coordinates for {name}...")
-        df_long_lat = analyze_functions.create_dataframe_from_all_kml(
-            directory=full_filename
-        )
-        print(f"Site coordinates for {name} collected.", "\n")
-        df = pd.merge(df_data, df_long_lat, on="num_activite", how="left")
-        globals()[f"df_{name}_raw"] = df.copy()
-        df_names_raw.append(f"df_{name}_raw")
 
-    df_names = []
+class PklBuildError(Exception):
+    """Au moins un pilote n'a pas pu être traité : le pkl existant n'est pas écrasé."""
+
+
+def _save_pickle_atomic(obj, path: str) -> None:
+    """Écrit dans un fichier temporaire puis le renomme : un plantage pendant l'écriture
+    laisse l'ancien pkl intact (l'app ne lit jamais un pkl à moitié écrit)."""
+    tmp_path = path + ".tmp"
+    with open(tmp_path, "wb") as f:
+        pickle.dump(obj, f)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_path, path)
+
+
+def create_gobal_flight_data(
+    common_filename: str, dict_filenames: dict, regenerate_sites: bool = False,
+    allow_partial: bool = False,
+) -> None:
+    """
+    Construit le pkl de tous les pilotes de dict_filenames ({nom court: dossier}).
+
+    Si un pilote ayant des vols ne peut pas être lu ou traité, le pkl existant n'est PAS
+    écrasé (PklBuildError), pour ne pas publier un pkl où ce pilote aurait disparu.
+    allow_partial=True : écrit quand même le pkl, sans les pilotes en échec.
+    """
+    rules = analyze_functions.load_uniformisation(
+        os.path.join(common_filename, UNIFORMISATION_NAME)
+    )
+
+    dfs_raw = {}
+    failures = {}   # nom -> message
+    empty = []      # pilotes sans aucun vol (dossier absent ou vide) : pas une erreur
+
+    db_path = os.path.join(common_filename, flights_db.DB_NAME)
+    conn = flights_db.connect(db_path)
+
+    # Une df par pilote, depuis l'index (mis à jour d'abord depuis les dossiers)
+    try:
+        for name, foldername in dict_filenames.items():
+            print(f"Collecting data for {name}...")
+            try:
+                nb = flights_db.sync_pilot(conn, common_filename, foldername)
+                df_data, df_long_lat = flights_db.load_pilot_frames(conn, foldername)
+
+                if df_data.empty:
+                    print(f"Warning: No flight data found for {name} ({nb} vol(s) dans le dossier)")
+                    empty.append(name)
+                    continue
+
+                df = pd.merge(df_data, df_long_lat, on="num_activite", how="left")
+                dfs_raw[name] = df.copy()
+            except Exception as e:
+                print(traceback.format_exc())
+                failures[name] = f"lecture : {e}"
+    finally:
+        conn.close()
+
     list_dfs = []
-
-    jours_replace = {
-        "Monday": "lundi",
-        "Tuesday": "mardi",
-        "Wednesday": "mercredi",
-        "Thursday": "jeudi",
-        "Friday": "vendredi",
-        "Saturday": "samedi",
-        "Sunday": "dimanche",
-    }
-
-    mois_replace = {
-        "1": "janvier",
-        "2": "fevrier",
-        "3": "mars",
-        "4": "avril",
-        "5": "mai",
-        "6": "juin",
-        "7": "juillet",
-        "8": "aout",
-        "9": "septembre",
-        "10": "octobre",
-        "11": "novembre",
-        "12": "decembre",
-    }
+    counts = {}
 
     # Modification des dfs
-    for df_name in df_names_raw:
-        print("")
-        print(df_name)
-        name_df = str(df_name[:-4])
-        globals()[f"{name_df}"] = (
-            globals()[f"{df_name}"]
-            .pipe(analyze_functions.start_pipeline)
-            .pipe(analyze_functions.valeurs_manquantes)
-            .pipe(analyze_functions.remove_too_low_flights)
-            .pipe(analyze_functions.assign_data_types)
-            .pipe(analyze_functions.remove_biplan_flights)
-            .pipe(analyze_functions.uniformize_data)
-            .pipe(analyze_functions.flight_type)
-            .pipe(analyze_functions.transform_dates)
-            .pipe(analyze_functions.get_season)
-            .pipe(analyze_functions.delete_zero_min_flights)
-            .pipe(analyze_functions.replace_values, dict_values=jours_replace)
-            .pipe(
-                analyze_functions.replace_values,
-                dict_values=mois_replace,
-                var_interest="mois",
+    for name, df_raw in dfs_raw.items():
+        try:
+            df = (
+                df_raw
+                .pipe(analyze_functions.start_pipeline)
+                .pipe(analyze_functions.valeurs_manquantes)
+                .pipe(analyze_functions.remove_too_low_flights)
+                .pipe(analyze_functions.assign_data_types)
+                .pipe(analyze_functions.remove_plane_flights, rules=rules)
+                .pipe(analyze_functions.uniformize_data, rules=rules)
+                .pipe(analyze_functions.flight_type, rules=rules)
+                .pipe(analyze_functions.transform_dates)
+                .pipe(analyze_functions.get_season)
+                .pipe(analyze_functions.delete_zero_min_flights)
+                .pipe(analyze_functions.replace_values, dict_values=JOURS_REPLACE)
+                .pipe(
+                    analyze_functions.replace_values,
+                    dict_values=MOIS_REPLACE,
+                    var_interest="mois",
+                )
             )
-            .pipe(analyze_functions.get_mean_site_coordinates)
+            list_dfs.append(df)
+            counts[name] = len(df)
+        except Exception as e:
+            print(traceback.format_exc())
+            failures[name] = f"traitement : {e}"
+
+    # Bilan
+    print("\nBilan du pkl :")
+    for name, n in counts.items():
+        print(f"  {name:15s} {n:5d} vol(s)")
+    if empty:
+        print(f"  Sans vol : {', '.join(empty)}")
+    if failures:
+        print("  EN ÉCHEC :")
+        for name, msg in failures.items():
+            print(f"    {name} ({dict_filenames[name]}) : {msg}")
+
+    if not list_dfs:
+        raise PklBuildError("Aucun pilote n'a pu être traité : pkl non généré.")
+    if failures and not allow_partial:
+        raise PklBuildError(
+            f"{len(failures)} pilote(s) en échec ({', '.join(failures)}) : le pkl existant "
+            f"n'est PAS écrasé. Corrige l'erreur ci-dessus, ou relance avec "
+            f"allow_partial=True pour l'écrire sans ces pilotes."
         )
 
-        globals()[f"{name_df}_paramot"] = globals()[f"{name_df}"][
-            globals()[f"{name_df}"]["type_vol"] == "paramoteur"
-        ]
-
-        df_names.append(f"{name_df}")
-        list_dfs.append(globals()[f"{name_df}"])
-
     df_tot = pd.concat(list_dfs)
+
+    # Coordonnées uniques par site (tous pilotes confondus), depuis le dictionnaire
+    sites_path = os.path.join(common_filename, sites_coordinates.SITES_COORDS_NAME)
+    sites_coords = sites_coordinates.update_sites_coordinates(
+        df_tot, sites_path, regenerate=regenerate_sites
+    )
+    df_tot = sites_coordinates.apply_sites_coordinates(df_tot, sites_coords)
 
     df_tot["date_update"] = datetime.datetime.today()
 
     # Sauvegarde du pkl
-    pickle_name = "global_flights_data.pkl"
-    full_pickle_name = common_filename + pickle_name
-    with open(full_pickle_name, "wb") as pickle_file:
-        pickle.dump(df_tot, pickle_file)
-    print(f"\n{pickle_name} sauvegardé !\n")
+    full_pickle_name = os.path.join(common_filename, PKL_NAME)
+    _save_pickle_atomic(df_tot, full_pickle_name)
+    print(f"\n{PKL_NAME} sauvegardé : {len(df_tot)} vols, {len(counts)} pilote(s).\n")
 
 
 if __name__ == "__main__":
