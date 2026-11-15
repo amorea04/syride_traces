@@ -85,14 +85,14 @@
 
     "FlightsFile": {
       "title": "data/flights.<hash>.json (format colonnaire)",
-      "description": "Une ligne par vol, dans l'ordre de `columns`. Les catégories sont des index dans `dict`. Champs dérivés (année, mois, jour, saison, heure entière) non exportés : recalculés côté front depuis `date` et `time`.",
+      "description": "Une ligne par vol, dans l'ordre de `columns`. La clé d'un vol (FlightKey, URL /vol/:key) n'est pas exportée : le front la recalcule = pilot_slugs[pilot] + \"-\" + syride_num (gain ≈ 30 Ko gzip). Les catégories sont des index dans `dict`. Champs dérivés (année, mois, jour, saison, heure entière) non exportés : recalculés côté front depuis `date` et `time`.",
       "type": "object",
       "additionalProperties": false,
       "required": ["schema_version", "columns", "dict", "pilot_slugs", "rows"],
       "properties": {
         "schema_version": { "$ref": "#/$defs/SchemaVersion" },
         "columns": {
-          "const": ["key", "pilot", "activity", "date", "time", "site", "wing", "instrument", "mode",
+          "const": ["pilot", "activity", "date", "time", "site", "wing", "instrument", "mode",
                     "duration_min", "dist_km", "dist_cum_km", "speed_avg", "speed_max", "ceiling_m", "gain_m",
                     "vario_max", "g_max", "incomplete", "source", "syride_num"]
         },
@@ -120,10 +120,9 @@
           "type": "array",
           "items": {
             "type": "array",
-            "minItems": 21,
-            "maxItems": 21,
+            "minItems": 20,
+            "maxItems": 20,
             "prefixItems": [
-              { "$ref": "#/$defs/FlightKey" },
               { "$ref": "#/$defs/Index", "description": "pilot" },
               { "$ref": "#/$defs/Index", "description": "activity" },
               { "oneOf": [{ "$ref": "#/$defs/Date" }, { "type": "null" }], "description": "date (null si inconnue, jamais 1901)" },
@@ -143,7 +142,7 @@
               { "$ref": "#/$defs/PositiveMeasure", "description": "g_max (1 décimale)" },
               { "type": "boolean", "description": "incomplete" },
               { "$ref": "#/$defs/Index", "description": "source des stats : index dans dict.source" },
-              { "type": ["integer", "null"], "minimum": 1, "description": "syride_num = num_activite ; lien https://www.syride.com/fr/pilotes/<pseudo>/<num>" }
+              { "type": "integer", "minimum": 1, "description": "syride_num = num_activite (toujours renseigné) ; clé du vol = pilot_slugs[pilot] + \"-\" + syride_num ; lien https://www.syride.com/fr/pilotes/<pseudo>/<num>" }
             ]
           }
         }
@@ -188,15 +187,15 @@
 
     "InsightsFile": {
       "title": "data/insights/<pilote_slug>-<année>.<hash>.json",
-      "description": "Récit précalculé par src/web_export/insights.py en appelant src/rapport/report_data.py. Textes déjà rendus (moteur de report_textes.md, tirage crc32). Le détail des sous-objets sera resserré en phase 1.5 bis ; `v` versionne ce fichier.",
+      "description": "Récit précalculé par src/web_export/insights.py en appelant src/rapport/report_data.py et le moteur de textes du rapport (report_textes.md, tirage crc32). Textes déjà rendus, en texte brut (espaces insécables conservés). `v` versionne ce fichier. Aucune coordonnée de vol : seules les zones de carte portent l'emprise des sites.",
       "type": "object",
       "additionalProperties": false,
       "required": ["v", "pilot", "year", "cutoff", "by_disc"],
       "properties": {
         "v": { "const": 1 },
         "pilot": { "$ref": "#/$defs/Slug" },
-        "year": { "type": "integer", "minimum": 2000, "maximum": 2100 },
-        "cutoff": { "$ref": "#/$defs/Date" },
+        "year": { "type": "integer", "minimum": 1980, "maximum": 2100 },
+        "cutoff": { "$ref": "#/$defs/Date", "description": "Date de fin effective du récit : le jour de l'export pour l'année en cours, le 31 décembre pour une année passée." },
         "by_disc": {
           "type": "object",
           "additionalProperties": false,
@@ -212,8 +211,13 @@
 
     "FlightRef": { "oneOf": [{ "$ref": "#/$defs/FlightKey" }, { "type": "null" }] },
 
+    "PersonaKey": {
+      "enum": ["debut", "libre", "polyvalent", "treuilleur", "marcheur", "plafond", "explorateur", "nomade", "marathonien", "regulier", "leve_tot", "soir", "fidele", "week_end"],
+      "description": "Étiquette du portrait (clés de PERSONA_RULES, plus « debut » sous 5 vols et « libre » sans règle applicable)."
+    },
+
     "Story": {
-      "description": "Récit d'une discipline ; null si le pilote n'a aucun vol dans cette discipline cette année.",
+      "description": "Récit d'une discipline pour un pilote et une année ; null si le pilote n'a aucun vol dans cette discipline cette année. Textes en texte brut, identiques à ceux du rapport HTML.",
       "oneOf": [
         { "type": "null" },
         {
@@ -222,90 +226,177 @@
           "required": ["persona", "gap", "milestones", "records_beaten", "equivalences", "new_sites", "new_wings", "map_zones", "reach", "texts"],
           "properties": {
             "persona": {
+              "description": "Portrait du pilote (page du bilan uniquement, D11) ; null si le texte est absent.",
               "oneOf": [{ "type": "null" }, {
                 "type": "object",
                 "additionalProperties": false,
                 "required": ["main", "secondary", "label", "why"],
                 "properties": {
-                  "main": { "type": "string" },
-                  "secondary": { "type": "array", "items": { "type": "string" } },
+                  "main": { "$ref": "#/$defs/PersonaKey" },
+                  "secondary": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["key", "label", "why"],
+                      "properties": {
+                        "key": { "$ref": "#/$defs/PersonaKey" },
+                        "label": { "type": "string" },
+                        "why": { "type": "string" }
+                      }
+                    }
+                  },
                   "label": { "type": "string" },
-                  "why": { "type": "string" }
+                  "why": { "type": "string", "description": "Justification ; chaîne vide si le texte n'en a pas." }
                 }
               }]
             },
             "gap": {
+              "description": "Avance ou retard sur l'année précédente (à date si l'année est en cours) ; null sans année de comparaison.",
               "oneOf": [{ "type": "null" }, {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["status", "minutes", "flights", "text"],
+                "required": ["status", "ref_year", "ongoing", "minutes", "flights", "text", "note"],
                 "properties": {
-                  "status": { "enum": ["avance", "retard", "egalite"] },
-                  "minutes": { "type": "number" },
-                  "flights": { "type": "integer" },
-                  "text": { "type": "string" }
+                  "status": { "enum": ["avance", "retard", "egal"] },
+                  "ref_year": { "type": "integer" },
+                  "ongoing": { "type": "boolean" },
+                  "minutes": { "type": "number", "minimum": 0, "description": "Écart absolu en minutes de vol." },
+                  "flights": { "type": "integer", "description": "Écart signé en nombre de vols." },
+                  "text": { "type": "string" },
+                  "note": { "type": "string" }
                 }
               }]
             },
             "milestones": {
               "type": "array",
+              "description": "Jalons de l'année, triés par date, au plus 12.",
               "items": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["date", "kind", "gold", "text"],
+                "required": ["date", "kind", "value", "gold", "title", "detail", "flight"],
                 "properties": {
                   "date": { "$ref": "#/$defs/Date" },
-                  "kind": { "type": "string" },
-                  "value": { "type": ["number", "string", "null"] },
+                  "kind": { "enum": ["first", "nth_flight", "nth_hour", "record", "best_day", "new_site", "new_wing", "comeback"] },
+                  "value": { "type": ["integer", "null"], "description": "Palier (n-ième vol ou heure) pour nth_flight et nth_hour, sinon null." },
                   "gold": { "type": "boolean", "description": "Or = records et nouveautés uniquement." },
-                  "text": { "type": "string" },
-                  "flight": { "$ref": "#/$defs/FlightRef" }
+                  "title": { "type": "string" },
+                  "detail": { "type": "string", "description": "Détail en une ligne (sites, durées, valeurs) ; chaîne vide s'il n'y en a pas." },
+                  "flight": { "$ref": "#/$defs/FlightRef" },
+                  "metrics": {
+                    "type": "array",
+                    "description": "Records du vol cité (jalons « record » et « first »).",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["metric", "value"],
+                      "properties": {
+                        "metric": { "enum": ["duree", "plafond", "distance"] },
+                        "value": { "type": "number" }
+                      }
+                    }
+                  }
                 }
               }
             },
             "records_beaten": {
               "type": "array",
+              "description": "Records personnels battus contre tout l'historique du pilote.",
               "items": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["metric", "value", "previous", "flight"],
+                "required": ["metric", "value", "previous", "previous_year", "date", "flight"],
                 "properties": {
                   "metric": { "enum": ["plafond", "vitesse_max", "distance", "vario", "g", "duree"] },
                   "value": { "type": "number" },
-                  "previous": { "type": ["number", "null"] },
+                  "previous": { "type": "number" },
+                  "previous_year": { "type": "integer" },
+                  "date": { "$ref": "#/$defs/Date" },
                   "flight": { "$ref": "#/$defs/FlightRef" }
                 }
               }
             },
             "equivalences": { "type": "array", "items": { "type": "string" } },
-            "new_sites": { "type": "array", "items": { "type": "string" } },
-            "new_wings": { "type": "array", "items": { "type": "string" } },
-            "map_zones": {
+            "new_sites": {
               "type": "array",
+              "description": "Sites jamais volés les années précédentes, triés par date de découverte.",
               "items": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["name", "sites", "bbox"],
+                "required": ["site", "first_date", "n"],
                 "properties": {
-                  "name": { "type": "string" },
-                  "sites": { "type": "array", "items": { "type": "string" } },
-                  "bbox": { "type": "array", "items": { "type": "number" }, "minItems": 4, "maxItems": 4, "description": "[lon_min, lat_min, lon_max, lat_max] des sites de la zone (pas de géométrie de vol)." }
+                  "site": { "type": "string" },
+                  "first_date": { "$ref": "#/$defs/Date" },
+                  "n": { "type": "integer", "minimum": 1 }
+                }
+              }
+            },
+            "new_wings": {
+              "type": "array",
+              "description": "Voiles jamais utilisées les années précédentes, triées par date.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["wing", "first_date"],
+                "properties": {
+                  "wing": { "type": "string" },
+                  "first_date": { "$ref": "#/$defs/Date" }
+                }
+              }
+            },
+            "map_zones": {
+              "type": "array",
+              "description": "Zones de la carte, de la plus volée à la moins volée.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "top", "sites", "flights", "minutes", "bbox"],
+                "properties": {
+                  "name": { "type": "string", "description": "« Autour de <site le plus volé> »." },
+                  "top": { "type": "string" },
+                  "sites": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+                  "flights": { "type": "integer", "minimum": 1 },
+                  "minutes": { "type": "number", "minimum": 0 },
+                  "bbox": {
+                    "type": "array",
+                    "items": { "type": "number" },
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "description": "[lon_min, lat_min, lon_max, lat_max] des positions moyennes des sites de la zone (jamais d'un vol)."
+                  }
                 }
               }
             },
             "reach": {
+              "description": "Portée autour du site principal ; null avec un seul site.",
               "oneOf": [{ "type": "null" }, {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["farthest_site", "km", "main_share"],
+                "required": ["main_site", "farthest_site", "km", "main_share"],
                 "properties": {
-                  "farthest_site": { "type": "string" },
-                  "km": { "type": "number", "minimum": 0 },
-                  "main_share": { "type": "number", "minimum": 0, "maximum": 1 }
+                  "main_site": { "type": "string" },
+                  "farthest_site": { "type": ["string", "null"], "description": "null si les sites n'ont pas de position." },
+                  "km": { "type": ["number", "null"], "minimum": 0 },
+                  "main_share": { "type": "number", "minimum": 0, "maximum": 1, "description": "Part des vols sur le site principal." }
                 }
               }]
             },
-            "texts": { "type": "object", "additionalProperties": { "type": "string" } }
+            "texts": {
+              "type": "object",
+              "description": "Phrases du rapport (aperçu, histoire, faits marquants) ; null si la phrase n'a pas lieu d'être.",
+              "additionalProperties": false,
+              "required": ["synthese", "rythme", "quand", "ou", "matos", "records", "meilleure_journee", "journee_type"],
+              "properties": {
+                "synthese": { "type": ["string", "null"] },
+                "rythme": { "type": ["string", "null"] },
+                "quand": { "type": ["string", "null"] },
+                "ou": { "type": ["string", "null"] },
+                "matos": { "type": ["string", "null"] },
+                "records": { "type": ["string", "null"] },
+                "meilleure_journee": { "type": ["string", "null"] },
+                "journee_type": { "type": ["string", "null"] }
+              }
+            }
           }
         }
       ]

@@ -286,6 +286,24 @@ def delete_zero_min_flights(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# Colonnes qui définissent un vol « strictement identique » (même vol importé deux fois sur Syride).
+# La voile n'en fait pas partie : 9 des 24 groupes de doublons ont la même trace sous deux voiles.
+DUPLICATE_KEY = ["date", "heure", "site", "types", "duree_vol_minutes",
+                 "distance", "plafond", "gain", "vitesse_max"]
+
+
+@log_func
+def remove_duplicate_flights(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Supprime les doublons strictement identiques d'un pilote (mêmes date, heure, site, type,
+    durée et mesures, voile comprise ou non) ; garde le plus petit num_activite (le premier publié). Décision d'Adrien du 15/11/2026.
+    """
+    key = [c for c in DUPLICATE_KEY if c in df.columns]
+    df = df.sort_values("num_activite")
+    df = df[~df.duplicated(subset=key, keep="first")]
+    return df.reset_index(drop=True)
+
+
 @log_func
 def uniformize_data(df: pd.DataFrame, rules: dict) -> pd.DataFrame:
     """

@@ -642,6 +642,7 @@ def compute_report(
     compare_years: Union[str, List[int]] = "auto",
     max_compare: int = 2,
     today: Optional[dt.date] = None,
+    compare_indicators: bool = True,
 ) -> dict:
     """
     Calcule toutes les données du rapport d'un pilote pour une année.
@@ -650,6 +651,8 @@ def compute_report(
                     (les plus récentes), ou une liste explicite d'années.
     today         : date de génération (par défaut aujourd'hui). Si `year` est l'année en cours,
                     l'année du rapport est arrêtée à cette date et comparée aux années précédentes entières.
+    compare_indicators : False = pas d'indicateurs détaillés (`data`) pour les années comparées, seulement leurs
+                    chiffres clés (`kpi_equiv`) : suffit à l'écart avec l'an dernier, 3 fois plus rapide (export web).
 
     Lève ValueError si le pilote n'a aucun vol cette année-là.
     """
@@ -690,8 +693,9 @@ def compute_report(
         y_cutoff = cutoff if y == year else None  # année du rapport arrêtée à aujourd'hui, années comparées entières
         for disc in DISCIPLINES:
             # Graphiques : année du rapport jusqu'à aujourd'hui, années précédentes en entier
-            full = filter_flights(df, pilot, y, disc, cutoff if y == year else None)
-            report["data"][y][disc] = compute_indicators(full)
+            if y == year or compare_indicators:
+                full = filter_flights(df, pilot, y, disc, cutoff if y == year else None)
+                report["data"][y][disc] = compute_indicators(full)
             equiv = filter_flights(df, pilot, y, disc, y_cutoff)
             report["kpi_equiv"][y][disc] = compute_kpis(equiv)
 

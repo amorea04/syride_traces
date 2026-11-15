@@ -288,6 +288,21 @@ Le contrat est écrit **une seule fois** en JSON Schema (`src/web_export/schema.
 - **`sites.json`** est un objet `{schema_version, sites: [...]}`, et `id` = index du site dans `dict.site`.
 - Insights : structure de §4.5 reprise, à resserrer en phase 1.5 bis (champ `v`).
 
+**Phase 1 (15/11/2026)** : nouveaux écarts, `schema.json` toujours en v1 :
+- **La colonne `key` est retirée de `flights.json`.** Elle fait gagner ≈ 180 Ko brut et ≈ 30 Ko gzip. Le front recalcule la clé : `pilot_slugs[pilot] + "-" + syride_num`. `syride_num` devient obligatoire, car il est renseigné pour 100 % des vols. `FlightKey` reste le format des URL `/vol/:key` et des références de vol dans les insights.
+- **« inconnue » reste une voile à part entière** (décision d'Adrien) : elle n'est ni null ni masquée. Seuls les restes textuels « nan » et « none » sont exportés en null.
+- **`Story` resserrée** :
+  - persona : `PersonaKey` en enum, et `secondary` en objets `{key, label, why}` ;
+  - gap : statut `egal`, ajout de `ref_year`, `ongoing` et `note` ;
+  - jalons : `title` et `detail`, avec `kind` en enum ;
+  - `new_sites` et `new_wings` deviennent des objets ;
+  - `map_zones` reçoit `top`, `flights` et `minutes` ;
+  - `reach` reçoit `main_site` ;
+  - `texts` a 8 clés fixes.
+
+  La carte par zones et la portée sont aussi calculées par discipline, alors que le rapport HTML ne les donne que pour « tout ».
+- **Budget de poids mesuré en brotli**, ce que Cloudflare sert réellement : `flights.json` fait 190 Ko en brotli et 231 Ko en gzip.
+
 ### 4.1 `data/meta.json` (~1 Ko, jamais mis en cache)
 
 ```json
@@ -867,15 +882,20 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - [ ] **`/clear`**
 
 ### Phase 1 : Export des données web
-- [ ] 1.1 Module schéma et validation
-- [ ] 1.2 `flights.json` colonnaire, sans sentinelles, tests pytest
-- [ ] 1.3 `sites.json` (clé vide corrigée)
-- [ ] 1.5 Audit de cohérence des statistiques ; aucune coordonnée par vol dans l'export
-- [ ] 1.5 bis `report_data.py` importable sans effet de bord ; `insights.py` ; test d'identité avec le rapport HTML
-- [ ] 1.6 `meta.json` et hashes de contenu, purge des anciens fichiers
-- [ ] 1.7 CLI `export_web.py`
-- [ ] 1.8 Fixtures synthétiques et `make fixtures`
-- [ ] Taille publiée mesurée : ______ Mo / ______ fichiers
+- [x] 1.1 Module schéma et validation (`src/web_export/schema.py`)
+- [x] 1.2 `flights.json` colonnaire, sans sentinelles, tests pytest : 9 587 vols, 1 écarté (date 1901)
+- [x] 1.3 `sites.json` : clé vide corrigée, 435 sites, dont 16 sans coordonnées (`lat` et `lon` à null)
+- [x] 1.5 Audit de cohérence des statistiques (`src/web_export/AUDIT_PHASE1.md`) ; aucune coordonnée par vol dans l'export (vérifié)
+- [x] 1.5 bis Le rapport HTML est importable sans effet de bord. `insights.py` réutilise `ReportBuilder` : 150 fichiers. Le test d'identité avec le rapport HTML passe (AdrienM et j2f 2025). Les rapports HTML sont identiques octet par octet avant et après les 2 retouches de `src/rapport/`.
+- [x] 1.6 `meta.json` et hashes de contenu, purge des anciens fichiers
+- [x] 1.7 CLI `export_web.py` (`--only`, `--pilot`, `--full`, `--out`, `--pkl`)
+- [x] 1.8 Fixtures synthétiques et `make fixtures` (`web/tests/fixtures/data/`) ; 58 tests pytest au vert (`make test-py`, qui ajoute `-p no:dash` à cause du plugin pytest de Dash, cassé dans l'environnement anaconda)
+- [x] Taille publiée mesurée : **2,6 Mo brut, 0,58 Mo gzip, 153 fichiers**. Détail : `flights` 888 Ko brut, 231 Ko gzip, ≈ 190 Ko brotli ; `sites` 55 Ko ; insights 1,65 Mo brut, 339 Ko gzip, 11 Ko en moyenne par fichier, chargés à la demande.
+- [ ] ⚠️ Durée de l'export complet : **51 s**, au-delà de la cible de 30 s. Les insights prennent 46 s, sur 8 processus. **Piste pour la phase 7** : export incrémental qui ne régénère que les pilotes dont les vols ont changé, plus l'année en cours.
+- [x] Décisions d'Adrien sur l'audit (15/11/2026) :
+  - **valeurs aberrantes conservées**, car rares mais possibles : aucune mesure n'est neutralisée ;
+  - **`biplan celebrity` corrigé** dans `voiles_exclues` : les 7 vols en avion sortent du décompte ;
+  - **doublons identiques supprimés** par `remove_duplicate_flights` (`analyze_functions.py`, branché dans `create_global_pkl.py`). Un doublon a les mêmes date, heure, site, type, durée et mesures, quelle que soit la voile (9 groupes ont la même trace sous deux voiles). On garde le plus petit `num_activite`. Le pkl est passé de 9 635 à 9 588 vols : 7 en avion, 29 doublons et 11 copies du vol à date 1901.
 - [ ] PR relue et fusionnée · **`/clear`**
 
 ### Phase 2 : Socle front et design
