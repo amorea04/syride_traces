@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="fr" data-pal="B" data-theme="light">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Comparer des sites</title>
+<style>html[data-pal="B"][data-theme="light"]{--bg:#f4f4f8;--surface:#ffffff;--line:#dcdce6;--text:#14151c;--muted:#5b5e70;--accent:#1f2358;--accent-ink:#ffffff;--p:#e4572e;--m:#2f6fe0;--b:#3f4352;--p-strong:#b8401c;--m-strong:#1f58c4;--gold:#b58900;--gold-bg:#fbf0cf;--gold-text:#6b5000;--y0:#1f2358;--y1:#8b5cf6;--y2:#7a7f92;--up:#0f8a7e;--down:#c2255c;--nup:#6f4fd0;--ndown:#a0651a;--flat:#5b5e70;--scrim:rgba(20,21,28,.45);--c1:#db5ab5;--c2:#a45159;--c3:#9d35ad;--c4:#346304;--c5:#9c0760;--c6:#02a339;--c7:#55489f;--c8:#2d895c;--up-bg:#e2eeec;--up-text:#0d766b;--down-bg:#fbe3e7;--down-text:#c2255c;--nup-bg:#e8e7fb;--nup-text:#6f4fd0;--ndown-bg:#f2e9e0;--ndown-text:#975c0a;--flat-bg:#e6e7ea;--flat-text:#5b5e70;--accent-text:#1f2358;--p-text:#d24619;--m-text:#2f6fe0;--cal-empty:#e2e2e7;--cal-p1:#dbb3ac;--cal-p2:#d29181;--cal-p3:#c76b52;--cal-p4:#b8401c;--cal-m1:#a7bae0;--cal-m2:#7c9dd9;--cal-m3:#4f7bcf;--cal-m4:#1f58c4;--cal-b1:#a0a1a9;--cal-b2:#72747d;--cal-b3:#444651;--cal-b4:#1b1d28;--w-site:#764800;--w-treuil:#930646;--w-rando:#2f7c20;--w-mer:#373ba7;--w-moteur:#7b5b86;--w-autre:#6b7280;--surface-2:#ebebf2;--hero-1:#1f2358;--hero-2:#2a2f75;--map-water:#dfe6ef;--map-land:#eceee9;--map-border:#c8ccd6;--shadow-sm:none;--shadow-md:none;color-scheme:light}
+html[data-pal="B"][data-theme="dark"]{--bg:#0e0f14;--surface:#17181f;--line:#2b2d3a;--text:#ececf4;--muted:#a0a3b6;--accent:#c7ccff;--accent-ink:#0e0f14;--p:#ff7a50;--m:#6aa0ff;--b:#c4c8d6;--p-strong:#ff7a50;--m-strong:#6aa0ff;--gold:#e8b923;--gold-bg:#33280a;--gold-text:#e8b923;--y0:#c7ccff;--y1:#a78bfa;--y2:#9a9fb2;--up:#2dd4bf;--down:#fb7185;--nup:#a78bfa;--ndown:#e0a458;--flat:#a0a3b6;--scrim:rgba(0,0,0,.65);--c1:#db5dbb;--c2:#a6535a;--c3:#9d50d5;--c4:#4dae0b;--c5:#b52a91;--c6:#4c781b;--c7:#625fa5;--c8:#009b7e;--up-bg:#23393b;--up-text:#2dd4bf;--down-bg:#3f2a32;--down-text:#fb7185;--nup-bg:#302d45;--nup-text:#a78bfa;--ndown-bg:#3a312d;--ndown-text:#e0a458;--flat-bg:#2f303a;--flat-text:#a0a3b6;--accent-text:#c7ccff;--p-text:#ff7a50;--m-text:#6aa0ff;--cal-empty:#202126;--cal-p1:#75615d;--cal-p2:#a7867c;--cal-p3:#d7a99a;--cal-p4:#ffc6b2;--cal-m1:#5c6679;--cal-m2:#7f8eaa;--cal-m3:#a0b5d8;--cal-m4:#bbd5ff;--cal-b1:#6b6c72;--cal-b2:#97989e;--cal-b3:#c1c3c9;--cal-b4:#e4e6ec;--w-site:#c49d68;--w-treuil:#fe85af;--w-rando:#9bd75b;--w-mer:#16bdb5;--w-moteur:#c38eff;--w-autre:#94a3b8;--surface-2:#20212b;--hero-1:#0a0b1e;--hero-2:#14173a;--map-water:#11141c;--map-land:#1c2030;--map-border:#343a50;--shadow-sm:none;--shadow-md:none;color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+html[data-pal="B"]{--card-bg:transparent;--card-bd:0 solid transparent;--card-top:2px solid var(--text);--card-r:0;--card-sh:none;--card-pad:14px 0 6px;--r-sm:3px;--r-md:5px;--r-lg:8px;--kpi-w:650;--h-w:700;--hero-r:6px}
+a{color:var(--accent-text);text-underline-offset:3px}
+h1,h2,h3,h4{margin:0;line-height:1.15;letter-spacing:-.02em}
+p{margin:0 0 .7em}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--accent-text);outline-offset:2px;border-radius:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+button{font:inherit;color:inherit;cursor:pointer}
+/* ---- barre de maquette (hors design) ---- */
+.mq{position:sticky;top:0;z-index:100;background:#111318;color:#e9eaee;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;padding:8px 14px;font-size:13px;border-bottom:1px solid #2a2d36}
+.mq b{font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:11px;color:#9aa0ad}
+.mq .g{display:inline-flex;align-items:center;gap:6px}
+.mq button,.mq a{background:#1d2028;color:#e9eaee;border:1px solid #33374a;border-radius:6px;padding:4px 10px;font-size:13px;text-decoration:none;line-height:1.3}
+.mq button[aria-pressed="true"],.mq a[aria-current="page"]{background:#e9eaee;color:#111318;border-color:#e9eaee;font-weight:650}
+.mq .nav{margin-left:auto}
+html.m375 body{background:#6b6f7b}
+html.m375 .stage{width:375px;margin:0 auto;background:var(--bg);box-shadow:0 0 0 1px #00000040,0 10px 40px #0006}
+.app{container-type:inline-size;container-name:app;background:var(--bg);min-height:100vh}
+/* ---- en-tête ---- */
+.top{display:flex;align-items:center;gap:20px;padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{font-weight:var(--h-w);letter-spacing:-.02em;font-size:17px;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.brand i{width:22px;height:22px;display:inline-block}
+.nav-app{display:flex;gap:2px;flex:1;min-width:0}
+.nav-app a{color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:var(--r-sm);font-weight:550;white-space:nowrap}
+.nav-app a[aria-current="page"]{color:var(--text);background:var(--surface-2)}
+.top .upd{color:var(--muted);font-size:13px;white-space:nowrap}
+.ibtn{width:36px;height:36px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);color:var(--text);display:inline-grid;place-items:center}
+.ibtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.foot{padding:28px 24px 40px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 24px}
+/* ---- cartes et grilles ---- */
+.card{background:var(--card-bg);border:var(--card-bd);border-top:var(--card-top);border-radius:var(--card-r);box-shadow:var(--card-sh);padding:var(--card-pad);min-width:0}
+.ch{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.ch h2{font-size:17px;font-weight:var(--h-w)}
+.ch .sub{color:var(--muted);font-size:13px;flex-basis:100%;order:3;margin:0}
+.eyebrow{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+.row{display:grid;gap:20px;min-width:0;align-items:start}
+.c2{grid-template-columns:repeat(2,minmax(0,1fr))}.c3{grid-template-columns:repeat(3,minmax(0,1fr))}.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.c6{grid-template-columns:repeat(6,minmax(0,1fr))}.c8{grid-template-columns:repeat(4,minmax(0,1fr))}
+.s75{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}.s57{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+.stack{display:flex;flex-direction:column;gap:20px;min-width:0}
+.sec-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:8px 0 -4px;display:flex;align-items:center;gap:10px}
+.sec-title::after{content:"";flex:1;height:1px;background:var(--line)}
+.only-n,.mms.only-n{display:none}
+@container app (max-width:1180px){.c6{grid-template-columns:repeat(3,minmax(0,1fr))}.c4{grid-template-columns:repeat(2,minmax(0,1fr))}.s75,.s57,.c3{grid-template-columns:minmax(0,1fr)}.c8{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container app (max-width:900px){.c2.keep2{grid-template-columns:repeat(2,minmax(0,1fr))}.top{flex-wrap:wrap;padding:10px 16px;gap:8px 12px}.nav-app{order:5;flex-basis:100%;overflow-x:auto;padding-bottom:2px}.top .upd{display:none}
+ .c2{grid-template-columns:minmax(0,1fr)}.c6{grid-template-columns:repeat(2,minmax(0,1fr))}.c8{grid-template-columns:repeat(2,minmax(0,1fr))}.only-w{display:none!important}.only-n{display:block}.mms.only-n{display:grid}}
+@container app (max-width:520px){.li{grid-template-columns:auto minmax(0,1fr)}.li .r{grid-column:1/-1;text-align:left;padding-left:0}td,th{padding-left:6px;padding-right:6px}table{font-size:13px}.c2.keep2{grid-template-columns:repeat(2,minmax(0,1fr))}.c4{grid-template-columns:minmax(0,1fr)}.c4.keep2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* ---- contrôles ---- */
+.seg{display:inline-flex;background:var(--surface-2);border-radius:var(--r-md);padding:3px;gap:2px;max-width:100%;overflow-x:auto}
+.seg button{border:0;background:transparent;color:var(--muted);padding:5px 12px;border-radius:calc(var(--r-md) - 3px);font-weight:600;font-size:13px;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 0 0 1px var(--line)}
+html[data-pal="B"] .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);box-shadow:none}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 10px;font-size:13px;color:var(--text)}
+.chip button{border:0;background:none;padding:0;color:var(--muted);line-height:1}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:var(--r-md);padding:8px 14px;font-weight:600;text-decoration:none}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);padding:12px 20px;font-size:16px}
+.btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pill{display:inline-flex;align-items:center;gap:3px;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:650;white-space:nowrap}
+.pill.up{background:var(--up-bg);color:var(--up-text)}.pill.down{background:var(--down-bg);color:var(--down-text)}
+.pill.nup{background:var(--nup-bg);color:var(--nup-text)}.pill.ndown{background:var(--ndown-bg);color:var(--ndown-text)}.pill.flat{background:var(--flat-bg);color:var(--flat-text)}
+.rec{display:inline-flex;align-items:center;gap:5px;background:var(--gold-bg);color:var(--gold-text);border-radius:999px;padding:1px 9px 1px 7px;font-size:12px;font-weight:700;white-space:nowrap}
+.rec::before{content:"";width:8px;height:8px;background:var(--gold);transform:rotate(45deg)}
+.gold{color:var(--gold-text);font-weight:700}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.dot.p{background:var(--p)}.dot.m{background:var(--m)}.dot.b{background:var(--b)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:650;color:var(--muted)}
+.muted{color:var(--muted)}.small{font-size:13px}
+/* ---- KPI ---- */
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;min-width:0;display:flex;flex-direction:column;gap:2px}
+.kpi .l{font-size:12px;font-weight:650;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.kpi .v{font-size:clamp(24px,3vw,32px);font-weight:var(--kpi-w);letter-spacing:-.03em;line-height:1.1;margin-top:4px;white-space:nowrap}
+.kpi .v small{font-size:.5em;font-weight:600;color:var(--muted);margin-left:2px;letter-spacing:0}
+.kpi .d{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:12px;color:var(--muted)}
+.kpi.big .v{font-size:clamp(28px,4vw,40px)}
+/* ---- tableaux ---- */
+.tw{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font-size:12px;font-weight:650;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:right;padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+td:first-child{white-space:normal}
+th:first-child,td:first-child{text-align:left}
+td.l,th.l{text-align:left}
+tr:last-child td{border-bottom:0}
+td button.lk{border:0;background:none;padding:0;color:var(--accent-text);text-decoration:underline;text-underline-offset:3px;font-weight:600}
+td.num{font-weight:600}
+details.data{margin-top:10px;font-size:13px;color:var(--muted)}
+details.data summary{cursor:pointer;font-weight:600}
+/* ---- barres HTML ---- */
+.hb{display:grid;grid-template-columns:minmax(90px,150px) minmax(0,1fr) auto;gap:6px 12px;align-items:center;font-size:14px}
+.hb .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb .t{height:12px;background:var(--surface-2);border-radius:0 6px 6px 0;position:relative}
+.hb .t i{position:absolute;inset:0 auto 0 0;border-radius:0 4px 4px 0;background:var(--accent)}
+html[data-pal="B"] .hb .t i{background:var(--b)}
+.hb .v{font-weight:600;text-align:right}
+.hb.pick .n,.hb.pick .t{cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block;flex:none}
+.ln{width:22px;height:0;border-top:3px solid;display:inline-block}
+/* ---- svg ---- */
+svg{display:block;max-width:100%;height:auto;overflow:visible}
+svg .tx{fill:var(--muted);font-size:11px;font-family:inherit}
+svg .tx.s{font-size:10px}
+svg .ax{stroke:var(--line);stroke-width:1;fill:none}
+svg .gr{stroke:var(--line);stroke-width:1;opacity:.7}
+svg .lb{fill:var(--text);font-size:11px;font-weight:650}
+.chartbox{position:relative}
+.tip{position:absolute;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:0 6px 24px #0003;padding:8px 12px;font-size:13px;line-height:1.45;pointer-events:none;white-space:nowrap}
+.tip b{display:block;margin-bottom:2px}
+.tip .r{display:flex;gap:10px;align-items:center;justify-content:space-between}
+/* ---- calendrier ---- */
+.cal{display:grid;grid-template-rows:repeat(7,11px);grid-auto-flow:column;grid-auto-columns:11px;gap:3px;justify-content:start}
+.cal-w{overflow-x:auto}
+.cal b,.mm b{display:block;border-radius:2px;background:var(--cal-empty)}
+.cal .x{visibility:hidden}
+.c-p1{background:var(--cal-p1)!important}.c-p2{background:var(--cal-p2)!important}.c-p3{background:var(--cal-p3)!important}.c-p4{background:var(--cal-p4)!important}
+.c-m1{background:var(--cal-m1)!important}.c-m2{background:var(--cal-m2)!important}.c-m3{background:var(--cal-m3)!important}.c-m4{background:var(--cal-m4)!important}
+.c-b1{background:var(--cal-b1)!important}.c-b2{background:var(--cal-b2)!important}.c-b3{background:var(--cal-b3)!important}.c-b4{background:var(--cal-b4)!important}
+.cal-ml{display:grid;grid-template-columns:repeat(12,1fr);font-size:11px;color:var(--muted);margin:0 0 4px;padding-left:0}
+.mms{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 12px}
+.mm .mt{font-size:12px;font-weight:650;color:var(--muted);margin-bottom:4px;text-transform:capitalize}
+.mm .g7{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.mm b{aspect-ratio:1;border-radius:2px}.mm .x{visibility:hidden}
+.lvl{display:inline-flex;gap:3px;align-items:center;font-size:12px;color:var(--muted)}
+.lvl i{width:12px;height:12px;border-radius:2px;display:inline-block}
+.tiles4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.tile{background:var(--surface-2);border-radius:var(--r-md);padding:10px 12px;border:0;text-align:left;color:inherit;min-width:0}
+.tile .l{font-size:12px;color:var(--muted);font-weight:600}.tile .v{font-size:20px;font-weight:var(--kpi-w);letter-spacing:-.02em}
+@container app (max-width:760px){.tiles4{grid-template-columns:repeat(2,minmax(0,1fr))}.cal-w .cal{display:none}}
+@container app (max-width:520px){.li{grid-template-columns:auto minmax(0,1fr)}.li .r{grid-column:1/-1;text-align:left;padding-left:0}td,th{padding-left:6px;padding-right:6px}table{font-size:13px}.c2.keep2{grid-template-columns:repeat(2,minmax(0,1fr))}.mms{grid-template-columns:repeat(3,1fr)}}
+/* matrice */
+.mx{display:grid;grid-template-columns:34px repeat(14,minmax(0,1fr)) 40px;gap:2px;font-size:11px;color:var(--muted);align-items:center}
+.mx .h{text-align:center}.mx .rt{text-align:right;padding-left:6px;font-weight:600;color:var(--text)}
+.mx .cl{aspect-ratio:1.25;border-radius:3px;background:var(--cal-empty)}
+.mx .rd{height:6px}
+/* histogramme */
+.hist{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;align-items:end;height:150px}
+.hist .col{display:flex;flex-direction:column;justify-content:flex-end;height:100%;align-items:stretch;font-size:12px;text-align:center;gap:4px}
+.hist .bar{background:var(--accent);border-radius:4px 4px 0 0;min-height:2px}
+html[data-pal="B"] .hist .bar{background:var(--b)}
+.hist .col span{color:var(--text);font-weight:600}
+.hl{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
+/* modes */
+.stk{display:flex;height:34px;border-radius:var(--r-sm);overflow:hidden;gap:2px}
+.stk div{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:650;color:#fff;min-width:2px;overflow:hidden}
+html[data-theme="dark"] .stk div{color:#0b0c10}
+.stk-l{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-size:13px}
+.stk-l span{display:inline-flex;align-items:center;gap:6px}
+/* listes */
+.list{display:flex;flex-direction:column}
+.li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.li:last-child{border-bottom:0}
+.li .a{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .b2{color:var(--muted);font-size:13px}
+.li .r{text-align:right;font-weight:600;white-space:nowrap}
+.li .ico{color:var(--muted);display:inline-grid;place-items:center;width:28px;height:28px;border-radius:var(--r-sm)}
+.li .ico svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sentence{font-size:clamp(17px,2.2vw,22px);line-height:1.35;font-weight:600;letter-spacing:-.01em;margin:0 0 6px}
+.sentence em{font-style:normal;font-weight:var(--kpi-w);color:var(--accent-text)}
+/* nuancier */
+.sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.swc{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.swc i{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);flex:none}
+.swc code{font:inherit;display:block;color:var(--text);font-weight:600}
+/* barre filtres mobile */
+.fbar{display:none}
+@container app (max-width:900px){.fbar{display:flex;gap:8px;align-items:center;position:sticky;top:var(--mqh,44px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);padding:8px 16px;overflow-x:auto}.fbar .btn{flex:none;padding:6px 12px}}
+.fbar .chip{flex:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+
+.layout{display:grid;grid-template-columns:280px minmax(0,1fr)}
+.side{background:var(--surface);border-right:1px solid var(--line);padding:18px 18px 28px;position:sticky;top:var(--mqh,44px);align-self:start;max-height:calc(100vh - var(--mqh,44px));overflow:auto;display:flex;flex-direction:column;gap:18px}
+.sh{display:flex;justify-content:space-between;align-items:center}.sh h2{font-size:17px;font-weight:var(--h-w)}
+.ibtn.sm{width:30px;height:30px}
+.fl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px}.fl .muted{text-transform:none;letter-spacing:0;font-weight:400}
+.fg .seg{display:flex}.fg .seg button{flex:1}
+.dates{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+input[type=text],input[type=search],.sel{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 10px;width:100%;min-width:0}
+.sel{width:auto;font-size:13px;padding:5px 8px}
+.sc{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sc .chip{cursor:pointer;font-size:12px;padding:2px 9px}.sc .chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.sc .chip button svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.opts{display:flex;flex-direction:column;margin-top:8px;max-height:176px;overflow:auto}
+.opt{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:4px 2px;font-size:14px}.opt em{font-style:normal;color:var(--muted);font-size:12px}
+.opt input{accent-color:var(--accent)}
+.main{padding:24px 28px 56px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.mapcard svg{width:100%}
+.mapcard .tip{box-shadow:0 6px 24px #0003}
+@container app (max-width:900px){.layout{display:block}.side{display:none;position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line)}.side.open{display:flex}.main{padding:16px 16px 40px}}
+.sel-add{display:inline-flex}.sel:disabled{opacity:.7}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 24px 56px}
+.ph{display:flex;flex-wrap:wrap;gap:20px 40px;justify-content:space-between;align-items:flex-end}
+.vt{font-size:clamp(30px,5vw,48px);font-weight:var(--kpi-w);letter-spacing:-.035em}
+.vs{margin:6px 0 12px;font-size:17px;color:var(--muted)}
+.tagrow{display:flex;flex-wrap:wrap;gap:8px}
+.b3{display:grid;grid-template-columns:minmax(110px,170px) minmax(0,1fr) 96px;gap:10px;align-items:center;font-size:13px;margin-bottom:4px}
+.b3 b{text-align:right;white-space:nowrap}.b3 .bn{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bt .sp{background:var(--p);display:inline-block;border-right:2px solid var(--surface)}.bt .sm{background:var(--m);display:inline-block}.bt:has(.sp){display:flex;border-radius:0 5px 5px 0;overflow:hidden}
+.bt{height:11px;background:var(--surface-2);border-radius:0 5px 5px 0;display:block}
+.bt i{display:block;height:100%;border-radius:0 4px 4px 0}
+.bt .f{background:var(--p)}.bt .a{background:var(--b);opacity:.55}.bt .s{background:repeating-linear-gradient(135deg,var(--b) 0 2px,transparent 2px 5px)}
+.cmps .row.c2{align-items:start}.cmp.full{margin-top:22px}
+.cmps{display:flex;flex-direction:column;gap:18px}
+.strip{padding:6px 0 4px}.trk{display:block;position:relative;height:22px;border-bottom:1px solid var(--line)}
+.trk .mn{position:absolute;bottom:0;width:3px;height:22px;margin-left:-1.5px;background:var(--text);border-radius:1px}
+.trk .me{position:absolute;bottom:0;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--surface)}
+.mqnote{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:12px;color:var(--muted);margin:0 0 14px;padding:6px 10px;border:1px dashed var(--line)}
+@container app (max-width:900px){.wrap{padding:20px 16px 40px!important}.b3{grid-template-columns:minmax(90px,120px) minmax(0,1fr) 96px}.c2{grid-template-columns:minmax(0,1fr)}}
+.b3 .sw{display:inline-block;vertical-align:-1px}
+</style></head>
+<body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<pattern id="h1" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--surface)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--y1)" stroke-width="2.4"/></pattern>
+<pattern id="h2" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(135)"><rect width="6" height="6" fill="var(--surface)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--y2)" stroke-width="2.4"/></pattern>
+<pattern id="hn" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--w-autre)" opacity=".25"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--w-autre)" stroke-width="2"/></pattern>
+</defs></svg>
+<div class="mq" role="toolbar" aria-label="Contrôles de la maquette"><b>Maquette</b><span class="g"><b>Thème</b><button data-set="theme:light" aria-pressed="true">Clair</button><button data-set="theme:dark" aria-pressed="false">Sombre</button></span><span class="g"><button data-set="m:1" aria-pressed="false">Aperçu mobile 375 px</button></span><span class="g nav"><a data-href="maquette-tableau-de-bord.html">Tableau de bord</a><a data-href="maquette-fiche-vol.html">Fiche vol</a><a data-href="maquette-pilote.html">Pilote</a><a data-href="maquette-bilan.html">Bilan</a><a data-href="maquette-comparer-sites.html" aria-current="page">Comparer des sites</a></span></div>
+<div class="stage"><div class="app">
+<header class="top"><div class="brand"><svg class="lg" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 18 9 7l4 6 2-3 6 8z" fill="var(--accent)"/></svg>Syride Traces</div><nav class="nav-app" aria-label="Navigation"><a href="#">Tableau de bord</a><a href="#">Vols</a><a href="#">Pilotes</a><a href="#">Sites</a><a href="#" aria-current="page">Comparer</a></nav><span class="upd">Données au 8 novembre 2026</span><button class="ibtn" data-toggle-theme aria-label="Basculer clair ou sombre"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button></header>
+<div class="fbar"><button class="btn" data-filters><svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filtres</button><span class="chip">Tout</span><span class="chip">3 pilotes</span><button class="btn">Réinitialiser</button></div>
+<div class="layout"><aside class="side" aria-label="Filtres">
+<div class="sh"><h2>Filtres</h2><button class="ibtn sm" aria-label="Replier la barre latérale"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button></div>
+<div class="fg"><div class="fl">Activité</div><div class="seg" role="group" aria-label="Activité"><button aria-pressed="true">Tout</button><button aria-pressed="false">Parapente</button><button aria-pressed="false">Paramoteur</button></div></div>
+<div class="fg"><div class="fl">Période</div><div class="dates"><input type="text" value="1ᵉʳ janv. 2014" aria-label="Du"><input type="text" value="8 nov. 2026" aria-label="Au"></div>
+<div class="sc"><button class="chip">Cette année</button><button class="chip">12 derniers mois</button><button class="chip">2025</button><button class="chip">2024</button><button class="chip on">Tout</button></div></div>
+<div class="fg"><div class="fl">Pilotes <span class="muted">· 3 choisis sur 23</span></div><input class="srch" type="search" placeholder="Rechercher un pilote" aria-label="Rechercher un pilote"><div class="opts"><label class="opt"><input type="checkbox" checked><span>AdrienM</span><em>505</em></label><label class="opt"><input type="checkbox" checked><span>Au_Phil_du_vent</span><em>734</em></label><label class="opt"><input type="checkbox" checked><span>LiLi06</span><em>572</em></label><label class="opt"><input type="checkbox"><span>air race pro</span><em>1426</em></label><label class="opt"><input type="checkbox"><span>j2f</span><em>1059</em></label><label class="opt"><input type="checkbox"><span>Thomas16</span><em>660</em></label><label class="opt"><input type="checkbox"><span>yanis</span><em>1049</em></label></div></div>
+<div class="fg act"><div class="fl">Filtres actifs</div><div class="sc"><span class="chip">Tout <button aria-label="Retirer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span><span class="chip">AdrienM <button aria-label="Retirer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span><span class="chip">Au_Phil_du_vent <button aria-label="Retirer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span><span class="chip">LiLi06 <button aria-label="Retirer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></div><button class="btn" style="margin-top:8px">Réinitialiser</button></div>
+</aside>
+<main class="main">
+<div class="wrap" style="padding:20px 24px 40px"><div class="stack" style="gap:20px">
+<div class="ph"><div><div class="eyebrow" style="margin-bottom:8px">Comparer</div><h1 class="vt">Comparer des sites</h1><p class="vs">Calculé sur les vols des pilotes sélectionnés dans les filtres : AdrienM, Au_Phil_du_vent et LiLi06, toutes périodes.</p></div><div class="seg" role="group" aria-label="Mode de comparaison"><button aria-pressed="true">Sites</button><button aria-pressed="false">Pilotes</button><button aria-pressed="false">Années</button></div></div>
+<section class="card"><div class="ch"><h2>Sites choisis</h2><p class="sub">De 2 à 4 sites. Chaque site garde sa couleur dans toute la page.</p></div><div class="tagrow"><span class="chip"><i class="sw" style="background:var(--c1);width:10px;height:10px;border-radius:50%"></i>Magnac Lavalette <button aria-label="Retirer Magnac Lavalette"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span><span class="chip"><i class="sw" style="background:var(--c2);width:10px;height:10px;border-radius:50%"></i>Plateforme Dirac <button aria-label="Retirer Plateforme Dirac"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span><span class="chip"><i class="sw" style="background:var(--c3);width:10px;height:10px;border-radius:50%"></i>Fayards <button aria-label="Retirer Fayards"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span><span class="chip"><i class="sw" style="background:var(--c4);width:10px;height:10px;border-radius:50%"></i>Montlambert <button aria-label="Retirer Montlambert"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span><span class="sel-add"><select class="sel" aria-label="Ajouter un site" disabled><option>Ajouter un site (4 maximum)</option></select></span></div></section>
+<section class="card"><div class="ch"><h2>Côte à côte</h2><p class="sub">634 vols des 3 pilotes sur ces 4 sites. Les vols sans mesure (valeur ≤ 0) sont ignorés dans les moyennes.</p></div><div class="cmps"><div class="row c2" style="gap:22px 36px"><div class="cmp"><div class="cl">Nombre de vols</div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c1);margin-right:6px"></i>Magnac Lavalette</span><span class="bt"><i style="width:100.0%;background:var(--c1)"></i></span><b>449</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c2);margin-right:6px"></i>Plateforme Dirac</span><span class="bt"><i style="width:18.7%;background:var(--c2)"></i></span><b>84</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c3);margin-right:6px"></i>Fayards</span><span class="bt"><i style="width:12.2%;background:var(--c3)"></i></span><b>55</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c4);margin-right:6px"></i>Montlambert</span><span class="bt"><i style="width:10.2%;background:var(--c4)"></i></span><b>46</b></div></div><div class="cmp"><div class="cl">Nombre de pilotes</div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c1);margin-right:6px"></i>Magnac Lavalette</span><span class="bt"><i style="width:100.0%;background:var(--c1)"></i></span><b>2</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c2);margin-right:6px"></i>Plateforme Dirac</span><span class="bt"><i style="width:100.0%;background:var(--c2)"></i></span><b>2</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c3);margin-right:6px"></i>Fayards</span><span class="bt"><i style="width:100.0%;background:var(--c3)"></i></span><b>2</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c4);margin-right:6px"></i>Montlambert</span><span class="bt"><i style="width:100.0%;background:var(--c4)"></i></span><b>2</b></div></div><div class="cmp"><div class="cl">Durée moyenne</div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c1);margin-right:6px"></i>Magnac Lavalette</span><span class="bt"><i style="width:30.1%;background:var(--c1)"></i></span><b>16 min</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c2);margin-right:6px"></i>Plateforme Dirac</span><span class="bt"><i style="width:66.6%;background:var(--c2)"></i></span><b>36 min</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c3);margin-right:6px"></i>Fayards</span><span class="bt"><i style="width:59.0%;background:var(--c3)"></i></span><b>32 min</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c4);margin-right:6px"></i>Montlambert</span><span class="bt"><i style="width:100.0%;background:var(--c4)"></i></span><b>55 min</b></div></div><div class="cmp"><div class="cl">Distance moyenne</div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c1);margin-right:6px"></i>Magnac Lavalette</span><span class="bt"><i style="width:33.6%;background:var(--c1)"></i></span><b>6,9 km</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c2);margin-right:6px"></i>Plateforme Dirac</span><span class="bt"><i style="width:100.0%;background:var(--c2)"></i></span><b>20,4 km</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c3);margin-right:6px"></i>Fayards</span><span class="bt"><i style="width:79.0%;background:var(--c3)"></i></span><b>16,1 km</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c4);margin-right:6px"></i>Montlambert</span><span class="bt"><i style="width:55.1%;background:var(--c4)"></i></span><b>11,2 km</b></div></div><div class="cmp"><div class="cl">Plafond moyen</div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c1);margin-right:6px"></i>Magnac Lavalette</span><span class="bt"><i style="width:37.2%;background:var(--c1)"></i></span><b>475 m</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c2);margin-right:6px"></i>Plateforme Dirac</span><span class="bt"><i style="width:57.2%;background:var(--c2)"></i></span><b>730 m</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c3);margin-right:6px"></i>Fayards</span><span class="bt"><i style="width:53.4%;background:var(--c3)"></i></span><b>682 m</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c4);margin-right:6px"></i>Montlambert</span><span class="bt"><i style="width:100.0%;background:var(--c4)"></i></span><b>1 276 m</b></div></div><div class="cmp"><div class="cl">Vitesse moyenne</div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c1);margin-right:6px"></i>Magnac Lavalette</span><span class="bt"><i style="width:58.9%;background:var(--c1)"></i></span><b>18,3 km/h</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c2);margin-right:6px"></i>Plateforme Dirac</span><span class="bt"><i style="width:100.0%;background:var(--c2)"></i></span><b>31,1 km/h</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c3);margin-right:6px"></i>Fayards</span><span class="bt"><i style="width:90.6%;background:var(--c3)"></i></span><b>28,2 km/h</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c4);margin-right:6px"></i>Montlambert</span><span class="bt"><i style="width:40.6%;background:var(--c4)"></i></span><b>12,6 km/h</b></div></div><div class="cmp"><div class="cl">Vario max moyen</div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c1);margin-right:6px"></i>Magnac Lavalette</span><span class="bt"><i style="width:100.0%;background:var(--c1)"></i></span><b>4,8 m/s</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c2);margin-right:6px"></i>Plateforme Dirac</span><span class="bt"><i style="width:58.9%;background:var(--c2)"></i></span><b>2,8 m/s</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c3);margin-right:6px"></i>Fayards</span><span class="bt"><i style="width:67.3%;background:var(--c3)"></i></span><b>3,2 m/s</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c4);margin-right:6px"></i>Montlambert</span><span class="bt"><i style="width:42.2%;background:var(--c4)"></i></span><b>2,0 m/s</b></div></div></div><div class="cmp full"><div class="cl">Part parapente et paramoteur</div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c1);margin-right:6px"></i>Magnac Lavalette</span><span class="bt"><i class="sp" style="width:69.5%"></i><i class="sm" style="width:30.5%"></i></span><b>69 % / 31 %</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c2);margin-right:6px"></i>Plateforme Dirac</span><span class="bt"><i class="sp" style="width:0.0%"></i><i class="sm" style="width:100.0%"></i></span><b>0 % / 100 %</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c3);margin-right:6px"></i>Fayards</span><span class="bt"><i class="sp" style="width:0.0%"></i><i class="sm" style="width:100.0%"></i></span><b>0 % / 100 %</b></div><div class="b3"><span class="bn"><i class="sw" style="background:var(--c4);margin-right:6px"></i>Montlambert</span><span class="bt"><i class="sp" style="width:100.0%"></i><i class="sm" style="width:0.0%"></i></span><b>100 % / 0 %</b></div></div></div><div class="legend"><span><i class="sw" style="background:var(--c1)"></i>Magnac Lavalette</span><span><i class="sw" style="background:var(--c2)"></i>Plateforme Dirac</span><span><i class="sw" style="background:var(--c3)"></i>Fayards</span><span><i class="sw" style="background:var(--c4)"></i>Montlambert</span><span><i class="sw" style="background:var(--p)"></i>Parapente</span><span><i class="sw" style="background:var(--m)"></i>Paramoteur</span></div><details class="data"><summary>Voir les données</summary><div class="tw"><table><thead><tr><th class="l">Mesure</th><th>Magnac Lavalette</th><th>Plateforme Dirac</th><th>Fayards</th><th>Montlambert</th></tr></thead><tbody><tr><td>Nombre de vols</td><td>449</td><td>84</td><td>55</td><td>46</td></tr><tr><td>Nombre de pilotes</td><td>2</td><td>2</td><td>2</td><td>2</td></tr><tr><td>Durée moyenne</td><td>16 min</td><td>36 min</td><td>32 min</td><td>55 min</td></tr><tr><td>Distance moyenne</td><td>6,9 km</td><td>20,4 km</td><td>16,1 km</td><td>11,2 km</td></tr><tr><td>Plafond moyen</td><td>475 m</td><td>730 m</td><td>682 m</td><td>1 276 m</td></tr><tr><td>Vitesse moyenne</td><td>18,3 km/h</td><td>31,1 km/h</td><td>28,2 km/h</td><td>12,6 km/h</td></tr><tr><td>Vario max moyen</td><td>4,8 m/s</td><td>2,8 m/s</td><td>3,2 m/s</td><td>2,0 m/s</td></tr><tr><td>Part parapente</td><td>69 %</td><td>0 %</td><td>0 %</td><td>100 %</td></tr></tbody></table></div></details><p class="small muted" style="margin:12px 0 0">Chaque barre est proportionnelle au plus grand des sites choisis. Le nombre de pilotes compte uniquement les pilotes sélectionnés. Un site sans vol des pilotes sélectionnés s’affiche « sans donnée ».</p></section>
+</div></div>
+<footer class="foot"><span>Données issues de syride.com. Outil personnel, non affilié à Syride.</span><span>Mise à jour : 8 novembre 2026</span><a href="#">À propos</a></footer>
+</main></div>
+</div></div>
+<script>
+(function(){
+var h=document.documentElement;
+function parse(){var m=(location.hash||'').replace('#','').split('-');if(m[0]==='A'||m[0]==='B')m.shift();return {theme:(m[0]==='dark'||m[0]==='light')?m[0]:null,w:m[1]==='m'}}
+function sys(){return (window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}
+var st=parse(); var theme=st.theme||sys(), mob=st.w;
+function apply(){h.setAttribute('data-theme',theme);h.classList.toggle('m375',mob);
+ document.querySelectorAll('[data-set]').forEach(function(b){var k=b.dataset.set.split(':');var on=(k[0]==='theme'&&theme===k[1])||(k[0]==='m'&&mob);b.setAttribute('aria-pressed',on?'true':'false')});
+ document.querySelectorAll('.mq .nav a').forEach(function(a){var base=a.getAttribute('data-href');a.href=base+'#'+theme+(mob?'-m':'')});
+ var tb=document.querySelector('.mq');if(tb)h.style.setProperty('--mqh',tb.offsetHeight+'px');
+ try{history.replaceState(null,'','#'+theme+(mob?'-m':''))}catch(e){}}
+document.addEventListener('click',function(e){var b=e.target.closest('[data-set]');if(b){var k=b.dataset.set.split(':');if(k[0]==='theme')theme=k[1];else if(k[0]==='m')mob=!mob;apply();return}
+ var t=e.target.closest('[data-toggle-theme]');if(t){theme=theme==='dark'?'light':'dark';apply();return}
+ var f=e.target.closest('[data-filters]');if(f){var s=document.querySelector('.side');if(s){s.classList.toggle('open')}return}
+ var sg=e.target.closest('.seg button');if(sg){sg.parentNode.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed','false')});sg.setAttribute('aria-pressed','true')}
+ var y=e.target.closest('.tabs button');if(y){y.parentNode.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed','false')});y.setAttribute('aria-pressed','true')}});
+window.addEventListener('hashchange',function(){var s=parse();theme=s.theme||theme;mob=s.w;apply()});
+document.addEventListener('click',function(e){var q=e.target.closest('[data-st]');if(q){document.querySelectorAll('[data-state]').forEach(function(x){x.hidden=x.dataset.state!==q.dataset.st})}var v=e.target.closest('[data-vw]');if(v){document.querySelectorAll('[data-view]').forEach(function(x){x.hidden=x.dataset.view!==v.dataset.vw})}});
+window.addEventListener('resize',apply);
+apply();
+})();
+</script>
+</body></html>

@@ -914,7 +914,7 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - [x] 2.4 Store des filtres et synchronisation de l'URL, cascades avec compteurs
 - [x] 2.5 `stats.ts`, `metrics.ts`, `rhythm.ts`, `records.ts` ; non-régression contre `app_functions.py` **et** `report_data.py` au vert
 - [x] 2.6 Formatage français (règles de `report_format.py`)
-- [ ] 2.7 Jetons (2 directions de palette), thèmes Mantine, ECharts et MapLibre ; 4 maquettes publiées (dont le Bilan)
+- [x] 2.7 Jetons (2 directions de palette), thèmes Mantine, ECharts et MapLibre ; 5 maquettes dans `web/design/` (dont le Bilan et Comparer en mode Sites), relues en local plutôt que publiées ; captures hors Git
 - [x] 2.7b **Maquettes validées par Adrien** (15/11/2026 : palette B « Encre » inversée, retouches D13 à D16)
 - [x] 2.8 Gabarit, navigation, barre de filtres responsive, thème clair et sombre, 404
 - [x] 2.9 `_redirects` et `_headers`
