@@ -13,6 +13,23 @@
 !/name_corrections.json
 !/uniformisation.json
 !/sites_coordinates.json
+# Refonte webapp (ROADMAP_WEBAPP.md)
+!/ROADMAP_WEBAPP.md
+!/Makefile
+!/web/
+!/.githooks/
+
+# --- Webapp : dépendances, builds et données générées ---------------
+# Les données réelles vont du Mac vers Cloudflare (wrangler), jamais sur GitHub.
+web/node_modules/
+web/dist/
+web/public/data/
+web/.wrangler/
+web/playwright-report/
+web/test-results/
+*.gpx
+*.igc
+*.kml
 
 # --- Secrets ---------------------------------------------------------
 .env
