@@ -1,16 +1,21 @@
 import { AppShell, Box, Drawer, ScrollArea, Stack } from '@mantine/core';
 import { useDisclosure, useHotkeys, useMediaQuery } from '@mantine/hooks';
+import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router';
 import { ActiveFilters } from '@/components/ActiveFilters';
 import { AppFooter } from '@/components/AppFooter';
 import { AppHeader, useToggleColorScheme } from '@/components/AppHeader';
-import { FilterPanel } from '@/components/FilterPanel';
+import { FilterPanel, PILOT_SEARCH_ID } from '@/components/FilterPanel';
+import { ShortcutsHelp } from '@/components/ShortcutsHelp';
 import { useFiltersStore } from '@/store/filters';
+import { useHighlightStore } from '@/store/highlight';
 
 /** En dessous de cette largeur (px) : filtres dans un tiroir du bas plutôt qu'une barre latérale. */
 export const MOBILE_MAX_WIDTH = 767;
 const NAVBAR_WIDTH = 300;
 const HEADER_HEIGHT = 56;
+/** Caractères des touches 1, 2, 3 sur un clavier AZERTY, sans Maj. */
+const AZERTY_DIGITS = ['&', 'é', '"'] as const;
 
 export function AppLayout() {
   const isMobile =
@@ -19,23 +24,58 @@ export function AppLayout() {
   const [drawerOpen, drawer] = useDisclosure(false);
   const setFilters = useFiltersStore((s) => s.setFilters);
   const { toggle: toggleTheme } = useToggleColorScheme();
+  const [helpOpen, help] = useDisclosure(false);
+  const [wantPilotFocus, setWantPilotFocus] = useState(false);
+  const filtersOpen = isMobile ? drawerOpen : sidebarOpen;
+  const toggleFilters = isMobile ? drawer.toggle : sidebar.toggle;
+
+  const focusPilotSearch = () => {
+    if (!filtersOpen) (isMobile ? drawer.open : sidebar.open)();
+    setWantPilotFocus(true);
+  };
+  const showHelp = () => help.open();
+  // Le panneau (ou le tiroir, animé) peut ne pas être monté tout de suite : on réessaie quelques images.
+  useEffect(() => {
+    if (!wantPilotFocus || !filtersOpen) return;
+    let tries = 0;
+    let raf = 0;
+    const attempt = () => {
+      const el = document.getElementById(PILOT_SEARCH_ID);
+      if (el) {
+        el.focus();
+        setWantPilotFocus(false);
+      } else if (tries < 60) {
+        tries += 1;
+        raf = requestAnimationFrame(attempt);
+      } else setWantPilotFocus(false);
+    };
+    attempt();
+    return () => cancelAnimationFrame(raf);
+  }, [wantPilotFocus, filtersOpen]);
 
   useHotkeys([
     ['t', toggleTheme],
-    ['1', () => setFilters({ activity: 'tout' })],
-    ['2', () => setFilters({ activity: 'parapente' })],
-    ['3', () => setFilters({ activity: 'paramoteur' })],
+    // Chiffres : sur AZERTY, la rangée du haut donne « & é " » sans Maj et « 1 2 3 » avec Maj.
+    ...(['tout', 'parapente', 'paramoteur'] as const).flatMap((activity, i) =>
+      [String(i + 1), `shift+${i + 1}`, AZERTY_DIGITS[i]].map(
+        (key) => [key, () => setFilters({ activity })] as [string, () => void],
+      ),
+    ),
+    // Sur clavier AZERTY, « / » et « ? » demandent Maj : on accepte les deux états.
+    ['/', focusPilotSearch],
+    ['shift+/', focusPilotSearch],
+    ['?', showHelp],
+    ['shift+?', showHelp],
     [
       'Escape',
       () => {
+        useHighlightStore.getState().setHighlight(null);
+        help.close();
         drawer.close();
         if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
       },
     ],
   ]);
-
-  const filtersOpen = isMobile ? drawerOpen : sidebarOpen;
-  const toggleFilters = isMobile ? drawer.toggle : sidebar.toggle;
 
   return (
     <AppShell
@@ -81,6 +121,8 @@ export function AppLayout() {
           <FilterPanel />
         </Drawer>
       )}
+
+      <ShortcutsHelp opened={helpOpen} onClose={help.close} />
 
       <AppShell.Main
         component="div"

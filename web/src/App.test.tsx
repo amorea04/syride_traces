@@ -8,9 +8,15 @@ import { App } from '@/App';
 import { resetDataCaches } from '@/data/load';
 import { defaultFilters } from '@/lib/filters';
 import { useFiltersStore } from '@/store/filters';
+import { useHighlightStore } from '@/store/highlight';
 import { mantineTheme } from '@/theme';
 import { installDomMocks } from '../tests/dom-mocks';
 import { FIXTURES_DIR, fixtureFlights } from '../tests/fixtures';
+
+// La page d'accueil (tableau de bord) monte des graphiques ECharts (canvas) et une carte MapLibre
+// (WebGL), absents de jsdom : on les remplace par des éléments inertes.
+vi.mock('echarts-for-react', () => ({ default: () => <div data-testid="echarts" /> }));
+vi.mock('@/components/map/SitesMap', () => ({ SitesMap: () => <div data-testid="sites-map" /> }));
 
 const flights = fixtureFlights();
 const parapente = flights.filter((f) => f.activity === 'parapente').length;
@@ -81,6 +87,45 @@ describe('application', () => {
     await waitFor(() => expect(count()).toBe(`${parapente} vols`));
     fireEvent.keyDown(document.body, { key: '1' });
     await waitFor(() => expect(count()).toBe(`${flights.length} vols`));
+  });
+
+  it('les raccourcis 1/2/3 marchent aussi sur AZERTY (« é » sans Maj, « 1 » avec Maj)', async () => {
+    renderApp();
+    await screen.findByRole('heading', { level: 1 });
+    fireEvent.keyDown(document.body, { key: 'é' });
+    await waitFor(() => expect(count()).toBe(`${parapente} vols`));
+    fireEvent.keyDown(document.body, { key: '1', shiftKey: true });
+    await waitFor(() => expect(count()).toBe(`${flights.length} vols`));
+  });
+
+  it('« ? » ouvre l’aide, Échap la ferme et efface le surlignage', async () => {
+    renderApp();
+    await screen.findByRole('heading', { level: 1 });
+    useHighlightStore.getState().setHighlight({ kind: 'site', siteId: 1 });
+    fireEvent.keyDown(document.body, { key: '?', shiftKey: true });
+    expect(await screen.findByRole('dialog', { name: 'Raccourcis clavier' })).toBeInTheDocument();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(useHighlightStore.getState().highlight).toBeNull();
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Raccourcis clavier' })).not.toBeInTheDocument());
+  });
+
+  it('« / » met le focus sur la recherche de pilotes', async () => {
+    renderApp();
+    await screen.findByRole('heading', { level: 1 });
+    fireEvent.keyDown(document.body, { key: '/' });
+    await waitFor(() => expect(document.activeElement).toBe(document.getElementById('filtre-pilotes')));
+  });
+
+  it('les raccourcis sont ignorés dans un champ de saisie et avec Ctrl', async () => {
+    renderApp();
+    await screen.findByRole('heading', { level: 1 });
+    const input = document.getElementById('filtre-pilotes') as HTMLElement;
+    input.focus();
+    fireEvent.keyDown(input, { key: '2' });
+    fireEvent.keyDown(document.body, { key: '2', ctrlKey: true });
+    fireEvent.keyDown(document.body, { key: '?', shiftKey: true, metaKey: true });
+    expect(count()).toBe(`${flights.length} vols`);
+    expect(screen.queryByRole('dialog', { name: 'Raccourcis clavier' })).not.toBeInTheDocument();
   });
 
   it('les pages à paramètres et la 404 s’affichent', async () => {

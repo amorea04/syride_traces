@@ -736,7 +736,7 @@ Peut tourner **en parallèle** de la phase 2.1 (scaffold).
 - **5.2** `/sites` et `/site/:id` : stats, pilotes, saisonnalité mois × heure, derniers vols (liens Syride), records du site.
 - **5.3** `/comparer` : 2 à 4 pilotes ou années, KPI côte à côte avec pastilles, cumuls superposés avec réticule commun, graphiques en haltère (T34). **Pas de radar.**
 - **5.4** `/records` : top 10 par métrique, avec les filtres appliqués.
-- **5.5** `/a-propos` : glossaire des métriques, compteurs de qualité des données.
+- **5.5** `/a-propos` : glossaire des métriques, compteurs de qualité des données, crédit « Créée par : Adrien Moreau » (ici seulement, pas dans le pied de page).
 - ~~**5.6** Publication des rapports HTML~~ : abandonné (D4).
 - **Sortie** : toutes les pages du §5 sont livrées, sauf le Bilan (phase 5B).
 
@@ -921,19 +921,19 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - [x] PR relue (`/code-review` medium, 10 constats corrigés) et fusionnée · **`/clear`**
 
 ### Phase 3 : Tableau de bord
-- [ ] 3.0 Bloc « Activité collective » (saison du groupe, derniers vols, ce mois-ci, records récents)
-- [ ] 3.1 Bandeau de KPI et variations
-- [ ] 3.2 Tableau des caractéristiques et liens vers les records
-- [ ] 3.3 `StatChart` (19 métriques × 8 axes), clic qui ajoute un filtre, « voir les données »
-- [ ] 3.4 Évolution temporelle
-- [ ] 3.5 Bloc Rythme : calendrier, tuiles série, pause, semaine et régularité, saisons, fiche jour
-- [ ] 3.5 bis Matrice jour × heure, histogramme des durées, modes de vol, voiles, ruban voile × mois, instruments, nuage de points
-- [ ] 3.5 ter Pastilles d'écart, mention « Données partielles », surlignage croisé, raccourcis clavier
-- [ ] 3.6 Carte des sites MapLibre (clusters, popup, heatmap)
-- [ ] 3.7 États vides et robustesse
-- [ ] 3.8 Tests e2e du tableau de bord
-- [ ] 3.9 Revue de parité avec l'app Dash : 100 % couvert
-- [ ] PR relue et fusionnée · **`/clear`**
+- [x] 3.0 Bloc « Activité collective » (saison du groupe, derniers vols, ce mois-ci, records récents)
+- [x] 3.1 Bandeau de KPI et variations (variation affichée seulement si une date de début est filtrée : même durée juste avant)
+- [x] 3.2 Tableau des caractéristiques et liens vers les records
+- [x] 3.3 `StatChart` (19 métriques × 8 axes), clic qui ajoute un filtre, « voir les données »
+- [x] 3.4 Évolution temporelle
+- [x] 3.5 Bloc Rythme : calendrier, tuiles série, pause, semaine et régularité, saisons, fiche jour
+- [x] 3.5 bis Matrice jour × heure, histogramme des durées, modes de vol, voiles, ruban voile × mois (24 derniers mois), instruments, nuage de points
+- [x] 3.5 ter Pastilles d'écart, mention « Données partielles », surlignage croisé, raccourcis clavier (`1 2 3` aussi en AZERTY, `t`, `/`, `?`, Échap)
+- [x] 3.6 Carte des sites MapLibre (clusters, popup avec pilotes, heatmap ; cadrage sur 90 % des vols, quantiles pondérés)
+- [x] 3.7 États vides et robustesse (e2e : filtre sans vol, aucune erreur)
+- [x] 3.8 Tests e2e du tableau de bord (`web/e2e/tableau-de-bord.spec.ts`, 7 scénarios ; 565 tests unitaires, 13 e2e au vert)
+- [x] 3.9 Revue de parité avec l'app Dash (`web/PARITE_DASH.md`) : 94 fonctions, 37 présentes, 40 remplacées, 13 corrigées, 3 abandonnées, 1 reportée (crédit « Créée par » : page À propos seulement, tâche 5.5). Années non contiguës : non reprises (décision d'Adrien)
+- [x] PR relue (`/code-review medium`, 10 constats corrigés) et fusionnée (PR #4) · **`/clear`**
 
 ### Phase 4 : Vols
 - [ ] 4.1 Liste des vols virtualisée et export CSV

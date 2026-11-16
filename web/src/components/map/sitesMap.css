@@ -1,0 +1,62 @@
+/* Popup et contrôles de la carte des sites : mêmes jetons que le reste de l'application. */
+.sr-map-popup {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--sr-text);
+  font-variant-numeric: tabular-nums;
+}
+.sr-map-popup-title {
+  display: block;
+  margin-bottom: 2px;
+  padding-right: 14px;
+  font-size: 14px;
+}
+.sr-map-popup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+}
+.sr-map-popup-actions a,
+.sr-map-popup-actions button {
+  font: inherit;
+  color: var(--sr-text);
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.maplibregl-popup-content {
+  background: var(--sr-surface);
+  color: var(--sr-text);
+  border-radius: 5px;
+  padding: 10px 12px;
+}
+.maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: var(--sr-surface);
+}
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: var(--sr-surface);
+}
+.maplibregl-popup-close-button {
+  color: var(--sr-muted);
+}
+.maplibregl-ctrl.maplibregl-ctrl-attrib {
+  background: color-mix(in srgb, var(--sr-surface) 80%, transparent);
+  color: var(--sr-muted);
+}
+.maplibregl-ctrl-attrib a {
+  color: var(--sr-muted);
+}
+.maplibregl-ctrl-group {
+  background: var(--sr-surface);
+}
+:root[data-mantine-color-scheme='dark'] .maplibregl-ctrl-group .maplibregl-ctrl-icon {
+  filter: invert(1);
+}

@@ -15,6 +15,7 @@
  *   - un lien Syride n'est pas construit ici : un record porte `pilot` et `syrideNum` (voir `syrideFlightUrl`).
  */
 
+import { MEASURES } from '@/lib/measures';
 import type { Flight } from '@/data/flight';
 import { groupBy } from '@/lib/collections';
 import {
@@ -373,15 +374,6 @@ export function computeHighlights(flights: readonly Flight[]): Highlights {
 export const MEASURE_KEYS = ['plafond', 'distance', 'gain', 'vitesseMax', 'vario', 'g'] as const;
 export type CoverageKey = (typeof MEASURE_KEYS)[number];
 
-const COVERAGE_VALUE: Readonly<Record<CoverageKey, (f: Flight) => number | null>> = {
-  plafond: (f) => f.ceilingM,
-  distance: (f) => f.distKm,
-  gain: (f) => f.gainM,
-  vitesseMax: (f) => f.speedMax,
-  vario: (f) => f.varioMax,
-  g: (f) => f.gMax,
-};
-
 export interface Coverage {
   n: number;
   /** Vols où chaque mesure existe (> 0). */
@@ -406,7 +398,7 @@ export function computeCoverage(
 ): Coverage {
   const n = flights.length;
   const measuredCounts = {} as Record<CoverageKey, number>;
-  for (const key of MEASURE_KEYS) measuredCounts[key] = positives(flights.map(COVERAGE_VALUE[key])).length;
+  for (const key of MEASURE_KEYS) measuredCounts[key] = positives(flights.map(MEASURES[key].of)).length;
   const sources = { gpx: 0, fiche: 0, aucune: 0 };
   for (const f of flights) sources[f.source] += 1;
   const noPosition = siteHasCoords

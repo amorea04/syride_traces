@@ -44,6 +44,7 @@ function countsOf<T extends string | number>(options: FilterOption<T>[]): Map<st
 }
 
 interface CountedSelectProps {
+  id?: string;
   label: string;
   placeholder: string;
   data: ComboboxItem[];
@@ -52,9 +53,13 @@ interface CountedSelectProps {
   onChange: (value: string[]) => void;
 }
 
-function CountedMultiSelect({ label, placeholder, data, counts, value, onChange }: CountedSelectProps) {
+/** Identifiant du champ de recherche des pilotes (raccourci « / »). */
+export const PILOT_SEARCH_ID = 'filtre-pilotes';
+
+function CountedMultiSelect({ id, label, placeholder, data, counts, value, onChange }: CountedSelectProps) {
   return (
     <MultiSelect
+      id={id}
       label={label}
       placeholder={value.length === 0 ? placeholder : undefined}
       data={data}
@@ -123,6 +128,7 @@ export function FilterPanel() {
       </div>
 
       <CountedMultiSelect
+        id={PILOT_SEARCH_ID}
         label="Pilotes"
         placeholder="Tous les pilotes"
         data={toItems(options.pilots)}
