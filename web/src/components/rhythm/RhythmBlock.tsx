@@ -5,7 +5,7 @@ import { Section } from '@/components/common/Section';
 import type { Flight } from '@/data/flight';
 import { EMPTY, fmtDuration, fmtHours, fmtInt, fmtPercent, fmtRange, plural } from '@/lib/format';
 import { computeRhythm, seasonsBreakdown, SEASONS, type DateSpan } from '@/lib/rhythm';
-import { referenceDate, weekendShareOf, yearEnd, yearsOf } from '@/lib/rhythmBlocks';
+import { weekendShareOf, yearEnd, yearsOf } from '@/lib/rhythmBlocks';
 import { useHighlightStore } from '@/store/highlight';
 import { CalendarHeatmap } from './CalendarHeatmap';
 import { DaySheet } from './DaySheet';
@@ -14,8 +14,8 @@ import './rhythm.css';
 interface Props {
   /** Vols de la sélection courante. */
   flights: readonly Flight[];
-  /** Date de référence « aujourd'hui » (`meta.data_updated_at`) ; repli sur le dernier vol de la sélection. */
-  referenceDate?: string | null;
+  /** Date de référence « aujourd'hui » (`referenceDate` de `lib/dashboard`). */
+  referenceDate: string;
 }
 
 interface TileProps {
@@ -59,8 +59,7 @@ export function RhythmBlock({ flights, referenceDate: reference }: Props) {
   const [selected, setSelected] = useState<number | null>(null);
   const [openDay, setOpenDay] = useState<string | null>(null);
   const year = selected !== null && years.includes(selected) ? selected : (years[0] ?? null);
-  const ref = useMemo(() => referenceDate(reference ?? undefined, flights), [reference, flights]);
-  const end = year === null ? '' : yearEnd(year, ref);
+  const end = year === null ? '' : yearEnd(year, reference);
   const rhythm = useMemo(
     () => (year === null ? null : computeRhythm(flights.filter((f) => f.year === year), year, end)),
     [flights, year, end],

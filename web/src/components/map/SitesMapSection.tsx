@@ -56,7 +56,7 @@ export function SitesMapSection({ flights }: Props) {
       ) : (
         <>
           <SitesMap
-            flights={flights}
+            data={data}
             height={isMobile ? MAP_HEIGHT_MOBILE : MAP_HEIGHT}
             heatmap={mode === 'heatmap'}
           />

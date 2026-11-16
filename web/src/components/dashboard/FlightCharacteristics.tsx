@@ -4,7 +4,8 @@ import { Section } from '@/components/common/Section';
 import { EmptyNote } from '@/components/dashboard/shared';
 import { FilterLink } from '@/components/FilterLink';
 import type { Flight } from '@/data/flight';
-import { characteristics, formatCharacteristic } from '@/lib/dashboard';
+import { characteristics } from '@/lib/dashboard';
+import { formatMeasure } from '@/lib/measures';
 import { EMPTY, fmtDateShort } from '@/lib/format';
 
 interface Props {
@@ -39,10 +40,10 @@ export function FlightCharacteristics({ flights }: Props) {
                 <Table.Tr key={r.id}>
                   <Table.Td>{r.label}</Table.Td>
                   <Table.Td ta="right" style={{ whiteSpace: 'nowrap' }}>
-                    {r.mean === null ? EMPTY : formatCharacteristic(r, r.mean)}
+                    {r.mean === null ? EMPTY : formatMeasure(r, r.mean)}
                   </Table.Td>
                   <Table.Td ta="right" style={{ whiteSpace: 'nowrap' }}>
-                    {r.median === null ? EMPTY : formatCharacteristic(r, r.median)}
+                    {r.median === null ? EMPTY : formatMeasure(r, r.median)}
                   </Table.Td>
                   <Table.Td ta="right" style={{ whiteSpace: 'nowrap' }}>
                     {r.max === null || r.maxFlight === null ? (
@@ -50,7 +51,7 @@ export function FlightCharacteristics({ flights }: Props) {
                     ) : (
                       <>
                         <FilterLink to={`/vol/${r.maxFlight.key}`} fw={650}>
-                          {formatCharacteristic(r, r.max)}
+                          {formatMeasure(r, r.max)}
                         </FilterLink>
                         <Text span size="xs" c="dimmed">
                           {` ${r.maxFlight.pilot}, ${fmtDateShort(r.maxFlight.date)}`}

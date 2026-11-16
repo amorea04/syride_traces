@@ -15,7 +15,6 @@ import {
   monthRange,
   neighborFlownDay,
   partialData,
-  referenceDate,
   scatterPoints,
   weekendShareOf,
   wingRibbon,
@@ -35,12 +34,9 @@ describe('calendrier', () => {
     expect(calendarKind(['parapente', 'paramoteur'])).toBe('b');
     expect(calendarToken({ date: '2025-05-01', n: 1, minutes: 100, disciplines: ['paramoteur'] })).toBe('cal-m3');
   });
-  it('années, date de référence et fin d’année', () => {
+  it('années et fin d’année', () => {
     const fl = [makeFlight('2023-05-01'), makeFlight('2025-06-01'), makeFlight('2025-07-01')];
     expect(yearsOf(fl)).toEqual([2025, 2023]);
-    expect(referenceDate('2025-12-28', fl)).toBe('2025-12-28');
-    expect(referenceDate(undefined, fl)).toBe('2025-07-01');
-    expect(referenceDate(undefined, [])).toBeNull();
     expect(yearEnd(2025, '2025-12-28')).toBe('2025-12-28');
     expect(yearEnd(2023, '2025-12-28')).toBe('2023-12-31');
   });
@@ -117,11 +113,26 @@ describe('ruban voile × mois', () => {
     const r = wingRibbon(fl, 2);
     expect(r.months).toEqual([
       { year: 2025, month: 3 },
+      { year: 2025, month: 4 },
       { year: 2025, month: 5 },
     ]);
     expect(r.rows.map((x) => x.wing)).toEqual(['B', 'A']);
-    expect(r.rows[1]).toMatchObject({ n: [1, 1], minutes: [60, 30], totalN: 2, totalMinutes: 90 });
+    expect(r.rows[1]).toMatchObject({ n: [1, 0, 1], minutes: [60, 0, 30], totalN: 2, totalMinutes: 90 });
     expect(r.hidden).toBe(1);
+  });
+  it('colonnes continues : les mois sans vol sont remplis, de janvier à avril ici', () => {
+    const fl = [
+      makeFlight('2024-11-05', { wing: 'A', durationMin: 60 }),
+      makeFlight('2025-02-10', { wing: 'A', durationMin: 30 }),
+    ];
+    const r = wingRibbon(fl);
+    expect(r.months).toEqual([
+      { year: 2024, month: 11 },
+      { year: 2024, month: 12 },
+      { year: 2025, month: 1 },
+      { year: 2025, month: 2 },
+    ]);
+    expect(r.rows[0]).toMatchObject({ n: [1, 0, 0, 1], minutes: [60, 0, 0, 30] });
   });
   it('sélection vide', () => {
     expect(wingRibbon([])).toEqual({ months: [], rows: [], hidden: 0 });

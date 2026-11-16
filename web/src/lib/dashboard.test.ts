@@ -7,7 +7,6 @@ import {
   stepValueAt,
   evolution,
   filteredPeriod,
-  formatCharacteristic,
   kpiBand,
   latestFlights,
   periodActivity,
@@ -18,6 +17,8 @@ import {
   seasonPhrase,
   statBars,
 } from '@/lib/dashboard';
+import { epochDay } from '@/lib/isoDay';
+import { formatMeasure } from '@/lib/measures';
 import { xOfDate } from '@/lib/rhythm';
 import { groupFlights } from '@/lib/stats';
 import { makeFlight } from '../../tests/flightFactory';
@@ -36,10 +37,22 @@ describe('périodes', () => {
       from: '2026-01-29',
       to: '2026-02-28',
     });
-    expect(previousPeriod('2026-01-01', '2026-12-31', '2026-06-10')).toEqual({
-      from: '2025-01-01',
+    expect(previousPeriod('2026-01-01', '2026-06-10', '2026-06-10')).toEqual({
+      from: '2025-07-24',
       to: '2025-12-31',
     });
+  });
+  it('une fin postérieure à la date de référence est plafonnée : périodes de même durée à date', () => {
+    const today = '2026-11-16';
+    const current = filteredPeriod('2026-01-01', '2026-12-31', today);
+    expect(current).toEqual({ from: '2026-01-01', to: '2026-11-16' });
+    const previous = previousPeriod('2026-01-01', '2026-12-31', today);
+    expect(previous?.to).toBe('2025-12-31');
+    const days = (r: { from: string; to: string }) => epochDay(r.to) - epochDay(r.from);
+    expect(previous && current && days(previous)).toBe(current && days(current));
+    // Fin antérieure à la date de référence : inchangée ; période entièrement future : fin conservée.
+    expect(filteredPeriod('2026-03-01', '2026-03-31', today)?.to).toBe('2026-03-31');
+    expect(filteredPeriod('2026-12-01', '2026-12-31', today)).toEqual({ from: '2026-12-01', to: '2026-12-31' });
   });
   it('dateFrom seul : jusqu’à la date de référence ; dateTo seul ou rien : pas de période', () => {
     expect(filteredPeriod('2026-06-01', null, '2026-06-10')).toEqual({ from: '2026-06-01', to: '2026-06-10' });
@@ -184,6 +197,15 @@ describe('recentRecords', () => {
     expect(r[0]).toMatchObject({ metric: 'plafond', value: 1800, previous: 1000 });
     expect(r[0]?.flight.date).toBe('2026-06-05');
   });
+  it('fenêtre de 30 jours, aujourd’hui inclus : 30 jours avant est exclu, 29 jours avant est inclus', () => {
+    const today = '2026-06-10';
+    const before = makeFlight('2026-01-01', { ...base, ceilingM: 1000 });
+    const out = recentRecords([before, makeFlight('2026-05-11', { ...base, ceilingM: 2000 })], today);
+    expect(out).toEqual([]);
+    const inn = recentRecords([before, makeFlight('2026-05-12', { ...base, ceilingM: 2000 })], today);
+    expect(inn).toHaveLength(1);
+    expect(inn[0]?.flight.date).toBe('2026-05-12');
+  });
   it('un premier vol, une égalité, une mesure ≤ 0 ou nulle ne sont pas des records', () => {
     const flights = [
       makeFlight('2026-06-01', { ...base, ceilingM: 1500 }),
@@ -221,7 +243,7 @@ describe('characteristics', () => {
     const plafond = rows.find((r) => r.id === 'plafond');
     expect(plafond).toMatchObject({ count: 2, mean: 2000, median: 2000, max: 3000 });
     expect(rows.find((r) => r.id === 'g')).toMatchObject({ count: 0, mean: null, max: null, maxFlight: null });
-    expect(formatCharacteristic({ unit: 'min', digits: 0 }, 135)).toMatch(/2.h.15.min/);
+    expect(formatMeasure({ unit: 'min', digits: 0 }, 135)).toMatch(/2.h.15.min/);
   });
   it('sélection vide', () => {
     expect(characteristics([]).every((r) => r.max === null)).toBe(true);
@@ -247,6 +269,34 @@ describe('statBars', () => {
     expect(r.bars[0]?.target).toEqual({ sites: [1] });
     const w = statBars(groupFlights(flights, 'voile'), 'nb_vols', 'voile', flights, null);
     expect(w.bars[0]?.target).toEqual({ wings: ['W1'] });
+  });
+  it('pilote : regroupe par slug, deux pilotes de même nom restent deux barres distinctes', () => {
+    const fl = [
+      makeFlight('2026-03-01', { pilot: 'Jean', pilotSlug: 'jean-1' }),
+      makeFlight('2026-03-02', { pilot: 'Jean', pilotSlug: 'jean-1' }),
+      makeFlight('2026-03-03', { pilot: 'Jean', pilotSlug: 'jean-2' }),
+    ];
+    const { bars } = statBars(groupFlights(fl, 'pilote'), 'nb_vols', 'pilote', fl);
+    expect(bars.map((b) => [b.label, b.value, b.key])).toEqual([
+      ['Jean (jean-1)', 2, 'jean-1'],
+      ['Jean (jean-2)', 1, 'jean-2'],
+    ]);
+    expect(bars[0]?.target).toEqual({ pilots: ['jean-1'] });
+    expect(bars[1]?.highlight).toEqual({ kind: 'pilot', pilotSlug: 'jean-2' });
+  });
+  it('site : regroupe par identifiant, homonymes distingués, valeur = vols du filtre de la barre', () => {
+    const fl = [
+      makeFlight('2026-03-01', { site: 'Col', siteId: 7 }),
+      makeFlight('2026-03-02', { site: 'Col', siteId: 7 }),
+      makeFlight('2026-03-03', { site: 'Col', siteId: 9 }),
+      makeFlight('2026-03-04', { site: 'Plage', siteId: 3 }),
+    ];
+    const { bars } = statBars(groupFlights(fl, 'site'), 'nb_vols', 'site', fl);
+    expect(bars.map((b) => b.label)).toEqual(['Col (n° 7)', 'Col (n° 9)', 'Plage']);
+    for (const bar of bars) {
+      const ids = bar.target?.sites ?? [];
+      expect(bar.value).toBe(fl.filter((f) => f.siteId !== null && ids.includes(f.siteId)).length);
+    }
   });
   it('année : chronologique, filtre sur l’année ; mois : pas de filtre', () => {
     const y = statBars(groupFlights(flights, 'annee'), 'nb_vols', 'annee', flights);

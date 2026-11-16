@@ -6,6 +6,7 @@
 
 import type { Flight } from '@/data/flight';
 import { daysInMonth, epochDay, isoOfEpochDay, mondayOfEpochDay } from '@/lib/isoDay';
+import { MEASURES } from '@/lib/measures';
 import { sum } from '@/lib/numeric';
 import { dailySummaries, minutesOf, type DaySummary, type WeekHourMatrix } from '@/lib/rhythm';
 import type { CoverageKey } from '@/lib/records';
@@ -42,17 +43,9 @@ export function yearsOf(flights: readonly Flight[]): number[] {
   return [...new Set(flights.map((f) => f.year))].sort((a, b) => b - a);
 }
 
-/** Date de référence « aujourd'hui » : date de mise à jour des données, sinon dernier vol de la sélection. */
-export function referenceDate(dataUpdatedAt: string | undefined, flights: readonly Flight[]): string | null {
-  if (dataUpdatedAt) return dataUpdatedAt.slice(0, 10);
-  let last: string | null = null;
-  for (const f of flights) if (last === null || f.date > last) last = f.date;
-  return last;
-}
-
-/** Dernier jour écoulé de l'année : la date de référence si elle tombe dans l'année, sinon le 31 décembre. */
-export function yearEnd(year: number, reference: string | null): string {
-  if (reference !== null && Number(reference.slice(0, 4)) === year) return reference;
+/** Dernier jour écoulé de l'année : la date de référence (`referenceDate` de `lib/dashboard`) si elle tombe dans l'année, sinon le 31 décembre. */
+export function yearEnd(year: number, reference: string): string {
+  if (Number(reference.slice(0, 4)) === year) return reference;
   return `${year}-12-31`;
 }
 
@@ -204,19 +197,26 @@ export interface WingRibbonData {
   hidden: number;
 }
 
-/** Top `RIBBON_TOP` voiles (temps de vol décroissant) par mois de la sélection, du premier au dernier mois présent. */
+/** Top `RIBBON_TOP` voiles (temps de vol décroissant) par mois, de façon continue du premier au dernier mois de la sélection (mois sans vol compris). */
 export function wingRibbon(flights: readonly Flight[], top = RIBBON_TOP): WingRibbonData {
   const withWing = flights.filter((f): f is Flight & { wing: string } => f.wing !== null);
-  const monthKeys = [...new Set(flights.map((f) => f.year * 12 + (f.month - 1)))].sort((a, b) => a - b);
+  let first = Infinity;
+  let last = -Infinity;
+  for (const f of flights) {
+    const k = f.year * 12 + (f.month - 1);
+    if (k < first) first = k;
+    if (k > last) last = k;
+  }
+  // Colonnes continues, du premier au dernier mois de la sélection : les mois sans vol restent des colonnes vides.
+  const monthKeys = flights.length === 0 ? [] : Array.from({ length: last - first + 1 }, (_, i) => first + i);
   const months = monthKeys.map((k) => ({ year: Math.floor(k / 12), month: (k % 12) + 1 }));
-  const index = new Map(monthKeys.map((k, i) => [k, i]));
   const byWing = new Map<string, { n: number[]; minutes: number[] }>();
   for (const f of withWing) {
     const row = byWing.get(f.wing) ?? {
       n: new Array<number>(months.length).fill(0),
       minutes: new Array<number>(months.length).fill(0),
     };
-    const i = index.get(f.year * 12 + (f.month - 1)) as number;
+    const i = f.year * 12 + (f.month - 1) - first;
     row.n[i] = (row.n[i] ?? 0) + 1;
     row.minutes[i] = (row.minutes[i] ?? 0) + minutesOf(f);
     byWing.set(f.wing, row);
@@ -309,18 +309,9 @@ export interface PartialData {
   partial: boolean;
 }
 
-const MEASURE_VALUE: Readonly<Record<CoverageKey, (f: Flight) => number | null>> = {
-  plafond: (f) => f.ceilingM,
-  distance: (f) => f.distKm,
-  gain: (f) => f.gainM,
-  vitesseMax: (f) => f.speedMax,
-  vario: (f) => f.varioMax,
-  g: (f) => f.gMax,
-};
-
 /** Couverture d'une mesure (> 0) dans la sélection. */
 export function partialData(flights: readonly Flight[], measure: CoverageKey): PartialData {
-  const value = MEASURE_VALUE[measure];
+  const value = MEASURES[measure].of;
   const sources = { gpx: 0, fiche: 0, aucune: 0 };
   const missingSources = { gpx: 0, fiche: 0, aucune: 0 };
   let missing = 0;

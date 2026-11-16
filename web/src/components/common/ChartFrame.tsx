@@ -24,14 +24,19 @@ interface Props {
   /** Contenu affiché sous le graphique (légende maison, note). */
   footer?: ReactNode;
   testId?: string;
+  /**
+   * Remplace l'option à chaque rendu (défaut : oui). Mettre `false` pour la fusionner dans l'existante et conserver
+   * l'état d'interaction (zoom) ; l'appelant doit alors remonter le graphique quand sa forme change (`key`).
+   */
+  notMerge?: boolean;
 }
 
 /**
  * Enveloppe commune des graphiques ECharts : thème clair/sombre, `aria-label`, hauteur fixe,
- * bascule « Voir les données / Voir le graphique ». `notMerge` évite les séries fantômes
- * quand la sélection change de forme.
+ * bascule « Voir les données / Voir le graphique ». `notMerge` (par défaut) évite les séries
+ * fantômes quand la sélection change de forme.
  */
-export function ChartFrame({ option, ariaLabel, height, table, onEvents, footer, testId }: Props) {
+export function ChartFrame({ option, ariaLabel, height, table, onEvents, footer, testId, notMerge = true }: Props) {
   const theme = useEchartsTheme();
   const [showTable, setShowTable] = useState(false);
   const tableId = useId();
@@ -63,7 +68,7 @@ export function ChartFrame({ option, ariaLabel, height, table, onEvents, footer,
           <ReactECharts
             option={option}
             theme={theme}
-            notMerge
+            notMerge={notMerge}
             lazyUpdate
             style={{ height, width: '100%' }}
             onEvents={onEvents}

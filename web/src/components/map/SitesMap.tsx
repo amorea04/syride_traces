@@ -11,7 +11,7 @@ import {
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import '@/components/map/sitesMap.css';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useFilterSearch } from '@/components/FilterLink';
 import {
@@ -25,10 +25,8 @@ import {
   SRC_RAW,
   type MapStyle,
 } from '@/components/map/sitesLayers';
-import type { Flight } from '@/data/flight';
-import { useData } from '@/data/DataProvider';
 import { fmtHm, fmtInt, fmtPercent } from '@/lib/format';
-import { aggregateSites, type Bounds, type SitePointProps } from '@/lib/mapSites';
+import { type Bounds, type SitePointProps, type SitesMapData } from '@/lib/mapSites';
 import { useFiltersStore } from '@/store/filters';
 import { useHighlightStore } from '@/store/highlight';
 import { mapStyleUrl } from '@/theme/map';
@@ -130,8 +128,8 @@ function siteProps(f: MapGeoJSONFeature): SitePointProps {
 }
 
 export interface SitesMapProps {
-  /** Sélection courante (déjà filtrée). */
-  flights: readonly Flight[];
+  /** Sites agrégés de la sélection courante (`aggregateSites`, calculés une fois par le parent). */
+  data: SitesMapData;
   height: number;
   /** Affiche la heatmap des décollages à la place des cercles. */
   heatmap?: boolean;
@@ -149,21 +147,19 @@ export interface SitesMapProps {
  * fond OpenFreeMap recoloré selon le schéma clair/sombre.
  */
 export function SitesMap({
-  flights,
+  data,
   height,
   heatmap = false,
   onSiteClick,
   highlightSiteId,
   fitToSelection = true,
 }: SitesMapProps) {
-  const { siteById } = useData();
   const scheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
   const isMobile = useMediaQuery(MOBILE_QUERY) ?? false;
   const navigate = useNavigate();
   const search = useFilterSearch();
   const storeHighlight = useHighlightStore((s) => s.highlight);
 
-  const data = useMemo(() => aggregateSites(flights, siteById), [flights, siteById]);
   const effectiveHighlight =
     highlightSiteId !== undefined
       ? highlightSiteId

@@ -8,6 +8,7 @@ import { CoverageNotice } from '@/components/common/CoverageNotice';
 import { Section } from '@/components/common/Section';
 import type { Flight } from '@/data/flight';
 import { EMPTY, fmtDateNumeric, fmtDuration, fmtInt, fmtNum, NBSP, plural } from '@/lib/format';
+import { escapeHtml } from '@/lib/html';
 import { SCATTER_LARGE_THRESHOLD, scatterPoints, type ScatterPoint, type ScatterY } from '@/lib/rhythmBlocks';
 import { colors } from '@/theme/tokens';
 import './rhythm.css';
@@ -23,9 +24,6 @@ const DISCIPLINES = [
   { activity: 'parapente', name: 'Parapente', color: 'p' },
   { activity: 'paramoteur', name: 'Paramoteur', color: 'm' },
 ] as const;
-
-const escapeHtml = (text: string): string =>
-  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const Y_META: Record<ScatterY, { label: string; unit: string; format: (v: number) => string }> = {
   plafond: { label: 'Plafond', unit: 'm', format: (v) => `${fmtInt(v)}${NBSP}m` },

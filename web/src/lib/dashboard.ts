@@ -12,6 +12,7 @@ import { groupBy } from '@/lib/collections';
 import { flightMatches, todayIso, type Filters } from '@/lib/filters';
 import { fmtDuration, fmtHours, fmtInt, fmtNum, MONTHS_LONG, MONTHS_SHORT, NBSP } from '@/lib/format';
 import { daysInMonth, epochDay, isoOfEpochDay, mondayOfEpochDay } from '@/lib/isoDay';
+import { MEASURES, type MeasureDef } from '@/lib/measures';
 import { METRICS, metricById, type Metric, type MetricId } from '@/lib/metrics';
 import {
   compareStrings,
@@ -25,7 +26,7 @@ import {
 } from '@/lib/numeric';
 import { deltaPct } from '@/lib/records';
 import { cumulativeSteps, minutesOf, xOfDate } from '@/lib/rhythm';
-import type { AxisId, GroupRow } from '@/lib/stats';
+import { computeMetrics, type AxisId, type GroupRow } from '@/lib/stats';
 import type { Highlight } from '@/store/highlight';
 
 // ---------------------------------------------------------------------------
@@ -51,6 +52,7 @@ export interface DateRange {
 /**
  * Période filtrée. Règle : `dateFrom` obligatoire (sans borne de début, la durée n'est pas définie : `null`) ;
  * `dateFrom` seul = de `dateFrom` jusqu'à la date de référence (ou `dateFrom` lui-même si elle est postérieure) ;
+ * une `dateTo` postérieure à la date de référence est plafonnée à celle-ci (période « à date ») ;
  * `dateTo` sans `dateFrom` = pas de période comparable. Bornes incluses.
  */
 export function filteredPeriod(
@@ -59,7 +61,9 @@ export function filteredPeriod(
   today: string,
 ): DateRange | null {
   if (dateFrom === null) return null;
-  const to = dateTo ?? (today >= dateFrom ? today : dateFrom);
+  let to = dateTo ?? (today >= dateFrom ? today : dateFrom);
+  // Une fin postérieure à la date de référence est ramenée à celle-ci : on compare des périodes écoulées de même durée.
+  if (to > today && today >= dateFrom) to = today;
   if (to < dateFrom) return null;
   return { from: dateFrom, to };
 }
@@ -334,29 +338,15 @@ export const RECENT_RECORD_DAYS = 30;
 export const RECORD_METRIC_IDS = ['plafond', 'distance', 'duree', 'vitesseMax', 'vario', 'g'] as const;
 export type RecordMetricId = (typeof RECORD_METRIC_IDS)[number];
 
-interface RecordMetric {
-  label: string;
-  unit: string;
-  digits: number;
-  of: (f: Flight) => number | null;
-}
-
-/** Critères de records (mêmes mesures que `lib/records`). */
-export const RECORD_METRICS: Readonly<Record<RecordMetricId, RecordMetric>> = {
-  plafond: { label: 'Plafond', unit: 'm', digits: 0, of: (f) => f.ceilingM },
-  distance: { label: 'Distance', unit: 'km', digits: 1, of: (f) => f.distKm },
-  duree: { label: 'Durée', unit: 'min', digits: 0, of: (f) => f.durationMin },
-  vitesseMax: { label: 'Vitesse max', unit: 'km/h', digits: 1, of: (f) => f.speedMax },
-  vario: { label: 'Vario max', unit: 'm/s', digits: 1, of: (f) => f.varioMax },
-  g: { label: 'g max', unit: 'g', digits: 1, of: (f) => f.gMax },
+/** Critères de records (mesures partagées, voir `lib/measures`). */
+export const RECORD_METRICS: Readonly<Record<RecordMetricId, MeasureDef>> = {
+  plafond: MEASURES.plafond,
+  distance: MEASURES.distance,
+  duree: MEASURES.duree,
+  vitesseMax: MEASURES.vitesseMax,
+  vario: MEASURES.vario,
+  g: MEASURES.g,
 };
-
-/** Valeur d'un critère de record, formatée avec son unité. */
-export function formatRecordValue(metric: RecordMetricId, value: number): string {
-  const def = RECORD_METRICS[metric];
-  if (def.unit === 'min') return fmtDuration(value);
-  return `${fmtNum(value, def.digits)}${NBSP}${def.unit}`;
-}
 
 export interface RecentRecord {
   pilot: string;
@@ -370,7 +360,7 @@ export interface RecentRecord {
 }
 
 /**
- * Records personnels battus dans les `days` jours qui précèdent `today` (inclus). Par pilote ET discipline :
+ * Records personnels battus dans les `days` derniers jours, `today` inclus (fenêtre de `days` jours). Par pilote ET discipline :
  * le meilleur vol de la fenêtre pour un critère est un record s'il dépasse strictement le meilleur des vols
  * antérieurs à la fenêtre ; sans vol antérieur mesuré, ce n'est pas un record (premier vol). Mesures
  * absentes ou ≤ 0 ignorées. Les plus récents d'abord.
@@ -380,7 +370,7 @@ export function recentRecords(
   today: string,
   days = RECENT_RECORD_DAYS,
 ): RecentRecord[] {
-  const windowStart = isoOfEpochDay(epochDay(today) - days);
+  const windowStart = isoOfEpochDay(epochDay(today) - days + 1);
   interface Group {
     pilot: string;
     pilotSlug: string;
@@ -445,25 +435,8 @@ export function recentRecords(
 // Caractéristiques de vol
 // ---------------------------------------------------------------------------
 
-export type CharacteristicId = 'duree' | 'distance' | 'vitesseMoyenne' | 'vitesseMax' | 'plafond' | 'vario' | 'g';
-
-interface CharacteristicDef {
-  id: CharacteristicId;
-  label: string;
-  unit: string;
-  digits: number;
-  of: (f: Flight) => number | null;
-}
-
-export const CHARACTERISTICS: readonly CharacteristicDef[] = [
-  { id: 'duree', label: 'Durée', unit: 'min', digits: 0, of: (f) => f.durationMin },
-  { id: 'distance', label: 'Distance', unit: 'km', digits: 1, of: (f) => f.distKm },
-  { id: 'vitesseMoyenne', label: 'Vitesse moyenne', unit: 'km/h', digits: 1, of: (f) => f.speedAvg },
-  { id: 'vitesseMax', label: 'Vitesse max', unit: 'km/h', digits: 1, of: (f) => f.speedMax },
-  { id: 'plafond', label: 'Plafond', unit: 'm', digits: 0, of: (f) => f.ceilingM },
-  { id: 'vario', label: 'Vario max', unit: 'm/s', digits: 1, of: (f) => f.varioMax },
-  { id: 'g', label: 'g max', unit: 'g', digits: 1, of: (f) => f.gMax },
-];
+export const CHARACTERISTIC_IDS = ['duree', 'distance', 'vitesseMoyenne', 'vitesseMax', 'plafond', 'vario', 'g'] as const;
+export type CharacteristicId = (typeof CHARACTERISTIC_IDS)[number];
 
 export interface CharacteristicRow {
   id: CharacteristicId;
@@ -481,11 +454,12 @@ export interface CharacteristicRow {
 
 /** Moyenne, médiane et max de chaque caractéristique ; valeurs absentes ou ≤ 0 ignorées. */
 export function characteristics(flights: readonly Flight[]): CharacteristicRow[] {
-  return CHARACTERISTICS.map((def) => {
+  return CHARACTERISTIC_IDS.map((id) => {
+    const def = MEASURES[id];
     const values = positives(flights.map(def.of));
     const best = bestOf(flights, def.of);
     return {
-      id: def.id,
+      id,
       label: def.label,
       unit: def.unit,
       digits: def.digits,
@@ -496,12 +470,6 @@ export function characteristics(flights: readonly Flight[]): CharacteristicRow[]
       maxFlight: best?.flight ?? null,
     };
   });
-}
-
-/** Valeur d'une caractéristique : durée en « 1 h 12 min », le reste avec son unité. */
-export function formatCharacteristic(row: Pick<CharacteristicRow, 'unit' | 'digits'>, value: number): string {
-  if (row.unit === 'min') return fmtDuration(value);
-  return `${fmtNum(value, row.digits)}${NBSP}${row.unit}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -541,9 +509,55 @@ export interface StatBars {
   hidden: number;
 }
 
+/** Groupe d'un axe à identité stable (pilote : slug ; site : identifiant) : un pilote ou un site = une barre. */
+interface StableGroup {
+  key: string;
+  label: string;
+  /** Complément qui distingue deux groupes de même libellé. */
+  hint: string;
+  flights: Flight[];
+  target: Partial<Filters> | null;
+  highlight: Highlight | null;
+}
+
+function stableGroups(flights: readonly Flight[], axis: 'pilote' | 'site'): StableGroup[] {
+  const groups = new Map<string, StableGroup>();
+  for (const f of flights) {
+    let group: StableGroup | undefined;
+    if (axis === 'pilote') {
+      group = groups.get(f.pilotSlug) ?? {
+        key: f.pilotSlug,
+        label: f.pilot,
+        hint: f.pilotSlug,
+        flights: [],
+        target: { pilots: [f.pilotSlug] },
+        highlight: { kind: 'pilot', pilotSlug: f.pilotSlug },
+      };
+      groups.set(f.pilotSlug, group);
+    } else {
+      if (f.site === null) continue;
+      // Site sans identifiant : regroupé par nom, sans filtre ni surlignage possible.
+      const key = f.siteId !== null ? String(f.siteId) : `nom:${f.site}`;
+      group = groups.get(key) ?? {
+        key,
+        label: f.site,
+        hint: f.siteId !== null ? `n° ${f.siteId}` : f.site,
+        flights: [],
+        target: f.siteId !== null ? { sites: [f.siteId] } : null,
+        highlight: f.siteId !== null ? { kind: 'site', siteId: f.siteId } : null,
+      };
+      groups.set(key, group);
+    }
+    group.flights.push(f);
+  }
+  return [...groups.values()];
+}
+
 /**
  * Barres de la statistique `metricId` selon l'axe : ordre naturel pour les axes courts (années croissantes),
  * ordre décroissant et top `limit` pour pilote / voile / site. Catégories sans valeur écartées.
+ * Pilote et site sont regroupés par leur clé stable (slug, identifiant) et non par leur nom d'affichage : une barre
+ * correspond exactement aux vols que son clic filtre. Deux clés de même nom sont distinguées dans le libellé.
  */
 export function statBars(
   rows: readonly GroupRow[],
@@ -552,51 +566,46 @@ export function statBars(
   flights: readonly Flight[],
   limit: number | null = STAT_TOP_N,
 ): StatBars {
-  const pilotSlugs = new Map<string, string>();
-  const siteIds = new Map<string, number>();
-  if (axis === 'pilote') for (const f of flights) pilotSlugs.set(f.pilot, f.pilotSlug);
-  if (axis === 'site') for (const f of flights) if (f.site !== null && f.siteId !== null) siteIds.set(f.site, f.siteId);
-
   const shortMonth = (label: string): string => {
     const i = MONTHS_LONG.indexOf(label as (typeof MONTHS_LONG)[number]);
     return i >= 0 ? (MONTHS_SHORT[i] ?? label) : label;
   };
 
   let all: StatBar[] = [];
-  for (const row of rows) {
-    const value = row.values[metricId];
-    if (value === null) continue;
-    let target: Partial<Filters> | null = null;
-    let highlight: Highlight | null = null;
-    if (axis === 'pilote') {
-      const slug = pilotSlugs.get(row.key);
-      if (slug) {
-        target = { pilots: [slug] };
-        highlight = { kind: 'pilot', pilotSlug: slug };
-      }
-    } else if (axis === 'site') {
-      const id = siteIds.get(row.key);
-      if (id !== undefined) {
-        target = { sites: [id] };
-        highlight = { kind: 'site', siteId: id };
-      }
-    } else if (axis === 'voile') {
-      target = { wings: [row.key] };
-      highlight = { kind: 'wing', wing: row.key };
-    } else if (axis === 'annee') {
-      target = { dateFrom: `${row.key}-01-01`, dateTo: `${row.key}-12-31` };
+  if (axis === 'pilote' || axis === 'site') {
+    const groups = stableGroups(flights, axis);
+    const labelCount = new Map<string, number>();
+    for (const g of groups) labelCount.set(g.label, (labelCount.get(g.label) ?? 0) + 1);
+    for (const g of groups) {
+      const value = computeMetrics(g.flights)[metricId];
+      if (value === null) continue;
+      const duplicated = (labelCount.get(g.label) ?? 0) > 1;
+      all.push({
+        key: g.key,
+        label: duplicated ? `${g.label} (${g.hint})` : g.label,
+        value,
+        target: g.target,
+        highlight: g.highlight,
+      });
     }
-    all.push({
-      key: row.key,
-      label: axis === 'mois' ? shortMonth(row.label) : row.label,
-      value,
-      target,
-      highlight,
-    });
+  } else {
+    for (const row of rows) {
+      const value = row.values[metricId];
+      if (value === null) continue;
+      let target: Partial<Filters> | null = null;
+      let highlight: Highlight | null = null;
+      if (axis === 'voile') {
+        target = { wings: [row.key] };
+        highlight = { kind: 'wing', wing: row.key };
+      } else if (axis === 'annee') {
+        target = { dateFrom: `${row.key}-01-01`, dateTo: `${row.key}-12-31` };
+      }
+      all.push({ key: row.key, label: axis === 'mois' ? shortMonth(row.label) : row.label, value, target, highlight });
+    }
   }
   if (axis === 'annee') all = all.reverse();
   if (isHorizontalAxis(axis)) {
-    all = all.sort((a, b) => b.value - a.value || compareStrings(a.label, b.label));
+    all = all.sort((a, b) => b.value - a.value || compareStrings(a.label, b.label) || compareStrings(a.key, b.key));
   }
   const total = all.length;
   const bars = limit !== null && isHorizontalAxis(axis) ? all.slice(0, limit) : all;

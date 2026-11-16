@@ -97,7 +97,7 @@ describe('RhythmBlock', () => {
     expect(document.activeElement).toBe(screen.getByLabelText(/dimanche 4\smai\s2025/));
   });
   it('affiche un message sobre sans vol', () => {
-    wrap(<RhythmBlock flights={[]} />);
+    wrap(<RhythmBlock flights={[]} referenceDate="2025-12-28" />);
     expect(screen.getByText('Aucun vol pour ces filtres.')).toBeInTheDocument();
   });
   it('mobile : 12 mini-mois', () => {

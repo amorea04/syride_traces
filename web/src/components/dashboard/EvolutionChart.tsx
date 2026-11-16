@@ -132,6 +132,7 @@ export function EvolutionChart({ flights }: Props) {
     [data.months, setHighlight],
   );
 
+  const shapeKey = [mode, measure, stack, data.months[0], data.months.length, ...data.series.map((s) => s.key)].join('|');
   const first = data.months[0];
   const last = data.months[data.months.length - 1];
   return (
@@ -179,6 +180,10 @@ export function EvolutionChart({ flights }: Props) {
         <EmptyNote />
       ) : (
         <ChartFrame
+          // Fusion de l'option (pas de remise à zéro) : un surlignage venu d'un autre bloc ne perd pas le zoom de
+          // l'utilisateur. Un changement de forme (séries, mois) remonte le graphique pour éviter les séries fantômes.
+          key={shapeKey}
+          notMerge={false}
           option={option}
           height={HEIGHT}
           table={table}

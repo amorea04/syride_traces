@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { MantineProvider } from '@mantine/core';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -176,6 +176,16 @@ describe('StatChart', () => {
     chart.props?.onEvents?.click?.({ dataIndex: 0 });
     expect(useFiltersStore.getState().filters).toEqual(defaultFilters());
   });
+  it('l’infobulle échappe le nom de la catégorie (pas de HTML injecté)', () => {
+    const evil = [makeFlight('2026-06-01', { pilot: '<img src=x onerror=alert(1)>', pilotSlug: 'evil' })];
+    renderUi(<StatChart flights={evil} defaultAxis="pilote" />);
+    const option = chart.props?.option as {
+      tooltip: { formatter: (p: unknown) => string };
+    };
+    const html = option.tooltip.formatter({ dataIndex: 0 });
+    expect(html).not.toContain('<img');
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+  });
   it('le survol surligne le site puis se retire', () => {
     renderUi(<StatChart flights={flights} defaultAxis="site" />);
     chart.props?.onEvents?.mouseover?.({ dataIndex: 0 });
@@ -207,6 +217,18 @@ describe('EvolutionChart', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Voir les données' }));
     // 2025-05 → 2026-06 : 14 mois.
     expect(screen.getAllByRole('row')).toHaveLength(15);
+  });
+  it('un surlignage de mois fusionne l’option sans réinitialiser le zoom', () => {
+    renderUi(<EvolutionChart flights={flights} />);
+    const props = chart.props as unknown as { notMerge?: boolean; option: { dataZoom: Record<string, unknown>[] } };
+    expect(props.notMerge).toBe(false);
+    for (const z of props.option.dataZoom) {
+      expect(z).not.toHaveProperty('start');
+      expect(z).not.toHaveProperty('end');
+    }
+    act(() => useHighlightStore.getState().setHighlight({ kind: 'month', year: 2026, month: 6 }));
+    const after = chart.props as unknown as { notMerge?: boolean };
+    expect(after.notMerge).toBe(false);
   });
   it('sélection vide', () => {
     renderUi(<EvolutionChart flights={[]} />);

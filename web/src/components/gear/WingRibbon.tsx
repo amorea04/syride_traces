@@ -2,7 +2,7 @@ import { Group, SegmentedControl, Text, Title } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import type { Flight } from '@/data/flight';
 import { fmtDuration, fmtHours, fmtInt, MONTHS_SHORT, plural } from '@/lib/format';
-import { lastMonthsFlights, monthRange, RIBBON_MONTHS, wingRibbon } from '@/lib/rhythmBlocks';
+import { lastMonthsFlights, matrixLevel, monthRange, RIBBON_MONTHS, wingRibbon } from '@/lib/rhythmBlocks';
 import { useFiltersStore } from '@/store/filters';
 import { useHighlightStore } from '@/store/highlight';
 import './gear.css';
@@ -13,12 +13,6 @@ interface Props {
 }
 
 type Measure = 'vols' | 'heures';
-
-/** Niveau 1 à 4 d'une cellule, relatif au maximum du ruban (mêmes parts que la matrice jour × heure). */
-function level(value: number, peak: number): 1 | 2 | 3 | 4 {
-  const share = peak > 0 ? value / peak : 0;
-  return share > 0.75 ? 4 : share > 0.5 ? 3 : share > 0.25 ? 2 : 1;
-}
 
 /**
  * Ruban « voile × mois » : les 8 voiles les plus utilisées en lignes, les mois de la sélection en colonnes, intensité = vols
@@ -122,7 +116,7 @@ export function WingRibbon({ flights }: Props) {
                         disabled={value === 0}
                         aria-label={value === 0 ? undefined : `${label}. Filtrer sur cette voile et ce mois.`}
                         title={value === 0 ? undefined : label}
-                        style={value > 0 ? { background: `var(--sr-cal-b${level(value, peak)})` } : undefined}
+                        style={value > 0 ? { background: `var(--sr-cal-b${matrixLevel(value, peak)})` } : undefined}
                         onClick={() => {
                           const [dateFrom, dateTo] = monthRange(m.year, m.month);
                           setFilters({ wings: [row.wing], dateFrom, dateTo });

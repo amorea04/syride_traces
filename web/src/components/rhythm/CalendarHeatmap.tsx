@@ -8,6 +8,7 @@ import { epochDay, isoOfEpochDay } from '@/lib/isoDay';
 import type { DaySummary } from '@/lib/rhythm';
 import {
   CALENDAR_LEVEL_LABELS,
+  calendarKind,
   calendarToken,
   dayMap,
   monthGrid,
@@ -63,7 +64,7 @@ export function CalendarHeatmap({ flights, year, end, onOpenDay }: Props) {
 
   const kinds = useMemo(() => {
     const present = new Set<CalendarKind>();
-    for (const d of days.values()) present.add(d.disciplines.length > 1 ? 'b' : d.disciplines[0] === 'paramoteur' ? 'm' : 'p');
+    for (const d of days.values()) present.add(calendarKind(d.disciplines));
     return (['p', 'm', 'b'] as const).filter((k) => present.has(k));
   }, [days]);
 

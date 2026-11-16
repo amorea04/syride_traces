@@ -14,6 +14,7 @@ import {
   type StatBar,
 } from '@/lib/dashboard';
 import { fmtInt } from '@/lib/format';
+import { escapeHtml } from '@/lib/html';
 import { metricById, type MetricId } from '@/lib/metrics';
 import { AXES, AXIS_IDS, groupFlights, type AxisId } from '@/lib/stats';
 import { useFiltersStore } from '@/store/filters';
@@ -84,7 +85,7 @@ export function StatChart({ flights, defaultMetric = 'nb_vols', defaultAxis = 'a
         formatter: (p) => {
           const i = eventIndex(p);
           const bar = i === null ? undefined : bars[i];
-          return bar ? `${bar.label}<br/>${formatMetricValue(metric, bar.value)}` : '';
+          return bar ? `${escapeHtml(bar.label)}<br/>${formatMetricValue(metric, bar.value)}` : '';
         },
       },
       xAxis: horizontal ? valueAxis : categoryAxis,

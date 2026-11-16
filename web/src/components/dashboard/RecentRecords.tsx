@@ -5,12 +5,12 @@ import { EmptyNote } from '@/components/dashboard/shared';
 import { FilterLink } from '@/components/FilterLink';
 import type { Flight } from '@/data/flight';
 import {
-  formatRecordValue,
   RECENT_RECORD_DAYS,
   RECORD_METRICS,
   recentRecords,
 } from '@/lib/dashboard';
 import { fmtDateShort } from '@/lib/format';
+import { formatMeasure } from '@/lib/measures';
 
 interface Props {
   /** Vols suivant les filtres globaux SAUF la période. */
@@ -66,11 +66,11 @@ export function RecentRecords({ flights, today, days = RECENT_RECORD_DAYS }: Pro
                         fontWeight: 650,
                       }}
                     >
-                      {formatRecordValue(r.metric, r.value)}
+                      {formatMeasure(RECORD_METRICS[r.metric], r.value)}
                     </span>
                   </Table.Td>
                   <Table.Td c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                    {formatRecordValue(r.metric, r.previous)}
+                    {formatMeasure(RECORD_METRICS[r.metric], r.previous)}
                   </Table.Td>
                   <Table.Td style={{ whiteSpace: 'nowrap' }}>
                     <FilterLink to={`/vol/${r.flight.key}`}>{fmtDateShort(r.flight.date)}</FilterLink>
