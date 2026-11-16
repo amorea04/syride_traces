@@ -113,3 +113,13 @@ body {
 .mantine-Combobox-dropdown {
   border: var(--sr-border-width) solid var(--sr-line);
 }
+
+/* Phase 3 : carte de section du tableau de bord (style « Encre » : filet haut, sans fond). */
+.sr-section {
+  border-top: 2px solid var(--sr-text);
+  padding: 14px 0 6px;
+  min-width: 0;
+}
+.sr-tabular {
+  font-variant-numeric: tabular-nums;
+}
