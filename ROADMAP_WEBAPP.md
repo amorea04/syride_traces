@@ -933,7 +933,7 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - [x] 3.7 États vides et robustesse (e2e : filtre sans vol, aucune erreur)
 - [x] 3.8 Tests e2e du tableau de bord (`web/e2e/tableau-de-bord.spec.ts`, 7 scénarios ; 565 tests unitaires, 13 e2e au vert)
 - [x] 3.9 Revue de parité avec l'app Dash (`web/PARITE_DASH.md`) : 94 fonctions, 37 présentes, 40 remplacées, 13 corrigées, 3 abandonnées, 1 reportée (crédit « Créée par » : page À propos seulement, tâche 5.5). Années non contiguës : non reprises (décision d'Adrien)
-- [ ] PR relue et fusionnée · **`/clear`**
+- [x] PR relue (`/code-review medium`, 10 constats corrigés) et fusionnée (PR #4) · **`/clear`**
 
 ### Phase 4 : Vols
 - [ ] 4.1 Liste des vols virtualisée et export CSV
