@@ -955,7 +955,7 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - [x] Ligne « Vue filtrée » unique (`lib/filterSummary.ts`) ; zoom des graphiques temporels au Ctrl + molette (la molette fait défiler la page)
 - [x] Tests : 731 unitaires, 50 e2e au vert ; contrôle visuel clair, sombre et 360 px sur données réelles
 - [x] Relecture `/code-review medium` : 10 constats corrigés
-- [ ] PR relues et fusionnées · **`/clear`**
+- [x] PR relue et fusionnée (PR #6) · **`/clear`**
 
 ### Phase 5B : Bilan pilote × année
 - [ ] 5B.1 Route, chargement des insights, sélecteur d'année
