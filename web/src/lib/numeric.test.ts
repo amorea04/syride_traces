@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { max, mean, median, numpyRound, positives, sum } from '@/lib/numeric';
+import { max, mean, median, numpyRound, positives, rankOf, sum } from '@/lib/numeric';
 
 describe('numpyRound', () => {
   it('arrondit au pair en cas d’égalité, comme np.round', () => {
@@ -34,5 +34,12 @@ describe('agrégats', () => {
   });
   it('positives ignore zéros, négatifs et valeurs absentes', () => {
     expect(positives([0, -1, null, undefined, 2, 3])).toEqual([2, 3]);
+  });
+});
+
+describe('rankOf', () => {
+  it('1 = plus haut, ex æquo au même rang', () => {
+    expect(rankOf(10, [10, 8, 12, 10])).toBe(2);
+    expect(rankOf(12, [10, 8, 12])).toBe(1);
   });
 });

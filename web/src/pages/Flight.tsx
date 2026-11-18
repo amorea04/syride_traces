@@ -44,7 +44,7 @@ export function Flight() {
 
   const site = flight.siteId === null ? undefined : siteById.get(flight.siteId);
   return (
-    <Stack gap={28} data-testid="flight-page" data-flight-key={flight.key}>
+    <Stack key={flight.key} gap={28} data-testid="flight-page" data-flight-key={flight.key}>
       <title>{`${flight.site ?? 'Vol'} · ${flight.pilot} · ${fmtFlightMoment(flight)} · ${APP_NAME}`}</title>
       <FlightHeader flight={flight} />
       <div className="fv-grid">

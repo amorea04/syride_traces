@@ -13,6 +13,7 @@ import {
   savePrefs,
   searchFlights,
   sortFlights,
+  sortOnVisible,
   type ColumnId,
   type SortSpec,
   type TablePrefs,
@@ -29,7 +30,8 @@ function downloadText(name: string, text: string): void {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  // Le téléchargement démarre après le clic : l'URL est révoquée une fois la main rendue au navigateur.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /** Liste des vols (ROADMAP §5.2) : sélection filtrée, recherche, tri, colonnes, export CSV. */
@@ -41,15 +43,22 @@ export function Flights() {
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query);
 
-  const update = useCallback((patch: Partial<TablePrefs>) => {
+  const update = useCallback((change: (prev: TablePrefs) => TablePrefs) => {
     setPrefs((prev) => {
-      const next = { ...prev, ...patch };
+      const next = change(prev);
       savePrefs(next);
       return next;
     });
   }, []);
-  const setSort = useCallback((sort: SortSpec[]) => update({ sort }), [update]);
-  const setVisible = useCallback((visible: ColumnId[]) => update({ visible }), [update]);
+  const setSort = useCallback(
+    (sort: SortSpec[]) => update((prev) => ({ ...prev, sort: sortOnVisible(sort, prev.visible) })),
+    [update],
+  );
+  // Masquer une colonne la retire aussi du tri (état et stockage restent cohérents).
+  const setVisible = useCallback(
+    (visible: ColumnId[]) => update((prev) => ({ visible, sort: sortOnVisible(prev.sort, visible) })),
+    [update],
+  );
 
   const haystacks = useMemo(() => buildHaystacks(allFlights), [allFlights]);
   const searched = useMemo(

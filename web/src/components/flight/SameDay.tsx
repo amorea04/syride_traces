@@ -8,6 +8,8 @@ import { SYRIDE_LABEL } from '@/components/flight/FlightHeader';
 import type { Flight } from '@/data/flight';
 import type { SameDay as SameDayFlights } from '@/lib/flightContext';
 import { fmtDateShort, fmtDuration, fmtInt, plural } from '@/lib/format';
+import { fmtWithUnit } from '@/components/flight/measureFormat';
+import { MEASURES, measureValue } from '@/lib/metrics';
 import { syrideFlightUrl } from '@/lib/syride';
 import { disciplineColor } from '@/theme/tokens';
 
@@ -18,7 +20,7 @@ function detail(f: Flight): string {
   const parts = [
     f.time,
     f.durationMin === null ? null : fmtDuration(f.durationMin),
-    f.ceilingM === null ? null : `plafond ${fmtInt(f.ceilingM)} m`,
+    `plafond ${fmtWithUnit(measureValue(f, MEASURES.plafond), 'm', 0)}`,
   ];
   return parts.filter(Boolean).join(' · ');
 }

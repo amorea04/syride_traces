@@ -3,6 +3,7 @@
  * Fonctions pures, sans dépendance à React : la page et le tableau restent minces.
  */
 import type { Flight } from '@/data/flight';
+import { MEASURES, measureValue, type MeasureId } from '@/lib/metrics';
 import { syrideFlightUrl } from '@/lib/syride';
 
 /** Identifiants des colonnes de données (la colonne d'action n'est pas une colonne de données). */
@@ -66,6 +67,15 @@ const measureCsv = (header: string, value: (f: Flight) => number | null, digits:
   value,
   digits,
 });
+
+/**
+ * Mesure de fiche d'un vol : `null` pour un vol incomplet (comme la fiche vol et les agrégats),
+ * pour l'affichage, le tri et l'export.
+ */
+const ficheOf =
+  (id: MeasureId) =>
+  (f: Flight): number | null =>
+    measureValue(f, MEASURES[id]);
 
 /** Clé de tri chronologique : date, puis heure (un vol sans heure passe avant ceux du même jour). */
 export function dateSortKey(f: Flight): string {
@@ -146,8 +156,8 @@ export const COLUMNS: readonly ColumnSpec[] = [
     width: 95,
     numeric: true,
     defaultVisible: true,
-    sortValue: (f) => f.ceilingM,
-    csv: [measureCsv('Plafond (m)', (f) => f.ceilingM, 0)],
+    sortValue: ficheOf('plafond'),
+    csv: [measureCsv('Plafond (m)', ficheOf('plafond'), 0)],
   },
   {
     id: 'speedMax',
@@ -155,8 +165,8 @@ export const COLUMNS: readonly ColumnSpec[] = [
     width: 115,
     numeric: true,
     defaultVisible: true,
-    sortValue: (f) => f.speedMax,
-    csv: [measureCsv('Vitesse max (km/h)', (f) => f.speedMax, 1)],
+    sortValue: ficheOf('vitesse_max'),
+    csv: [measureCsv('Vitesse max (km/h)', ficheOf('vitesse_max'), 1)],
   },
   {
     id: 'varioMax',
@@ -164,8 +174,8 @@ export const COLUMNS: readonly ColumnSpec[] = [
     width: 105,
     numeric: true,
     defaultVisible: true,
-    sortValue: (f) => f.varioMax,
-    csv: [measureCsv('Vario max (m/s)', (f) => f.varioMax, 1)],
+    sortValue: ficheOf('vario_max'),
+    csv: [measureCsv('Vario max (m/s)', ficheOf('vario_max'), 1)],
   },
   {
     id: 'gMax',
@@ -173,8 +183,8 @@ export const COLUMNS: readonly ColumnSpec[] = [
     width: 85,
     numeric: true,
     defaultVisible: true,
-    sortValue: (f) => f.gMax,
-    csv: [measureCsv('g max', (f) => f.gMax, 1)],
+    sortValue: ficheOf('g_max'),
+    csv: [measureCsv('g max', ficheOf('g_max'), 1)],
   },
   {
     id: 'instrument',
@@ -209,8 +219,8 @@ export const COLUMNS: readonly ColumnSpec[] = [
     width: 140,
     numeric: true,
     defaultVisible: false,
-    sortValue: (f) => f.distCumKm,
-    csv: [measureCsv('Distance cumulée (km)', (f) => f.distCumKm, 1)],
+    sortValue: ficheOf('distance_cumulee'),
+    csv: [measureCsv('Distance cumulée (km)', ficheOf('distance_cumulee'), 1)],
   },
   {
     id: 'speedAvg',
@@ -218,8 +228,8 @@ export const COLUMNS: readonly ColumnSpec[] = [
     width: 140,
     numeric: true,
     defaultVisible: false,
-    sortValue: (f) => f.speedAvg,
-    csv: [measureCsv('Vitesse moyenne (km/h)', (f) => f.speedAvg, 1)],
+    sortValue: ficheOf('vitesse_moyenne'),
+    csv: [measureCsv('Vitesse moyenne (km/h)', ficheOf('vitesse_moyenne'), 1)],
   },
   {
     id: 'source',
@@ -396,6 +406,11 @@ export function defaultPrefs(): TablePrefs {
   return { sort: DEFAULT_SORT.map((s) => ({ ...s })), visible: defaultVisibleColumns() };
 }
 
+/** Tri restreint aux colonnes visibles (une colonne masquée ne doit plus trier la liste). */
+export function sortOnVisible(sort: readonly SortSpec[], visible: readonly ColumnId[]): SortSpec[] {
+  return sort.filter((s) => visible.includes(s.id)).map((s) => ({ ...s }));
+}
+
 function isColumnId(value: unknown): value is ColumnId {
   return typeof value === 'string' && COLUMN_BY_ID.has(value as ColumnId);
 }
@@ -422,10 +437,13 @@ export function parsePrefs(raw: string | null): TablePrefs {
       }
       prefs.sort = clean;
     }
+    // Sans ID connu dans la liste sauvegardée (vide ou entièrement périmée), on garde les colonnes par défaut.
     if (Array.isArray(visible)) {
       const wanted = new Set((visible as unknown[]).filter(isColumnId));
       if (wanted.size > 0) prefs.visible = COLUMNS.filter((c) => wanted.has(c.id)).map((c) => c.id);
     }
+    // Un tri ne porte que sur des colonnes visibles.
+    prefs.sort = sortOnVisible(prefs.sort, prefs.visible);
     return prefs;
   } catch {
     return fallback;

@@ -10,6 +10,7 @@ import {
   flightsToCsv,
   normalizeText,
   parsePrefs,
+  sortOnVisible,
   searchFlights,
   sortFlights,
 } from '@/lib/flightsTable';
@@ -150,13 +151,57 @@ describe('préférences', () => {
           { id: 'inconnue', desc: false },
           { id: 'duration', desc: false },
         ],
-        visible: ['site', 'bidule', 'date'],
+        visible: ['site', 'bidule', 'date', 'duration'],
       }),
     );
     expect(prefs.sort).toEqual([{ id: 'duration', desc: true }]);
-    expect(prefs.visible).toEqual(['date', 'site']);
+    expect(prefs.visible).toEqual(['date', 'site', 'duration']);
   });
   it('liste de colonnes vide : défauts', () => {
     expect(parsePrefs(JSON.stringify({ visible: [] })).visible).toEqual(defaultVisibleColumns());
+  });
+});
+
+describe('vols incomplets : mesures de fiche neutralisées', () => {
+  const complete = makeFlight('2025-01-01', { ceilingM: 1500, speedMax: 60, distKm: 12 });
+  const incomplete = makeFlight('2025-01-02', { ceilingM: 3000, speedMax: 90, distKm: 20, incomplete: true });
+  it('tri : la valeur neutralisée passe en fin de liste quel que soit le sens', () => {
+    expect(sortFlights([incomplete, complete], [{ id: 'ceiling', desc: true }])).toEqual([complete, incomplete]);
+    expect(sortFlights([incomplete, complete], [{ id: 'ceiling', desc: false }])).toEqual([complete, incomplete]);
+  });
+  it('export CSV : cellule vide pour la fiche, valeur conservée pour la distance', () => {
+    const csv = flightsToCsv([incomplete], ['ceiling', 'speedMax', 'distance']);
+    const row = csv.split('\r\n')[1] ?? '';
+    expect(row.startsWith(';;20;')).toBe(true);
+  });
+});
+
+describe('préférences : tri et colonnes visibles', () => {
+  it('sortOnVisible retire les colonnes masquées', () => {
+    expect(
+      sortOnVisible(
+        [
+          { id: 'date', desc: true },
+          { id: 'gain', desc: false },
+        ],
+        ['date', 'pilot'],
+      ),
+    ).toEqual([{ id: 'date', desc: true }]);
+  });
+  it('parsePrefs purge du tri les colonnes non visibles', () => {
+    const prefs = parsePrefs(
+      JSON.stringify({
+        visible: ['date', 'pilot'],
+        sort: [
+          { id: 'gain', desc: true },
+          { id: 'pilot', desc: false },
+        ],
+      }),
+    );
+    expect(prefs.sort).toEqual([{ id: 'pilot', desc: false }]);
+  });
+  it('ID inconnus filtrés ; défauts seulement si aucun ID connu', () => {
+    expect(parsePrefs(JSON.stringify({ visible: ['zzz', 'pilot', 'date'] })).visible).toEqual(['date', 'pilot']);
+    expect(parsePrefs(JSON.stringify({ visible: ['zzz'] })).visible).toEqual(defaultVisibleColumns());
   });
 });

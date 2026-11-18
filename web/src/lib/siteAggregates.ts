@@ -8,7 +8,7 @@
  */
 import type { Flight } from '@/data/flight';
 import { MEASURES, measureValue } from '@/lib/metrics';
-import { mean, meanPositive, median, present } from '@/lib/numeric';
+import { mean, meanPositive, median, present, rankOf } from '@/lib/numeric';
 
 /** Un site est comparé à partir de ce nombre de vols (D15). */
 export const MIN_SITE_FLIGHTS = 10;
@@ -168,11 +168,7 @@ export function positionAmongSites(
     const own = ind.of(self);
     const values = present(compared.map(ind.of));
     const otherValues = present(others.map(ind.of));
-    let rank: number | null = null;
-    if (own !== null) {
-      rank = 1;
-      for (const v of values) if (v > own) rank += 1;
-    }
+    const rank = own === null ? null : rankOf(own, values);
     return {
       id: ind.id,
       value: own,

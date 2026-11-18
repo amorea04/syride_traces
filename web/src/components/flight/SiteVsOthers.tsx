@@ -32,7 +32,7 @@ interface Props {
 
 function ShareBar({ name, share }: { name: string; share: DisciplineShare }) {
   const total = share.parapente + share.paramoteur;
-  const p = total === 0 ? 0 : (100 * share.parapente) / total;
+  const p = parapenteShare(share);
   return (
     <div className="fv-b3">
       <span className="fv-b3-name">{name}</span>
@@ -61,10 +61,12 @@ function Strips({
   pilotLabel: string | null;
 }) {
   const pct = (s: DisciplineShare) => fmtPercent(parapenteShare(s));
+  // Vue « Ce pilote » : le nombre de pilotes vaut toujours 1, l'indicateur n'apporte rien.
+  const indicators = pilotLabel ? pos.indicators.filter((ind) => ind.id !== 'pilots') : pos.indicators;
   return (
     <>
       <div className="fv-strips" data-testid="site-strips">
-        {pos.indicators.map((ind) => (
+        {indicators.map((ind) => (
           <SiteStrip key={ind.id} ind={ind} othersLabel={othersLabel} />
         ))}
       </div>
@@ -115,7 +117,7 @@ function Strips({
               </tr>
             </thead>
             <tbody>
-              {pos.indicators.map((ind) => {
+              {indicators.map((ind) => {
                 const def = SITE_INDICATORS.find((d) => d.id === ind.id)!;
                 const fmt = (v: number | null) => fmtWithUnit(v, def.unit, def.digits);
                 return (
@@ -159,21 +161,18 @@ export function SiteVsOthers({ flight, allFlights, pilotFlights }: Props) {
   const siteId = flight.siteId;
   const siteName = flight.site ?? '';
 
+  // Les agrégats ne dépendent que des vols (un passage) ; seul le positionnement dépend du site.
+  const allAggregates = useMemo(() => siteAggregates(allFlights), [allFlights]);
+  const pilotAggregates = useMemo(() => siteAggregates(pilotFlights), [pilotFlights]);
   const all = useMemo(
-    () => (siteId === null ? null : positionAmongSites(siteAggregates(allFlights), siteId, MIN_SITE_FLIGHTS)),
-    [allFlights, siteId],
+    () => (siteId === null ? null : positionAmongSites(allAggregates, siteId, MIN_SITE_FLIGHTS)),
+    [allAggregates, siteId],
   );
   const mine = useMemo(
-    () =>
-      siteId === null
-        ? null
-        : positionAmongSites(siteAggregates(pilotFlights), siteId, MIN_SITE_FLIGHTS_PILOT),
-    [pilotFlights, siteId],
+    () => (siteId === null ? null : positionAmongSites(pilotAggregates, siteId, MIN_SITE_FLIGHTS_PILOT)),
+    [pilotAggregates, siteId],
   );
-  const siteFlightsCount = useMemo(
-    () => (siteId === null ? 0 : allFlights.filter((f) => f.siteId === siteId).length),
-    [allFlights, siteId],
-  );
+  const siteFlightsCount = siteId === null ? 0 : (allAggregates.get(siteId)?.flights ?? 0);
 
   if (siteId === null) return null;
   const link = (

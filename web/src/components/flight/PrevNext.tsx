@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router';
 import { FilterLink, useFilterSearch } from '@/components/FilterLink';
 import '@/components/flight/flight.css';
 import type { Flight } from '@/data/flight';
-import { fmtDateShort, fmtDuration, fmtInt } from '@/lib/format';
+import { fmtDateShort, fmtDuration } from '@/lib/format';
+import { fmtWithUnit } from '@/components/flight/measureFormat';
+import { MEASURES, measureValue } from '@/lib/metrics';
 
 function summary(f: Flight): string {
   const parts = [
     f.time ? `${fmtDateShort(f.date)}, ${f.time}` : fmtDateShort(f.date),
     f.durationMin === null ? null : fmtDuration(f.durationMin),
-    f.ceilingM === null ? null : `${fmtInt(f.ceilingM)} m`,
+    fmtWithUnit(measureValue(f, MEASURES.plafond), 'm', 0),
   ];
   return parts.filter(Boolean).join(' · ');
 }

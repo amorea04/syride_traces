@@ -5,7 +5,7 @@
 import type { Flight } from '@/data/flight';
 import { fmtInt } from '@/lib/format';
 import { MEASURES, measureValue } from '@/lib/metrics';
-import { mean, meanPositive, present } from '@/lib/numeric';
+import { mean, meanPositive, positives, present, rankOf } from '@/lib/numeric';
 
 /** Effectif minimal d'une population pour qu'un rang mérite d'être dit. */
 export const MIN_RANK_POPULATION = 5;
@@ -27,12 +27,7 @@ export function fmtOrdinal(n: number): string {
   return n === 1 ? '1ᵉʳ' : `${fmtInt(n)}ᵉ`;
 }
 
-/** Rang d'une valeur (1 = la plus haute) : les ex æquo partagent le même rang. */
-export function rankOf(value: number, values: readonly number[]): number {
-  let above = 0;
-  for (const v of values) if (v > value) above += 1;
-  return above + 1;
-}
+export { rankOf };
 
 /** Un rang est-il assez parlant pour être dit ? */
 export function isNotableRank(rank: number, total: number): boolean {
@@ -211,7 +206,7 @@ function meanOf(values: readonly (number | null)[], keepZero: boolean | undefine
 }
 
 function countOf(values: readonly (number | null)[], keepZero: boolean | undefined): number {
-  return keepZero ? present(values).length : values.filter((v) => v !== null && v > 0).length;
+  return keepZero ? present(values).length : positives(values).length;
 }
 
 /** Une ligne par métrique : ce vol, moyenne du pilote, moyenne du site (valeurs ≤ 0 ignorées). */
