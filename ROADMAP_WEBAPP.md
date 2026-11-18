@@ -944,7 +944,7 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - [x] 4.6 Contrôle D12 automatisé (`web/e2e/d12.spec.ts`)
 - [x] 4.7 Tests e2e des vols (`vols-liste`, `vol-fiche`, `d12` ; 641 tests unitaires, 31 e2e au vert)
 - [x] Relecture `/code-review medium` : 10 constats corrigés
-- [ ] PR relue et fusionnée · **`/clear`**
+- [x] PR relue et fusionnée (PR #5) · **`/clear`**
 
 ### Phase 5 : Pilotes, sites, comparaison, records
 - [ ] 5.1 Pages pilotes (carrière, carte des sites, accès aux Bilans)
