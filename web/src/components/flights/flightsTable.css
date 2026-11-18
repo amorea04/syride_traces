@@ -1,0 +1,93 @@
+/* Liste des vols : tableau virtualisé en grille, défilement dans son propre conteneur. */
+.sr-vt-scroll {
+  position: relative;
+  overflow: auto;
+  max-width: 100%;
+  height: clamp(360px, calc(100dvh - 330px), 900px);
+  border-top: var(--sr-border-width) solid var(--sr-line);
+  border-bottom: var(--sr-border-width) solid var(--sr-line);
+  font-size: var(--sr-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.sr-vt-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  background: var(--sr-surface-2);
+  border-bottom: var(--sr-border-width) solid var(--sr-line);
+}
+.sr-vt-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  align-items: center;
+  border-bottom: var(--sr-border-width) solid var(--sr-line);
+  cursor: pointer;
+}
+.sr-vt-row:hover {
+  background: var(--sr-surface-2);
+}
+.sr-vt-row:focus-visible {
+  outline: 2px solid var(--sr-accent);
+  outline-offset: -2px;
+}
+.sr-vt-th,
+.sr-vt-td {
+  padding: 0 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sr-vt-th {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  font-size: var(--sr-text-xs);
+  font-weight: 600;
+  color: var(--sr-muted);
+}
+.sr-vt-th[data-numeric='true'] {
+  justify-content: flex-end;
+}
+.sr-vt-sort {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sr-vt-sort:focus-visible {
+  outline: 2px solid var(--sr-accent);
+  outline-offset: 2px;
+}
+.sr-vt-th[aria-sort='ascending'] .sr-vt-sort,
+.sr-vt-th[aria-sort='descending'] .sr-vt-sort {
+  color: var(--sr-text);
+}
+.sr-vt-td[data-numeric='true'] {
+  text-align: right;
+}
+.sr-vt-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: baseline;
+}
+.sr-vt-flag {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 5px;
+  color: var(--sr-muted);
+}
+.sr-vt-empty {
+  padding: 24px 8px;
+}

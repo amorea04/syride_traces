@@ -936,14 +936,15 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - [x] PR relue (`/code-review medium`, 10 constats corrigés) et fusionnée (PR #4) · **`/clear`**
 
 ### Phase 4 : Vols
-- [ ] 4.1 Liste des vols virtualisée et export CSV
-- [ ] 4.2 `syride.ts` (liens) et tests
-- [ ] 4.3 Fiche vol : en-tête, bouton Syride, chiffres et sources
-- [ ] 4.4 Ce vol dans son contexte (rangs, comparaisons, même jour, précédent et suivant)
-- [ ] 4.5 Mini-carte du site
-- [ ] 4.6 Contrôle D12 automatisé (aucune géométrie de vol)
-- [ ] 4.7 Tests e2e des vols
-- [ ] PR relue et fusionnée · **`/clear`**
+- [x] 4.1 Liste des vols virtualisée (tri multicolonne, recherche sans accents, colonnes au choix mémorisées) et export CSV (`;`, BOM, lien Syride)
+- [x] 4.2 `syride.ts` (liens) et tests (faits en phase 2)
+- [x] 4.3 Fiche vol : en-tête, bouton Syride, chiffres et sources (fiche indépendante des filtres globaux : contexte calculé sur tous les vols)
+- [x] 4.4 Ce vol dans son contexte (rangs, comparaisons, même jour, précédent et suivant avec ← →) ; en plus, « Ce site face aux autres » (D15/D17, module `lib/siteAggregates.ts` réutilisable en phase 5, seuil 10 vols, aussi en vue « Ce pilote »)
+- [x] 4.5 Mini-carte du site
+- [x] 4.6 Contrôle D12 automatisé (`web/e2e/d12.spec.ts`)
+- [x] 4.7 Tests e2e des vols (`vols-liste`, `vol-fiche`, `d12` ; 641 tests unitaires, 31 e2e au vert)
+- [x] Relecture `/code-review medium` : 10 constats corrigés
+- [x] PR relue et fusionnée (PR #5) · **`/clear`**
 
 ### Phase 5 : Pilotes, sites, comparaison, records
 - [ ] 5.1 Pages pilotes (carrière, carte des sites, accès aux Bilans)

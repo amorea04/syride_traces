@@ -146,3 +146,10 @@ const EXACT_TIE_PROBE = 30;
 export function compareStrings(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
+
+/** Rang d'une valeur (1 = la plus haute) : les ex æquo partagent le même rang. */
+export function rankOf(value: number, values: readonly number[]): number {
+  let above = 0;
+  for (const v of values) if (v > value) above += 1;
+  return above + 1;
+}
