@@ -1,0 +1,484 @@
+/* Fiche vol : styles propres à la page, jetons --sr-* uniquement (maquette-fiche-vol.html, palette « Encre »). */
+.fv-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 24px 28px;
+  align-items: start;
+}
+.fv-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+@media (max-width: 75em) {
+  .fv-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* En-tête */
+.fv-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 40px;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.fv-title {
+  font-size: clamp(28px, 5vw, 46px);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.fv-title a {
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-decoration: none;
+}
+.fv-title a:hover {
+  text-decoration: underline;
+}
+.fv-sub {
+  margin: 6px 0 12px;
+  font-size: 17px;
+  color: var(--sr-muted);
+}
+.fv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--sr-line);
+  background: var(--sr-surface);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 13px;
+}
+.fv-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.fv-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.fv-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--sr-accent);
+  color: var(--sr-accent-ink);
+  border: 1px solid var(--sr-accent);
+  border-radius: var(--sr-radius-md, 5px);
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 650;
+  text-decoration: none;
+}
+.fv-primary:hover {
+  filter: brightness(1.12);
+  text-decoration: none;
+}
+@media (max-width: 48em) {
+  .fv-actions,
+  .fv-primary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Chiffres du vol */
+.fv-figs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 16px;
+}
+@media (max-width: 48em) {
+  .fv-figs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.fv-fig {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid var(--sr-line);
+  padding-top: 10px;
+  min-width: 0;
+}
+.fv-fig-label {
+  font-size: 12px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sr-muted);
+}
+.fv-fig-value {
+  font-size: clamp(22px, 3.4vw, 32px);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.fv-fig-value small {
+  font-size: 0.5em;
+  color: var(--sr-muted);
+  margin-left: 3px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.fv-fig-empty {
+  color: var(--sr-muted);
+}
+.fv-note {
+  font-size: 13px;
+  color: var(--sr-muted);
+  margin: 14px 0 0;
+}
+
+/* Rangs */
+.fv-ctx {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fv-ctx li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+.fv-diamond {
+  width: 9px;
+  height: 9px;
+  transform: rotate(45deg);
+  background: var(--sr-line);
+  border: 1px solid var(--sr-muted);
+  justify-self: center;
+}
+.fv-diamond[data-gold='true'] {
+  background: var(--sr-gold);
+  border-color: var(--sr-gold);
+}
+.fv-gold {
+  color: var(--sr-gold-text);
+  background: var(--sr-gold-bg);
+  border-radius: 3px;
+  padding: 0 4px;
+  font-weight: 700;
+}
+
+/* Barres « ce vol / pilote / site » */
+.fv-cmps {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.fv-cmp-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-weight: 650;
+  margin-bottom: 6px;
+}
+.fv-b3 {
+  display: grid;
+  grid-template-columns: minmax(110px, 170px) minmax(0, 1fr) 100px;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.fv-b3 b {
+  text-align: right;
+  white-space: nowrap;
+}
+.fv-b3-name {
+  color: var(--sr-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fv-bar {
+  height: 11px;
+  background: var(--sr-surface-2);
+  border-radius: 0 5px 5px 0;
+  display: flex;
+  overflow: hidden;
+}
+.fv-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+}
+.fv-bar .fv-bar-self {
+  background: var(--sr-p);
+}
+.fv-bar .fv-bar-pilot {
+  background: var(--sr-b);
+  opacity: 0.55;
+}
+.fv-bar .fv-bar-site {
+  background: repeating-linear-gradient(135deg, var(--sr-b) 0 2px, transparent 2px 5px);
+}
+.fv-bar .fv-bar-sp {
+  background: var(--sr-p);
+  border-radius: 0;
+  border-right: 2px solid var(--sr-surface);
+}
+.fv-bar .fv-bar-sm {
+  background: var(--sr-m);
+  border-radius: 0;
+}
+.fv-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13px;
+  color: var(--sr-muted);
+  margin-top: 12px;
+}
+.fv-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.fv-sw {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+  flex: none;
+}
+@media (max-width: 48em) {
+  .fv-b3 {
+    grid-template-columns: minmax(80px, 110px) minmax(0, 1fr) 90px;
+  }
+}
+
+/* Bandes « ce site face aux autres » */
+.fv-strips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 36px;
+}
+@media (max-width: 48em) {
+  .fv-strips {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.fv-trk {
+  display: block;
+  position: relative;
+  height: 22px;
+  border-bottom: 1px solid var(--sr-line);
+  margin: 6px 0 4px;
+}
+.fv-trk > i {
+  position: absolute;
+  bottom: 3px;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 50%;
+  background: var(--sr-b);
+  opacity: 0.38;
+}
+.fv-trk .fv-mean {
+  position: absolute;
+  bottom: 0;
+  width: 3px;
+  height: 22px;
+  margin-left: -1.5px;
+  background: var(--sr-text);
+  border-radius: 1px;
+}
+.fv-trk .fv-me {
+  position: absolute;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: var(--sr-accent);
+  box-shadow: 0 0 0 2px var(--sr-surface);
+}
+.fv-sv {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  align-items: center;
+  font-size: 13px;
+}
+.fv-sv b {
+  font-size: 15px;
+}
+.fv-ax {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  margin-top: 2px;
+  color: var(--sr-muted);
+}
+.fv-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.fv-data {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--sr-muted);
+}
+.fv-data summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.fv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  color: var(--sr-text);
+}
+.fv-table th {
+  font-size: 12px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--sr-muted);
+  text-align: right;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--sr-line);
+  white-space: nowrap;
+}
+.fv-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--sr-line);
+  text-align: right;
+  white-space: nowrap;
+}
+.fv-table th:first-child,
+.fv-table td:first-child {
+  text-align: left;
+}
+.fv-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Précédent / suivant */
+.fv-pn-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.fv-pn {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--sr-line);
+  background: var(--sr-surface);
+  border-radius: 5px;
+  padding: 12px 14px;
+  text-decoration: none;
+  color: var(--sr-text);
+  min-width: 0;
+}
+a.fv-pn:hover {
+  border-color: var(--sr-accent);
+  text-decoration: none;
+}
+.fv-pn b {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fv-pn[data-empty='true'] {
+  color: var(--sr-muted);
+  background: transparent;
+  border-style: dashed;
+}
+.fv-pn[data-dir='next'] {
+  text-align: right;
+}
+.fv-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sr-muted);
+}
+
+/* Mini-carte */
+.fv-map {
+  height: 220px;
+  width: 100%;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--sr-line);
+  background: var(--sr-map-land);
+}
+
+/* Vols du même jour */
+.fv-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.fv-li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--sr-line);
+}
+.fv-li:last-child {
+  border-bottom: 0;
+}
+.fv-li-main {
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+.fv-li-sub {
+  color: var(--sr-muted);
+  font-size: 13px;
+}
+.fv-ico {
+  color: var(--sr-muted);
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+}
+.fv-ico:hover {
+  color: var(--sr-text);
+}
