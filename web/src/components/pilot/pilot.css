@@ -1,0 +1,401 @@
+/* Pages pilotes : jetons --sr-* uniquement (maquette-pilote.html, palette « Encre »). */
+.pl-two {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 24px 28px;
+  align-items: start;
+}
+@media (max-width: 75em) {
+  .pl-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.pl-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 40px;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.pl-title {
+  font-size: clamp(28px, 5vw, 46px);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.pl-sub {
+  margin: 6px 0 12px;
+  font-size: 16px;
+  color: var(--sr-muted);
+}
+.pl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.pl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--sr-line);
+  background: var(--sr-surface);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 13px;
+}
+.pl-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.pl-years-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.pl-years-nav a {
+  border: 1px solid var(--sr-line);
+  background: var(--sr-surface);
+  border-radius: var(--sr-radius-md, 5px);
+  padding: 3px 10px;
+  font-size: 14px;
+  color: var(--sr-text);
+  text-decoration: none;
+}
+.pl-years-nav a:hover {
+  border-color: var(--sr-accent);
+  text-decoration: none;
+}
+
+.pl-kpis {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 75em) {
+  .pl-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 36em) {
+  .pl-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.pl-kpi {
+  border: 1px solid var(--sr-line);
+  background: var(--sr-surface);
+  border-radius: var(--sr-radius-lg, 8px);
+  padding: 12px 14px;
+  min-width: 0;
+}
+.pl-kpi .sr-kpi-value {
+  font-size: 24px;
+}
+
+.pl-career-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+@media (max-width: 48em) {
+  .pl-career-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.pl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13px;
+  color: var(--sr-muted);
+  margin-top: 8px;
+}
+.pl-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pl-star {
+  color: var(--sr-gold);
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* Records personnels : l'or est réservé aux records. */
+.pl-recs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.pl-rec {
+  background: var(--sr-surface-2);
+  border-radius: var(--sr-radius-lg, 8px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pl-rec-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--sr-gold-text);
+  background: var(--sr-gold-bg);
+  border-radius: 3px;
+  padding: 1px 6px;
+  align-self: flex-start;
+}
+.pl-rec-diamond {
+  width: 7px;
+  height: 7px;
+  transform: rotate(45deg);
+  background: var(--sr-gold);
+}
+.pl-rec-value {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--sr-gold-text);
+  line-height: 1.2;
+}
+.pl-rec-meta {
+  font-size: 12px;
+  color: var(--sr-muted);
+  overflow-wrap: anywhere;
+}
+.pl-rec-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Cartes par année */
+.pl-years {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+.pl-year {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--sr-line);
+  background: var(--sr-surface);
+  border-radius: var(--sr-radius-lg, 8px);
+  padding: 12px 14px;
+  color: var(--sr-text);
+  text-decoration: none;
+  min-width: 0;
+}
+.pl-year:hover {
+  border-color: var(--sr-accent);
+  text-decoration: none;
+}
+.pl-year-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.pl-year-y {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.pl-year-tag {
+  font-size: 12px;
+  color: var(--sr-muted);
+}
+.pl-year-h {
+  font-size: 20px;
+  font-weight: 650;
+}
+.pl-year-meta {
+  font-size: 13px;
+  color: var(--sr-muted);
+}
+.pl-months {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 28px;
+  margin: 4px 0;
+}
+.pl-months i {
+  flex: 1;
+  background: var(--sr-accent);
+  border-radius: 1px 1px 0 0;
+  min-height: 2px;
+}
+.pl-months i[data-empty='true'] {
+  background: var(--sr-line);
+}
+.pl-year-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--sr-accent-text);
+}
+
+/* Sites favoris */
+.pl-sites {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 20px 24px;
+  align-items: start;
+}
+@media (max-width: 62em) {
+  .pl-sites {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.pl-site-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 1.2fr) minmax(0, 1fr) 68px;
+  gap: 10px;
+  align-items: center;
+  font-size: 14px;
+  padding: 3px 0;
+}
+.pl-site-row > a,
+.pl-site-row > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pl-site-bar {
+  height: 10px;
+  background: var(--sr-surface-2);
+  border-radius: 0 5px 5px 0;
+  overflow: hidden;
+}
+.pl-site-bar i {
+  display: block;
+  height: 100%;
+  background: var(--sr-b);
+  opacity: 0.7;
+  border-radius: 0 4px 4px 0;
+}
+.pl-site-row b {
+  text-align: right;
+  white-space: nowrap;
+}
+.pl-site-row[data-dim='true'] {
+  opacity: 0.35;
+}
+
+/* Frise des voiles */
+.pl-wings {
+  display: grid;
+  grid-template-columns: minmax(64px, 140px) minmax(0, 1fr) 40px;
+  gap: 3px 10px;
+  align-items: center;
+  font-size: 13px;
+}
+.pl-wing-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pl-wing-cells,
+.pl-wing-years {
+  display: grid;
+  gap: 2px;
+}
+.pl-wing-years span {
+  font-size: 11px;
+  color: var(--sr-muted);
+  border-left: 1px solid var(--sr-line);
+  padding-left: 3px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.pl-wing-cell {
+  height: 16px;
+  border-radius: 2px;
+  background: var(--sr-cal-empty);
+}
+.pl-wing-total {
+  text-align: right;
+  font-weight: 650;
+}
+.pl-wings[data-dim='true'] {
+  opacity: 1;
+}
+.pl-wing-dim {
+  opacity: 0.3;
+}
+
+/* Liste des pilotes */
+.pl-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+.pl-card {
+  position: relative;
+  border: 1px solid var(--sr-line);
+  background: var(--sr-surface);
+  border-radius: var(--sr-radius-lg, 8px);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.pl-card:hover {
+  border-color: var(--sr-accent);
+}
+.pl-card-name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--sr-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.pl-card-name::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.pl-card-name:hover {
+  text-decoration: underline;
+}
+.pl-card-meta {
+  font-size: 13px;
+  color: var(--sr-muted);
+}
+.pl-card-main {
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pl-card-ext {
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  font-size: 12px;
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

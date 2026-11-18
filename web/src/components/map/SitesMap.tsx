@@ -25,7 +25,7 @@ import {
   SRC_RAW,
   type MapStyle,
 } from '@/components/map/sitesLayers';
-import { fmtHm, fmtInt, fmtPercent } from '@/lib/format';
+import { fmtHm, fmtInt, fmtPercent, plural } from '@/lib/format';
 import { type Bounds, type SitePointProps, type SitesMapData } from '@/lib/mapSites';
 import { useFiltersStore } from '@/store/filters';
 import { useHighlightStore } from '@/store/highlight';
@@ -139,6 +139,8 @@ export interface SitesMapProps {
   highlightSiteId?: number | null;
   /** Recadre la carte sur la sélection quand elle change (défaut : oui). */
   fitToSelection?: boolean;
+  /** Ouvre la fenêtre d'information au clic sur un site (défaut : oui). */
+  popup?: boolean;
 }
 
 /**
@@ -153,6 +155,7 @@ export function SitesMap({
   onSiteClick,
   highlightSiteId,
   fitToSelection = true,
+  popup: showPopup = true,
 }: SitesMapProps) {
   const scheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
   const isMobile = useMediaQuery(MOBILE_QUERY) ?? false;
@@ -175,9 +178,29 @@ export function SitesMap({
   const appliedScheme = useRef<ColorScheme | null>(null);
 
   // Dernières valeurs, lues par les gestionnaires d'événements créés une seule fois.
-  const live = useRef({ data, heatmap, effectiveHighlight, scheme, onSiteClick, search, navigate, isMobile });
+  const live = useRef({
+    data,
+    heatmap,
+    effectiveHighlight,
+    scheme,
+    onSiteClick,
+    search,
+    navigate,
+    isMobile,
+    showPopup,
+  });
   useLayoutEffect(() => {
-    live.current = { data, heatmap, effectiveHighlight, scheme, onSiteClick, search, navigate, isMobile };
+    live.current = {
+      data,
+      heatmap,
+      effectiveHighlight,
+      scheme,
+      onSiteClick,
+      search,
+      navigate,
+      isMobile,
+      showPopup,
+    };
   });
 
   // Création de la carte (une fois) et nettoyage.
@@ -229,6 +252,7 @@ export function SitesMap({
         const p = siteProps(f);
         const { coordinates } = f.geometry as unknown as { coordinates: [number, number] };
         live.current.onSiteClick?.(p.siteId);
+        if (!live.current.showPopup) return;
         popup?.remove();
         popup = new Popup({ closeButton: true, maxWidth: '280px', offset: 10 })
           .setLngLat(coordinates)
@@ -369,7 +393,7 @@ export function SitesMap({
       <div
         ref={containerRef}
         role="region"
-        aria-label={`Carte des sites : ${fmtInt(data.collection.features.length)} sites avec coordonnées`}
+        aria-label={`Carte des sites : ${plural(data.collection.features.length, 'site')} avec coordonnées`}
         style={{ height, width: '100%', borderRadius: 3, overflow: 'hidden' }}
         data-testid="sites-map"
       />

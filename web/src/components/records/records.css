@@ -1,0 +1,15 @@
+/* Page Records : valeur record en or (couleur réservée), jetons --sr-* uniquement. */
+.rc-gold {
+  color: var(--sr-gold-text);
+  background: var(--sr-gold-bg);
+  border-radius: 3px;
+  padding: 0 6px;
+  font-weight: 700;
+}
+.rc-tabs {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+.rc-tabs button {
+  white-space: nowrap;
+}

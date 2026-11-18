@@ -97,7 +97,7 @@ export function EvolutionChart({ flights }: Props) {
         nameGap: 12,
       },
       dataZoom: [
-        { type: 'inside', xAxisIndex: 0 },
+        { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: 'ctrl', moveOnMouseWheel: false },
         { type: 'slider', xAxisIndex: 0, height: 22, bottom: 8 },
       ],
       series,
