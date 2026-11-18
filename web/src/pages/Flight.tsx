@@ -56,7 +56,7 @@ export function Flight() {
             hasSite={flight.siteId !== null}
             siteName={flight.site}
           />
-          <SiteVsOthers flight={flight} allFlights={flights} pilotFlights={context.populations.pilot} />
+          <SiteVsOthers flight={flight} referenceFlights={flights} pilotFlights={context.populations.pilot} />
         </div>
         <div className="fv-stack">
           <PrevNext previous={context.previous} next={context.next} />

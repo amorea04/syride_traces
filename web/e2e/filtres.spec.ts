@@ -26,10 +26,10 @@ test.describe('filtres globaux', () => {
   });
 
   test('un filtre dans l’URL est appliqué au chargement et suit la navigation', async ({ page }) => {
-    await page.goto('/vols?activite=parapente');
+    await page.goto('/?activite=parapente');
     await expect.poll(() => countText(page)).toBe(`${parapente} vols`);
-    await page.getByRole('link', { name: 'Pilotes' }).click();
-    await expect(page).toHaveURL(/\/pilotes\?activite=parapente/);
+    await page.getByRole('link', { name: 'Vols', exact: true }).click();
+    await expect(page).toHaveURL(/\/vols\?activite=parapente/);
     await expect.poll(() => countText(page)).toBe(`${parapente} vols`);
 
     await page.getByRole('button', { name: 'Réinitialiser' }).click();

@@ -23,12 +23,24 @@ import { plural } from '@/lib/format';
 type View = 'all' | 'pilot';
 
 interface Props {
-  flight: Flight;
-  /** Tous les vols (population de référence, indépendante des filtres). */
-  allFlights: readonly Flight[];
-  /** Vols du pilote. */
-  pilotFlights: readonly Flight[];
+  /** Vol de la fiche : donne le site et le pilote. Absent sur la page du site (voir `site`). */
+  flight?: Flight;
+  /** Site comparé quand il n'y a pas de vol (page du site). */
+  site?: { id: number; name: string };
+  /**
+   * Population de référence des sites comparés : tous les vols sur la fiche vol (indépendante des filtres),
+   * la sélection filtrée (tous filtres sauf les sites) sur la page du site.
+   */
+  referenceFlights: readonly Flight[];
+  /** Vols du pilote (vide si la vue « Ce pilote » est masquée). */
+  pilotFlights?: readonly Flight[];
+  /** Propose la bascule « Tous les pilotes / Ce pilote » (défaut : oui, si `flight` est fourni). */
+  showPilotView?: boolean;
+  /** Affiche le lien « Voir la page du site » (défaut : oui). */
+  showSiteLink?: boolean;
 }
+
+const NO_FLIGHTS: readonly Flight[] = [];
 
 function ShareBar({ name, share }: { name: string; share: DisciplineShare }) {
   const total = share.parapente + share.paramoteur;
@@ -156,13 +168,22 @@ function Strips({
  * D15 / D17 : le site du vol positionné parmi les autres sites (tous pilotes), ou parmi les sites du
  * pilote. Même langage visuel que « Ce vol face aux moyennes ». Calculs mémoïsés (un passage sur les vols).
  */
-export function SiteVsOthers({ flight, allFlights, pilotFlights }: Props) {
+export function SiteVsOthers({
+  flight,
+  site,
+  referenceFlights,
+  pilotFlights = NO_FLIGHTS,
+  showPilotView = true,
+  showSiteLink = true,
+}: Props) {
   const [view, setView] = useState<View>('all');
-  const siteId = flight.siteId;
-  const siteName = flight.site ?? '';
+  const siteId = site?.id ?? flight?.siteId ?? null;
+  const siteName = site?.name ?? flight?.site ?? '';
+  const pilotName = flight?.pilot ?? '';
+  const pilotViewEnabled = showPilotView && flight !== undefined;
 
   // Les agrégats ne dépendent que des vols (un passage) ; seul le positionnement dépend du site.
-  const allAggregates = useMemo(() => siteAggregates(allFlights), [allFlights]);
+  const allAggregates = useMemo(() => siteAggregates(referenceFlights), [referenceFlights]);
   const pilotAggregates = useMemo(() => siteAggregates(pilotFlights), [pilotFlights]);
   const all = useMemo(
     () => (siteId === null ? null : positionAmongSites(allAggregates, siteId, MIN_SITE_FLIGHTS)),
@@ -175,11 +196,11 @@ export function SiteVsOthers({ flight, allFlights, pilotFlights }: Props) {
   const siteFlightsCount = siteId === null ? 0 : (allAggregates.get(siteId)?.flights ?? 0);
 
   if (siteId === null) return null;
-  const link = (
+  const link = showSiteLink ? (
     <FilterLink to={`/site/${siteId}`} data-testid="site-page-link" fz={13}>
       Voir la page du site
     </FilterLink>
-  );
+  ) : null;
 
   if (!all) {
     return (
@@ -188,14 +209,16 @@ export function SiteVsOthers({ flight, allFlights, pilotFlights }: Props) {
           <b>{siteName}</b> compte <b>{plural(siteFlightsCount, 'vol')}</b> dans les données : sous le minimum
           de {MIN_SITE_FLIGHTS} vols, la comparaison avec les autres sites ne serait pas fiable.
         </p>
-        <p className="fv-note" style={{ margin: 0 }}>
-          La page du site donne ses chiffres bruts.
-        </p>
+        {showSiteLink && (
+          <p className="fv-note" style={{ margin: 0 }}>
+            La page du site donne ses chiffres bruts.
+          </p>
+        )}
       </Section>
     );
   }
 
-  const pilotAvailable = mine !== null && mine.comparedSites >= 2;
+  const pilotAvailable = pilotViewEnabled && mine !== null && mine.comparedSites >= 2;
   const showPilot = view === 'pilot' && pilotAvailable;
   const pos = showPilot ? mine : all;
   const alone = pos.comparedSites < 2;
@@ -215,9 +238,9 @@ export function SiteVsOthers({ flight, allFlights, pilotFlights }: Props) {
 
   const subtitle = showPilot ? (
     <>
-      Les {plural(pos.indicators[0]?.value ?? 0, 'vol')} de <b>{flight.pilot}</b> à <b>{siteName}</b>,
-      comparés à ses {pos.comparedSites - 1} autres sites ayant au moins {MIN_SITE_FLIGHTS_PILOT} vols. Les
-      vols sans mesure (valeur ≤ 0) sont ignorés dans les moyennes.
+      Les {plural(pos.indicators[0]?.value ?? 0, 'vol')} de <b>{pilotName}</b> à <b>{siteName}</b>, comparés à
+      ses {pos.comparedSites - 1} autres sites ayant au moins {MIN_SITE_FLIGHTS_PILOT} vols. Les vols sans
+      mesure (valeur ≤ 0) sont ignorés dans les moyennes.
     </>
   ) : (
     <>
@@ -239,10 +262,10 @@ export function SiteVsOthers({ flight, allFlights, pilotFlights }: Props) {
         </>
       }
     >
-      {!pilotAvailable && (
+      {pilotViewEnabled && !pilotAvailable && (
         <p className="fv-note" style={{ margin: '0 0 12px' }} data-testid="pilot-view-unavailable">
-          Vue « Ce pilote » indisponible : {flight.pilot} n’a pas au moins deux sites de{' '}
-          {MIN_SITE_FLIGHTS_PILOT} vols ou plus, dont celui-ci.
+          Vue « Ce pilote » indisponible : {pilotName} n’a pas au moins deux sites de {MIN_SITE_FLIGHTS_PILOT}{' '}
+          vols ou plus, dont celui-ci.
         </p>
       )}
       {alone ? (
@@ -254,7 +277,7 @@ export function SiteVsOthers({ flight, allFlights, pilotFlights }: Props) {
           pos={pos}
           othersLabel={showPilot ? 'autres sites du pilote' : 'autres sites'}
           siteName={siteName}
-          pilotLabel={showPilot ? flight.pilot : null}
+          pilotLabel={showPilot ? pilotName : null}
         />
       )}
     </Section>

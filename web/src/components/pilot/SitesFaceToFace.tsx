@@ -1,0 +1,150 @@
+import { Select } from '@mantine/core';
+import { useMemo, useState } from 'react';
+import { Section } from '@/components/common/Section';
+import { FilterLink } from '@/components/FilterLink';
+import '@/components/flight/flight.css';
+import { fmtWithUnit } from '@/components/flight/measureFormat';
+import { SiteStrip } from '@/components/flight/SiteStrip';
+import { fmtWithShare } from '@/components/flight/shareFormat';
+import '@/components/pilot/pilot.css';
+import { useData } from '@/data/DataProvider';
+import type { Flight } from '@/data/flight';
+import { fmtInt, fmtPercent, plural } from '@/lib/format';
+import {
+  MIN_SITE_FLIGHTS_PILOT,
+  parapenteShare,
+  positionAmongSites,
+  siteAggregates,
+  SITE_INDICATORS,
+  type DisciplineShare,
+} from '@/lib/siteAggregates';
+
+interface Props {
+  pilot: string;
+  /** Vols du pilote avec les filtres de la page. */
+  flights: readonly Flight[];
+}
+
+function ShareBar({ name, share }: { name: string; share: DisciplineShare }) {
+  const total = share.parapente + share.paramoteur;
+  const p = parapenteShare(share);
+  return (
+    <div className="fv-b3">
+      <span className="fv-b3-name">{name}</span>
+      <span className="fv-bar" aria-hidden="true">
+        {total > 0 && (
+          <>
+            <i className="fv-bar-sp" style={{ width: `${p}%` }} />
+            <i className="fv-bar-sm" style={{ width: `${100 - p}%` }} />
+          </>
+        )}
+      </span>
+      <b>{fmtWithShare(share)}</b>
+    </div>
+  );
+}
+
+/**
+ * D17 : ses sites d'au moins 10 vols, positionnés les uns par rapport aux autres sur ses propres vols. Même
+ * langage visuel que « Ce site face aux autres » de la fiche vol.
+ */
+export function SitesFaceToFace({ pilot, flights }: Props) {
+  const { siteById } = useData();
+  const aggregates = useMemo(() => siteAggregates(flights), [flights]);
+  const eligible = useMemo(
+    () =>
+      [...aggregates.values()]
+        .filter((a) => a.flights >= MIN_SITE_FLIGHTS_PILOT)
+        .sort((a, b) => b.flights - a.flights || a.siteId - b.siteId),
+    [aggregates],
+  );
+  const nameOf = (id: number): string => siteById.get(id)?.name ?? `Site ${id}`;
+  const [chosen, setChosen] = useState<number | null>(null);
+  const siteId = chosen !== null && eligible.some((a) => a.siteId === chosen) ? chosen : (eligible[0]?.siteId ?? null);
+  const position = useMemo(
+    () => (siteId === null ? null : positionAmongSites(aggregates, siteId, MIN_SITE_FLIGHTS_PILOT)),
+    [aggregates, siteId],
+  );
+  const indicators = SITE_INDICATORS.filter((i) => i.id !== 'pilots');
+
+  return (
+    <Section
+      id="sites-face"
+      title="Ses sites face à face"
+      subtitle={`Ses sites d’au moins ${MIN_SITE_FLIGHTS_PILOT} vols, comparés les uns aux autres sur ses propres vols. Les vols sans mesure (valeur ≤ 0) sont ignorés dans les moyennes.`}
+    >
+      {eligible.length < 2 || position === null || siteId === null ? (
+        <p style={{ margin: 0 }} role="status" data-testid="sites-face-empty">
+          Moins de deux sites ont au moins {MIN_SITE_FLIGHTS_PILOT} vols de {pilot} : la comparaison entre ses
+          sites n’est pas possible.
+        </p>
+      ) : (
+        <>
+          <Select
+            label="Site à situer"
+            data={eligible.map((a) => ({ value: String(a.siteId), label: `${nameOf(a.siteId)} (${a.flights})` }))}
+            value={String(siteId)}
+            allowDeselect={false}
+            searchable
+            onChange={(v) => v !== null && setChosen(Number(v))}
+            maw={420}
+            mb="md"
+            data-testid="face-select"
+          />
+          <div className="fv-strips" data-testid="pilot-site-strips">
+            {position.indicators
+              .filter((i) => i.id !== 'pilots')
+              .map((ind) => (
+                <SiteStrip key={ind.id} ind={ind} othersLabel="autres sites du pilote" />
+              ))}
+          </div>
+          <div style={{ marginTop: 22 }}>
+            <div style={{ fontWeight: 650, marginBottom: 6 }}>Part parapente et paramoteur</div>
+            <ShareBar name="Ce site" share={position.site} />
+            <ShareBar name="Autres sites du pilote" share={position.others} />
+          </div>
+          <details className="fv-data">
+            <summary>Voir les données</summary>
+            <div className="fv-scroll">
+              <table className="fv-table">
+                <thead>
+                  <tr>
+                    <th>Site</th>
+                    <th>Vols</th>
+                    {indicators
+                      .filter((i) => i.id !== 'flights')
+                      .map((i) => (
+                        <th key={i.id}>{i.label}</th>
+                      ))}
+                    <th>Part parapente</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {eligible.map((a) => (
+                    <tr key={a.siteId}>
+                      <td>
+                        <FilterLink to={`/site/${a.siteId}`}>{nameOf(a.siteId)}</FilterLink>
+                      </td>
+                      <td>{fmtInt(a.flights)}</td>
+                      {indicators
+                        .filter((i) => i.id !== 'flights')
+                        .map((i) => (
+                          <td key={i.id}>{fmtWithUnit(i.of(a), i.unit, i.digits)}</td>
+                        ))}
+                      <td>{fmtPercent(parapenteShare(a))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+          <p className="fv-note">
+            {plural(eligible.length, 'site')} sur {fmtInt(aggregates.size)} atteignent {MIN_SITE_FLIGHTS_PILOT}{' '}
+            vols. Chaque site compte pour une voix : la moyenne des autres est la moyenne de leurs moyennes. Le
+            rang 1ᵉʳ désigne la valeur la plus haute.
+          </p>
+        </>
+      )}
+    </Section>
+  );
+}

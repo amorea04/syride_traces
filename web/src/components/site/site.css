@@ -1,0 +1,119 @@
+/* Pages Sites et Site : tableaux, parts de discipline, en-tête. Jetons --sr-* uniquement. */
+.st-th-btn {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.st-th-btn:focus-visible {
+  outline: 2px solid var(--sr-accent);
+  outline-offset: 2px;
+}
+.st-row[data-hl='on'] {
+  background: var(--sr-surface-2);
+}
+.st-share {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.st-share-bar {
+  display: inline-flex;
+  width: 56px;
+  height: 8px;
+  background: var(--sr-surface-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.st-share-bar i {
+  display: block;
+  height: 100%;
+}
+.st-head {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 20px 32px;
+  align-items: start;
+}
+@media (max-width: 62em) {
+  .st-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.st-title {
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.st-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+.st-facts b {
+  font-variant-numeric: tabular-nums;
+}
+.st-minimap {
+  min-width: 0;
+}
+.st-records {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px 28px;
+}
+.st-records h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 650;
+}
+.st-records ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.st-records li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 6px;
+  align-items: baseline;
+  padding: 3px 0;
+  border-top: 1px solid var(--sr-line);
+}
+.st-records-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 8px;
+  min-width: 0;
+}
+.st-rank {
+  color: var(--sr-muted);
+}
+.st-gold {
+  color: var(--sr-gold-text);
+  background: var(--sr-gold-bg);
+  border-radius: 3px;
+  padding: 0 4px;
+  font-weight: 700;
+}
+.st-records-sub {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--sr-muted);
+  font-size: 12px;
+}

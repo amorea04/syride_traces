@@ -13,6 +13,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Pilotes', to: '/pilotes', prefixes: ['/pilotes', '/pilote/'] },
   { label: 'Sites', to: '/sites', prefixes: ['/sites', '/site/'] },
   { label: 'Comparer', to: '/comparer', prefixes: ['/comparer'] },
+  { label: 'Records', to: '/records', prefixes: ['/records'] },
 ];
 
 export function isNavActive(item: NavItem, pathname: string): boolean {
