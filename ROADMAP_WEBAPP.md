@@ -947,11 +947,14 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - [x] PR relue et fusionnée (PR #5) · **`/clear`**
 
 ### Phase 5 : Pilotes, sites, comparaison, records
-- [ ] 5.1 Pages pilotes (carrière, carte des sites, accès aux Bilans)
-- [ ] 5.2 Pages sites (saisonnalité, derniers vols avec liens Syride)
-- [ ] 5.3 Comparaison (haltères, cumuls ; pas de radar)
-- [ ] 5.4 Records
-- [ ] 5.5 À propos, glossaire et qualité des données
+- [x] 5.1 Pages pilotes (carrière, carte des sites, accès aux Bilans) ; en plus, « Ses sites face à face » (D17), frise des voiles par trimestre ; la page pilote ignore le filtre pilote et applique les autres
+- [x] 5.2 Pages sites (saisonnalité mois × heure, derniers vols avec liens Syride, records du site) ; « Ce site face aux autres » calculé sur la vue filtrée (décision d'Adrien, 18/11/2026), mention affichée quand des filtres réduisent la vue
+- [x] 5.3 Comparaison : modes Pilotes, Années et Sites (D17), choix dans l'URL ; haltères (`components/common/Dumbbell.tsx`, réutilisable en 5B), cumuls avec réticule commun ; pas de radar
+- [x] 5.4 Records : top 10 par métrique, option « un seul vol par pilote » ; départage des ex aequo aligné sur `topRecords` (rapport Python), même vol désigné sur la page pilote (décision d'Adrien, 18/11/2026) ; « Records » ajouté au menu
+- [x] 5.5 À propos, glossaire, qualité des données (vols écartés, sites sans coordonnées, couverture, voiles proches) et crédit « Créée par »
+- [x] Ligne « Vue filtrée » unique (`lib/filterSummary.ts`) ; zoom des graphiques temporels au Ctrl + molette (la molette fait défiler la page)
+- [x] Tests : 731 unitaires, 50 e2e au vert ; contrôle visuel clair, sombre et 360 px sur données réelles
+- [x] Relecture `/code-review medium` : 10 constats corrigés
 - [ ] PR relues et fusionnées · **`/clear`**
 
 ### Phase 5B : Bilan pilote × année
