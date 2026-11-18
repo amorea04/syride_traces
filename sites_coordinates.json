@@ -480,14 +480,14 @@
     "n_files": 2
   },
   "Col De La Gardette": {
-    "latitude": 44.58865,
-    "longitude": 6.307733,
-    "n_files": 1
+    "latitude": 44.5885085,
+    "longitude": 6.307708,
+    "n_files": 2
   },
   "Col De La Pourrachière": {
-    "latitude": 44.616083,
-    "longitude": 6.27535,
-    "n_files": 1
+    "latitude": 44.6136915,
+    "longitude": 6.272183500000001,
+    "n_files": 2
   },
   "Col De San Bastiano": {
     "latitude": 42.0246835,
@@ -543,6 +543,11 @@
     "latitude": 45.822593399999995,
     "longitude": 5.86605204,
     "n_files": 25
+  },
+  "Col Du Varo": {
+    "latitude": 45.829767,
+    "longitude": 6.281217,
+    "n_files": 1
   },
   "Col Rodella 3 Rifugio": {
     "latitude": 46.49425879999999,
@@ -975,9 +980,9 @@
     "n_files": 3
   },
   "La Peyrouse Connex": {
-    "latitude": 44.991617,
-    "longitude": 5.724717,
-    "n_files": 1
+    "latitude": 44.9915585,
+    "longitude": 5.724683499999999,
+    "n_files": 2
   },
   "La Rochebeaucourt": {
     "latitude": 45.46681512,
@@ -1075,9 +1080,9 @@
     "n_files": 3
   },
   "Le Cuchon d'Ancelle": {
-    "latitude": 44.633900000000004,
-    "longitude": 6.217983333333334,
-    "n_files": 9
+    "latitude": 44.63395454545454,
+    "longitude": 6.218174272727273,
+    "n_files": 11
   },
   "Le Dôme": {
     "latitude": 44.348933,
@@ -1168,6 +1173,11 @@
     "latitude": 29.4396366,
     "longitude": -10.1214866,
     "n_files": 5
+  },
+  "Les 7 Laux - Lac Noir": {
+    "latitude": 45.2549,
+    "longitude": 6.07885,
+    "n_files": 1
   },
   "Les Antennes-cuchon": {
     "latitude": 44.633075000000005,
@@ -1265,9 +1275,9 @@
     "n_files": 3
   },
   "Les Richards": {
-    "latitude": 44.68084988888889,
-    "longitude": 6.231433333333333,
-    "n_files": 9
+    "latitude": 44.6808399,
+    "longitude": 6.2314283,
+    "n_files": 10
   },
   "Lf1660": {
     "latitude": 45.580837360000004,
@@ -1490,9 +1500,9 @@
     "n_files": 2
   },
   "Orcières Cairn": {
-    "latitude": 44.69812385714285,
-    "longitude": 6.304304571428572,
-    "n_files": 7
+    "latitude": 44.698091749999996,
+    "longitude": 6.304254,
+    "n_files": 8
   },
   "Organya": {
     "latitude": 42.228355666666666,
@@ -1665,9 +1675,9 @@
     "n_files": 25
   },
   "Pointe De La Galopaz": {
-    "latitude": 45.568090999999995,
-    "longitude": 6.069089454545455,
-    "n_files": 11
+    "latitude": 45.568177833333344,
+    "longitude": 6.06912925,
+    "n_files": 12
   },
   "Pointe De La Sauge": {
     "latitude": 45.55060424999999,
@@ -1690,9 +1700,9 @@
     "n_files": 3
   },
   "Prade": {
-    "latitude": 45.15746879166667,
-    "longitude": 0.554722125,
-    "n_files": 24
+    "latitude": 45.15731000000001,
+    "longitude": 0.55464924,
+    "n_files": 25
   },
   "Praia Da Cordoama": {
     "latitude": 37.10692766666667,
