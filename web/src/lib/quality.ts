@@ -4,15 +4,13 @@
  */
 
 import type { Flight } from '@/data/flight';
+import { normalizeText } from '@/lib/flightsTable';
 import { MEASURES, type Aggregation, type Metric } from '@/lib/metrics';
 import { computeCoverage, type Coverage } from '@/lib/records';
 
 /** Nom de voile ramené à une forme canonique : casse, accents, espaces et tirets ignorés. */
 export function normalizeWingName(name: string): string {
-  return name
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .toLowerCase()
+  return normalizeText(name)
     .replace(/[-_‐-―]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();

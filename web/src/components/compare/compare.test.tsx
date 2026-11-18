@@ -38,7 +38,7 @@ function Harness({ mode = 'pilotes', children }: { mode?: CompareMode; children:
   return children({ ...p, visuals });
 }
 function setup(mode: CompareMode) {
-  const selection = resolveSelection(mode, [], flights);
+  const selection = resolveSelection(mode, null, flights);
   const series = buildSeries(mode, selection.ids, flights, '2025-12-28');
   return { selection, series, visuals: [] as ReturnType<typeof useSeriesVisuals> };
 }

@@ -45,7 +45,7 @@ export function RecordsTables({ flights }: Props) {
     <Section
       id="classements"
       title="Top 10 par métrique"
-      subtitle="Les dix meilleures marques de la sélection. À valeur égale, le vol le plus ancien passe devant ; les ex æquo partagent le même rang."
+      subtitle="Les dix meilleures marques de la sélection. À valeur égale, le vol le plus récent passe devant (puis le numéro Syride le plus élevé) ; les ex æquo de valeur partagent le même rang."
       actions={
         <Checkbox
           size="xs"

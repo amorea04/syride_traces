@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { personalRecords } from '@/lib/pilots';
 import {
-  describeFilters,
   filterSiteRows,
   foldText,
   latestFlightsOf,
@@ -12,7 +12,6 @@ import {
   sitePilotRows,
   sortSiteRows,
 } from '@/lib/sites';
-import { defaultFilters } from '@/lib/filters';
 import { makeFlight } from '../../tests/flightFactory';
 
 const SITES = new Map([
@@ -131,38 +130,40 @@ describe('rankedTop', () => {
   it('donne le même rang aux ex æquo et saute le suivant', () => {
     const top = rankedTop(flights, dur);
     expect(top.map((r) => r.rank)).toEqual([1, 1, 3, 4]);
-    expect(top[0]!.flight.date).toBe('2025-01-01');
+    expect(top[0]!.flight.date).toBe('2025-01-02');
   });
   it('ignore les valeurs nulles ou ≤ 0', () => {
     expect(rankedTop(flights, dur)).toHaveLength(4);
   });
-  it('garde un vol par pilote, le plus ancien à égalité', () => {
+  it('garde un vol par pilote, le plus récent à égalité', () => {
     const top = rankedTop(flights, dur, { onePerPilot: true });
     expect(top.map((r) => r.flight.pilotSlug)).toEqual(['a', 'b', 'c']);
-    expect(top[0]!.flight.date).toBe('2025-01-01');
+    expect(top[0]!.flight.date).toBe('2025-01-02');
     expect(top.map((r) => r.rank)).toEqual([1, 2, 3]);
+  });
+  it('départage les ex æquo de façon déterministe, dans les deux sens (date puis numéro Syride)', () => {
+    const x = makeFlight('2025-02-01', { pilotSlug: 'p', durationMin: 90, syrideNum: 10 });
+    const y = makeFlight('2025-02-01', { pilotSlug: 'p', durationMin: 90, syrideNum: 20 });
+    const order = (list: typeof flights) => rankedTop(list, dur).map((r) => r.flight.syrideNum);
+    expect(order([x, y])).toEqual([20, 10]);
+    expect(order([y, x])).toEqual([20, 10]);
+    expect(rankedTop([x, y], dur, { onePerPilot: true })[0]!.flight.syrideNum).toBe(20);
+  });
+  it('pointe vers le même vol que les records personnels (même pilote, deux vols de même plafond)', () => {
+    const old = makeFlight('2025-03-01', { pilotSlug: 'p', ceilingM: 1500, syrideNum: 5, key: 'old' });
+    const recent = makeFlight('2025-04-01', { pilotSlug: 'p', ceilingM: 1500, syrideNum: 6, key: 'recent' });
+    const sameDayA = makeFlight('2025-05-01', { pilotSlug: 'p', ceilingM: 1600, syrideNum: 7, key: 'a' });
+    const sameDayB = makeFlight('2025-05-01', { pilotSlug: 'p', ceilingM: 1600, syrideNum: 8, key: 'b' });
+    const ceiling = RECORD_METRICS.find((m) => m.id === 'plafond')!.of;
+    for (const list of [[old, recent], [recent, old], [sameDayA, sameDayB], [sameDayB, sameDayA]]) {
+      const personal = personalRecords(list).find((r) => r.key === 'plafond')!.entry!;
+      const ranked = rankedTop(list, ceiling, { onePerPilot: true })[0]!;
+      expect(ranked.flight.key).toBe(personal.flightKey);
+      expect(rankedTop(list, ceiling)[0]!.flight.key).toBe(personal.flightKey);
+    }
   });
   it('borne le nombre de lignes', () => {
     expect(rankedTop(flights, dur, { top: 2 })).toHaveLength(2);
   });
 });
 
-describe('describeFilters', () => {
-  const names = { pilot: (s: string) => `P:${s}`, site: (i: number) => `S:${i}` };
-  it('décrit les filtres sauf celui de l’entité', () => {
-    const f = {
-      ...defaultFilters(),
-      pilots: ['x'],
-      activity: 'paramoteur' as const,
-      sites: [3],
-      dateFrom: '2025-01-01',
-      dateTo: '2025-12-31',
-    };
-    expect(describeFilters(f, names)).toEqual(['P:x', 'paramoteur', '2025', 'S:3']);
-    expect(describeFilters(f, names, 'sites')).toEqual(['P:x', 'paramoteur', '2025']);
-    expect(describeFilters(f, names, 'pilots')).toEqual(['paramoteur', '2025', 'S:3']);
-  });
-  it('est vide sans filtre', () => {
-    expect(describeFilters(defaultFilters(), names)).toEqual([]);
-  });
-});

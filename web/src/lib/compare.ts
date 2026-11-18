@@ -36,8 +36,11 @@ export const PARAM_IDS = 'ids';
 
 export interface CompareParams {
   mode: CompareMode;
-  /** Pilotes : slugs. Sites : identifiants. Années : slug du pilote, puis les années. */
-  ids: string[];
+  /**
+   * Pilotes : slugs. Sites : identifiants. Années : slug du pilote, puis les années.
+   * `null` : paramètre `ids` absent (sélection par défaut) ; `[]` : présent mais vide (sélection vide respectée).
+   */
+  ids: string[] | null;
 }
 
 export function isCompareMode(value: string | null): value is CompareMode {
@@ -46,11 +49,19 @@ export function isCompareMode(value: string | null): value is CompareMode {
 
 export function parseCompareParams(params: URLSearchParams): CompareParams {
   const mode = params.get(PARAM_MODE);
-  const ids = (params.get(PARAM_IDS) ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return { mode: isCompareMode(mode) ? mode : 'pilotes', ids: [...new Set(ids)] };
+  const raw = params.get(PARAM_IDS);
+  const ids =
+    raw === null
+      ? null
+      : [
+          ...new Set(
+            raw
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean),
+          ),
+        ];
+  return { mode: isCompareMode(mode) ? mode : 'pilotes', ids };
 }
 
 /** Copie de `params` avec `mode` et `ids` remplacés ; les autres paramètres (filtres globaux) sont conservés. */
@@ -58,8 +69,8 @@ export function writeCompareParams(params: URLSearchParams, next: CompareParams)
   const out = new URLSearchParams(params);
   out.delete(PARAM_MODE);
   out.delete(PARAM_IDS);
-  if (next.mode !== 'pilotes' || next.ids.length > 0) out.set(PARAM_MODE, next.mode);
-  if (next.ids.length > 0) out.set(PARAM_IDS, next.ids.join(','));
+  if (next.mode !== 'pilotes' || next.ids !== null) out.set(PARAM_MODE, next.mode);
+  if (next.ids !== null) out.set(PARAM_IDS, next.ids.join(','));
   return out;
 }
 
@@ -116,7 +127,7 @@ export function pilotYears(pool: readonly Flight[], slug: string): number[] {
 
 export interface Selection {
   ids: string[];
-  /** Choix proposé par défaut (rien n'était choisi dans l'URL). */
+  /** Choix proposé par défaut (paramètre `ids` absent de l'URL). */
   isDefault: boolean;
   /** Au moins le minimum requis : la comparaison peut être calculée. */
   valid: boolean;
@@ -127,7 +138,12 @@ export interface Selection {
 const NOUN: Record<CompareMode, string> = { pilotes: 'pilotes', annees: 'années', sites: 'sites' };
 
 /** Garde les identifiants connus, uniques, au plus `MAX_SERIES` ; propose les plus actifs si rien n'est choisi. */
-export function resolveSelection(mode: CompareMode, ids: readonly string[], pool: readonly Flight[]): Selection {
+export function resolveSelection(
+  mode: CompareMode,
+  rawIds: readonly string[] | null,
+  pool: readonly Flight[],
+): Selection {
+  const ids = rawIds ?? [];
   const known = candidates(mode, pool);
   const knownValues = new Set(known.map((c) => c.value));
   let chosen: string[];
@@ -140,9 +156,10 @@ export function resolveSelection(mode: CompareMode, ids: readonly string[], pool
       const available = new Set(pilotYears(pool, pilot));
       years = [...new Set(ids.slice(1).map(Number))].filter((y) => available.has(y)).slice(0, MAX_SERIES);
     }
-    if (ids.length === 0) {
+    if (rawIds === null) {
+      // Le pilote le plus actif parmi ceux qui ont au moins deux années de vols (jamais un pilote sans choix possible).
       isDefault = true;
-      pilot = (known.find((c) => pilotYears(pool, c.value).length >= 2) ?? known[0])?.value ?? null;
+      pilot = known.find((c) => pilotYears(pool, c.value).length >= MIN_SERIES)?.value ?? null;
       years = pilot === null ? [] : pilotYears(pool, pilot).slice(0, MIN_SERIES).reverse();
     }
     // Années du plus ancien au plus récent : la plus ancienne sert de référence aux écarts.
@@ -156,12 +173,14 @@ export function resolveSelection(mode: CompareMode, ids: readonly string[], pool
       problem: valid
         ? null
         : pilot === null
-          ? 'Choisir un pilote.'
+          ? rawIds === null
+            ? 'Aucun pilote n’a au moins deux années de vols.'
+            : 'Choisir un pilote.'
           : `Choisir au moins ${MIN_SERIES} années.`,
     };
   }
 
-  if (ids.length === 0) {
+  if (rawIds === null) {
     isDefault = true;
     chosen = known.slice(0, MIN_SERIES).map((c) => c.value);
   } else {
@@ -172,7 +191,11 @@ export function resolveSelection(mode: CompareMode, ids: readonly string[], pool
     ids: chosen,
     isDefault,
     valid,
-    problem: valid ? null : `Choisir au moins ${MIN_SERIES} ${NOUN[mode]}.`,
+    problem: valid
+      ? null
+      : chosen.length === 0
+        ? `Choisir ${MIN_SERIES} à ${MAX_SERIES} ${NOUN[mode]}.`
+        : `Choisir au moins ${MIN_SERIES} ${NOUN[mode]}.`,
   };
 }
 

@@ -6,11 +6,20 @@
  */
 import type { Discipline, Flight } from '@/data/flight';
 import { groupBy } from '@/lib/collections';
-import type { FilterDimension, Filters } from '@/lib/filters';
-import { fmtDate } from '@/lib/format';
 import { normalizeText } from '@/lib/flightsTable';
 import { distinctCount, sum } from '@/lib/numeric';
-import { RECORD_KEYS, topRecords, type RecordEntry, type RecordKey } from '@/lib/records';
+import {
+  bestCareerYear,
+  CAREER_MIN_YEARS,
+  careerFromRows,
+  careerYearRows,
+  RECORD_KEYS,
+  topRecords,
+  type Career,
+  type CareerYear,
+  type RecordEntry,
+  type RecordKey,
+} from '@/lib/records';
 import { minutesOf } from '@/lib/rhythm';
 
 // ---------------------------------------------------------------------------
@@ -90,79 +99,29 @@ export function searchPilots(rows: readonly PilotSummary[], query: string): Pilo
 }
 
 // ---------------------------------------------------------------------------
-// Vue filtrée
-// ---------------------------------------------------------------------------
-
-/**
- * Libellés des filtres qui réduisent la vue (« paramoteur », « 2025 », « 2 voiles »…), hors dimensions
- * `omit`. Vide si rien ne réduit la vue.
- */
-export function filterSummary(
-  filters: Filters,
-  omit: readonly FilterDimension[] = [],
-  siteName: (id: number) => string = (id) => `site ${id}`,
-): string[] {
-  const out: string[] = [];
-  if (!omit.includes('pilots') && filters.pilots.length > 0) {
-    out.push(filters.pilots.length === 1 ? filters.pilots[0]! : `${filters.pilots.length} pilotes`);
-  }
-  if (!omit.includes('activity') && filters.activity !== 'tout') out.push(filters.activity);
-  if (!omit.includes('period') && (filters.dateFrom !== null || filters.dateTo !== null)) {
-    const { dateFrom: from, dateTo: to } = filters;
-    if (from && to && from.slice(0, 4) === to.slice(0, 4) && from.endsWith('-01-01') && to.endsWith('-12-31')) {
-      out.push(from.slice(0, 4));
-    } else if (from && to) out.push(`du ${fmtDate(from, { withYear: true })} au ${fmtDate(to, { withYear: true })}`);
-    else if (from) out.push(`depuis le ${fmtDate(from, { withYear: true })}`);
-    else if (to) out.push(`jusqu’au ${fmtDate(to, { withYear: true })}`);
-  }
-  if (!omit.includes('wings') && filters.wings.length > 0) {
-    out.push(filters.wings.length === 1 ? filters.wings[0]! : `${filters.wings.length} voiles`);
-  }
-  if (!omit.includes('sites') && filters.sites.length > 0) {
-    out.push(filters.sites.length === 1 ? siteName(filters.sites[0]!) : `${filters.sites.length} sites`);
-  }
-  return out;
-}
-
-// ---------------------------------------------------------------------------
 // Carrière
 // ---------------------------------------------------------------------------
 
-export interface CareerBar {
-  year: number;
-  pMin: number;
-  mMin: number;
-  pN: number;
-  mN: number;
-}
+export type CareerBar = CareerYear;
 
 export interface CareerBars {
   /** Une ligne par année avec vol, de la plus ancienne à la plus récente. */
   years: CareerBar[];
-  /** Année avec le plus d'heures, puis le plus de vols ; à égalité la plus récente. */
+  /** Année avec le plus d'heures, puis le plus de vols ; à égalité la plus récente (règle de `computeCareer`). */
   bestHoursYear: number | null;
   bestFlightsYear: number | null;
+  /** KPI de carrière (`computeCareer`), `null` sous 2 années ; calculés avec les barres, en un seul passage. */
+  career: Career | null;
 }
 
-function bestYear(rows: readonly CareerBar[], score: (r: CareerBar) => number): number | null {
-  let best: CareerBar | null = null;
-  for (const r of rows) if (best === null || score(r) >= score(best)) best = r;
-  return best?.year ?? null;
-}
-
-/** Barres de la carrière, valable dès une seule année (`computeCareer` en exige deux, pour ses KPI). */
+/** Barres de la carrière, valables dès une seule année (les KPI de `career` en exigent deux). */
 export function careerBars(flights: readonly Flight[]): CareerBars {
-  const years: CareerBar[] = [];
-  for (const [year, group] of groupBy(flights, (f) => f.year)) {
-    const p = group.filter((f) => f.activity === 'parapente');
-    const m = group.filter((f) => f.activity === 'paramoteur');
-    years.push({ year, pMin: sum(p.map(minutesOf)), mMin: sum(m.map(minutesOf)), pN: p.length, mN: m.length });
-  }
-  years.sort((a, b) => a.year - b.year);
+  const years = careerYearRows(flights);
   return {
     years,
-    bestHoursYear: bestYear(years, (r) => r.pMin + r.mMin),
-    bestFlightsYear: bestYear(years, (r) => r.pN + r.mN),
+    bestHoursYear: bestCareerYear(years, (r) => r.pMin + r.mMin),
+    bestFlightsYear: bestCareerYear(years, (r) => r.pN + r.mN),
+    career: years.length >= CAREER_MIN_YEARS ? careerFromRows(flights, years) : null,
   };
 }
 
@@ -240,7 +199,10 @@ export interface PersonalRecord {
 }
 
 export function personalRecords(flights: readonly Flight[]): PersonalRecord[] {
-  const top = topRecords(flights, 1);
+  // `topRecords` garde l'ordre d'entrée à valeur et date égales : un tri préalable par numéro Syride décroissant
+  // aligne le départage sur `compareRanked` (page Records), pour que les deux pages désignent le même vol.
+  const ordered = [...flights].sort((a, b) => b.syrideNum - a.syrideNum);
+  const top = topRecords(ordered, 1);
   return PERSONAL_RECORD_ORDER.filter((k) => RECORD_KEYS.includes(k)).map((key) => ({
     key,
     label: PERSONAL_RECORD_LABELS[key],

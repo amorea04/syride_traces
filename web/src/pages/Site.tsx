@@ -15,6 +15,7 @@ import { SiteSeasonality } from '@/components/site/SiteSeasonality';
 import { useData } from '@/data/DataProvider';
 import { flightMatches } from '@/lib/filters';
 import { useFiltersStore } from '@/store/filters';
+import { useFilterSummary } from '@/store/useFilterSummary';
 
 /** Identifiant de site d'une URL : entier positif ou nul, sinon `null`. */
 function parseSiteId(raw: string): number | null {
@@ -29,10 +30,12 @@ export function Site() {
   const { id = '' } = useParams();
   const { flights, siteById } = useData();
   const filters = useFiltersStore((s) => s.filters);
+  const reduced = useFilterSummary(['sites']);
   const siteId = parseSiteId(id);
   const site = siteId === null ? undefined : siteById.get(siteId);
 
-  // Vols de tous les sites après les autres filtres (population de « Ce site face aux autres »).
+  // Vols de tous les sites après les autres filtres : population de « Ce site face aux autres » (voulu : cohérent
+  // avec la vue filtrée, d'où la mention sous le bloc).
   const scope = useMemo(() => flights.filter((f) => flightMatches(f, filters, 'sites')), [flights, filters]);
   const siteFlights = useMemo(() => scope.filter((f) => f.siteId === siteId), [scope, siteId]);
 
@@ -69,10 +72,15 @@ export function Site() {
           <SiteRecords flights={siteFlights} />
           <SiteVsOthers
             site={{ id: site.id, name: site.name }}
-            allFlights={scope}
+            referenceFlights={scope}
             showPilotView={false}
             showSiteLink={false}
           />
+          {reduced.length > 0 && (
+            <Text size="xs" c="dimmed" data-testid="site-vs-others-filtered">
+              Comparaison calculée sur la vue filtrée.
+            </Text>
+          )}
         </>
       )}
     </Stack>

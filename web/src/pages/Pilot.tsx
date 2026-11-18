@@ -15,7 +15,7 @@ import { APP_NAME } from '@/components/navigation';
 import { useData } from '@/data/DataProvider';
 import { referenceDate } from '@/lib/dashboard';
 import { flightMatches } from '@/lib/filters';
-import { filterSummary } from '@/lib/pilots';
+import { useFilterSummary } from '@/store/useFilterSummary';
 import { useFiltersStore } from '@/store/filters';
 
 /**
@@ -24,15 +24,12 @@ import { useFiltersStore } from '@/store/filters';
  */
 export function Pilot() {
   const { slug = '' } = useParams();
-  const { meta, flights: all, siteById } = useData();
+  const { meta, flights: all } = useData();
   const filters = useFiltersStore((s) => s.filters);
   const mine = useMemo(() => all.filter((f) => f.pilotSlug === slug), [all, slug]);
   const flights = useMemo(() => mine.filter((f) => flightMatches(f, filters, 'pilots')), [mine, filters]);
   const refDate = useMemo(() => referenceDate(meta.data_updated_at, all), [meta.data_updated_at, all]);
-  const reduced = useMemo(
-    () => filterSummary(filters, ['pilots'], (id) => siteById.get(id)?.name ?? `site ${id}`),
-    [filters, siteById],
-  );
+  const reduced = useFilterSummary(['pilots']);
 
   const pilot = mine[0]?.pilot;
   if (pilot === undefined) {

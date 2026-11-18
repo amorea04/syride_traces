@@ -9,9 +9,9 @@
 
 import type { Flight } from '@/data/flight';
 import { groupBy } from '@/lib/collections';
-import type { Filters } from '@/lib/filters';
-import { fmtDate } from '@/lib/format';
+import { normalizeText } from '@/lib/flightsTable';
 import { MEASURES, type MeasureDef } from '@/lib/measures';
+import { dominantActivity, type SiteCollection, type SiteFeature, type SitesMapData } from '@/lib/mapSites';
 import { maxPositive } from '@/lib/numeric';
 import { hourOf, minutesOf } from '@/lib/rhythm';
 
@@ -21,7 +21,7 @@ import { hourOf, minutesOf } from '@/lib/rhythm';
 
 /** Minuscules sans accents ni espaces de bord : base de la recherche insensible aux accents. */
 export function foldText(text: string): string {
-  return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+  return normalizeText(text).trim();
 }
 
 // ---------------------------------------------------------------------------
@@ -125,6 +125,51 @@ export function filterSiteRows(rows: readonly SiteTableRow[], query: string): Si
   const q = foldText(query);
   if (q === '') return [...rows];
   return rows.filter((r) => foldText(r.name).includes(q));
+}
+
+// ---------------------------------------------------------------------------
+// Carte d'un site
+// ---------------------------------------------------------------------------
+
+/**
+ * Données de la mini-carte d'un site : un seul point, à la position du site (`sites.json`), avec le compte de
+ * vols de `siteFlights` s'il y en a. Sans coordonnées : aucun point. D12 : jamais de géométrie de vol.
+ */
+export function siteMapData(site: SiteInfo, siteFlights: readonly Flight[]): SitesMapData {
+  const parapente = siteFlights.filter((f) => f.activity === 'parapente').length;
+  const paramoteur = siteFlights.length - parapente;
+  const pilots = new Set(siteFlights.map((f) => f.pilotSlug)).size;
+  const minutes = siteFlights.reduce((acc, f) => acc + minutesOf(f), 0);
+  const features: SiteFeature[] = [];
+  if (site.lat !== null && site.lon !== null) {
+    features.push({
+      type: 'Feature',
+      id: site.id,
+      geometry: { type: 'Point', coordinates: [site.lon, site.lat] },
+      properties: {
+        siteId: site.id,
+        name: site.name,
+        flights: siteFlights.length,
+        minutes,
+        pilots,
+        parapente,
+        paramoteur,
+        dominant: dominantActivity(parapente, paramoteur),
+      },
+    });
+  }
+  const collection: SiteCollection = { type: 'FeatureCollection', features };
+  const point = features[0]?.geometry.coordinates;
+  const bounds = point ? ([point[0], point[1], point[0], point[1]] as [number, number, number, number]) : null;
+  return {
+    collection,
+    rows: [],
+    sitesWithoutCoords: point ? 0 : 1,
+    flightsWithoutCoords: point ? 0 : siteFlights.length,
+    flightsWithoutSite: 0,
+    bounds,
+    allBounds: bounds,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -267,16 +312,26 @@ export interface RankOptions {
 }
 
 /**
- * Meilleurs vols d'une mesure (valeurs > 0 seulement). À valeur égale : le plus ancien d'abord (premier à avoir
- * posé la marque). Avec `onePerPilot`, seule la meilleure marque de chaque pilote reste (la plus ancienne à égalité).
+ * Ordre des classements : valeur décroissante, puis date la plus récente d'abord (même convention que
+ * `topRecords` de `records.ts`, portage du rapport Python), puis numéro Syride décroissant pour rester
+ * déterministe. Négatif si `a` passe devant `b` ; nul seulement pour un même vol.
+ */
+function compareRanked(a: { value: number; flight: Flight }, b: { value: number; flight: Flight }): number {
+  if (a.value !== b.value) return b.value - a.value;
+  if (a.flight.date !== b.flight.date) return a.flight.date < b.flight.date ? 1 : -1;
+  return b.flight.syrideNum - a.flight.syrideNum;
+}
+
+/**
+ * Meilleurs vols d'une mesure (valeurs > 0 seulement). À valeur égale : le vol le plus récent d'abord, puis le
+ * numéro Syride le plus élevé (voir `compareRanked`) ; le rang ne dépend que de la valeur. Avec `onePerPilot`,
+ * seule la meilleure marque de chaque pilote reste (même règle, donc le même vol que `personalRecords`).
  */
 export function rankedTop(
   flights: readonly Flight[],
   of: (f: Flight) => number | null,
   { top = 10, onePerPilot = false }: RankOptions = {},
 ): RankedFlight[] {
-  const better = (a: { value: number; flight: Flight }, b: { value: number; flight: Flight }): boolean =>
-    a.value > b.value || (a.value === b.value && momentOf(a.flight) < momentOf(b.flight));
   let pool: { value: number; flight: Flight }[] = [];
   if (onePerPilot) {
     const best = new Map<string, { value: number; flight: Flight }>();
@@ -285,7 +340,7 @@ export function rankedTop(
       if (value === null || value <= 0) continue;
       const candidate = { value, flight };
       const current = best.get(flight.pilotSlug);
-      if (!current || better(candidate, current)) best.set(flight.pilotSlug, candidate);
+      if (!current || compareRanked(candidate, current) < 0) best.set(flight.pilotSlug, candidate);
     }
     pool = [...best.values()];
   } else {
@@ -294,7 +349,7 @@ export function rankedTop(
       if (value !== null && value > 0) pool.push({ value, flight });
     }
   }
-  pool.sort((a, b) => b.value - a.value || (momentOf(a.flight) < momentOf(b.flight) ? -1 : 1));
+  pool.sort(compareRanked);
   const out: RankedFlight[] = [];
   let rank = 1;
   for (let i = 0; i < Math.min(top, pool.length); i += 1) {
@@ -302,40 +357,5 @@ export function rankedTop(
     if (i > 0 && item.value < pool[i - 1]!.value) rank = i + 1;
     out.push({ rank, value: item.value, flight: item.flight });
   }
-  return out;
-}
-
-// ---------------------------------------------------------------------------
-// Filtres actifs
-// ---------------------------------------------------------------------------
-
-/** Libellé court de la période (année entière → « 2025 »), ou `null` sans borne. */
-function periodText(from: string | null, to: string | null): string | null {
-  if (from && to) {
-    if (from.slice(0, 4) === to.slice(0, 4) && from.slice(5) === '01-01' && to.slice(5) === '12-31')
-      return from.slice(0, 4);
-    return `du ${fmtDate(from, { withYear: true })} au ${fmtDate(to, { withYear: true })}`;
-  }
-  if (from) return `depuis le ${fmtDate(from, { withYear: true })}`;
-  if (to) return `jusqu’au ${fmtDate(to, { withYear: true })}`;
-  return null;
-}
-
-/**
- * Libellés des filtres actifs, sans celui de l'entité de la page (`omit`) : « paramoteur », « 2025 »…
- * `pilotName` et `siteName` résolvent les identifiants (repli sur l'identifiant).
- */
-export function describeFilters(
-  filters: Filters,
-  names: { pilot: (slug: string) => string; site: (id: number) => string },
-  omit?: 'pilots' | 'sites',
-): string[] {
-  const out: string[] = [];
-  if (omit !== 'pilots') for (const slug of filters.pilots) out.push(names.pilot(slug));
-  if (filters.activity !== 'tout') out.push(filters.activity);
-  const period = periodText(filters.dateFrom, filters.dateTo);
-  if (period) out.push(period);
-  for (const w of filters.wings) out.push(w);
-  if (omit !== 'sites') for (const id of filters.sites) out.push(names.site(id));
   return out;
 }

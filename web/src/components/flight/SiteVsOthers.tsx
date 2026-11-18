@@ -27,8 +27,11 @@ interface Props {
   flight?: Flight;
   /** Site comparé quand il n'y a pas de vol (page du site). */
   site?: { id: number; name: string };
-  /** Tous les vols (population de référence, indépendante des filtres). */
-  allFlights: readonly Flight[];
+  /**
+   * Population de référence des sites comparés : tous les vols sur la fiche vol (indépendante des filtres),
+   * la sélection filtrée (tous filtres sauf les sites) sur la page du site.
+   */
+  referenceFlights: readonly Flight[];
   /** Vols du pilote (vide si la vue « Ce pilote » est masquée). */
   pilotFlights?: readonly Flight[];
   /** Propose la bascule « Tous les pilotes / Ce pilote » (défaut : oui, si `flight` est fourni). */
@@ -168,7 +171,7 @@ function Strips({
 export function SiteVsOthers({
   flight,
   site,
-  allFlights,
+  referenceFlights,
   pilotFlights = NO_FLIGHTS,
   showPilotView = true,
   showSiteLink = true,
@@ -180,7 +183,7 @@ export function SiteVsOthers({
   const pilotViewEnabled = showPilotView && flight !== undefined;
 
   // Les agrégats ne dépendent que des vols (un passage) ; seul le positionnement dépend du site.
-  const allAggregates = useMemo(() => siteAggregates(allFlights), [allFlights]);
+  const allAggregates = useMemo(() => siteAggregates(referenceFlights), [referenceFlights]);
   const pilotAggregates = useMemo(() => siteAggregates(pilotFlights), [pilotFlights]);
   const all = useMemo(
     () => (siteId === null ? null : positionAmongSites(allAggregates, siteId, MIN_SITE_FLIGHTS)),

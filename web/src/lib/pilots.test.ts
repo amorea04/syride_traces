@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { defaultFilters } from '@/lib/filters';
 import {
   careerBars,
-  filterSummary,
   intensityLevel,
   personalRecords,
   pilotSummaries,
@@ -11,6 +9,7 @@ import {
   wingTimeline,
   yearCards,
 } from '@/lib/pilots';
+import { computeCareer } from '@/lib/records';
 import { makeFlight } from '../../tests/flightFactory';
 
 const alice = { pilot: 'Alice', pilotSlug: 'alice' };
@@ -47,25 +46,6 @@ describe('pilotSummaries et tri', () => {
   });
 });
 
-describe('filterSummary', () => {
-  it('est vide sans filtre et ignore les dimensions omises', () => {
-    expect(filterSummary(defaultFilters())).toEqual([]);
-    const f = { ...defaultFilters(), pilots: ['a'], activity: 'paramoteur' as const };
-    expect(filterSummary(f, ['pilots'])).toEqual(['paramoteur']);
-  });
-  it('décrit période, voiles et sites', () => {
-    const f = {
-      ...defaultFilters(),
-      dateFrom: '2025-01-01',
-      dateTo: '2025-12-31',
-      wings: ['a', 'b'],
-      sites: [3],
-    };
-    expect(filterSummary(f, [], () => 'Montbron')).toEqual(['2025', '2 voiles', 'Montbron']);
-    expect(filterSummary({ ...defaultFilters(), dateFrom: '2025-03-01' })[0]).toContain('depuis le 1');
-  });
-});
-
 describe('careerBars', () => {
   it('une ligne par année, meilleure année en heures et en vols', () => {
     const flights = [
@@ -80,9 +60,23 @@ describe('careerBars', () => {
     expect(bars.bestFlightsYear).toBe(2024);
     expect(bars.years[1]).toMatchObject({ pMin: 60, mMin: 30, pN: 2, mN: 1 });
   });
+  it('reprend les résultats de computeCareer (années, meilleures années, KPI) et départage à la plus récente', () => {
+    const flights = [
+      makeFlight('2023-05-01', { durationMin: 60 }),
+      makeFlight('2024-05-01', { durationMin: 60 }),
+    ];
+    const bars = careerBars(flights);
+    const career = computeCareer(flights, 2024)!;
+    expect(bars.bestHoursYear).toBe(2024);
+    expect(bars.bestHoursYear).toBe(career.bestYear);
+    expect(bars.bestFlightsYear).toBe(career.bestFlightsYear);
+    expect(bars.years).toEqual(career.years);
+    expect(bars.career).toEqual(career);
+    expect(careerBars([makeFlight('2024-05-01')]).career).toBeNull();
+  });
   it('fonctionne avec une seule année et sans vol', () => {
     expect(careerBars([makeFlight('2024-05-01')]).bestHoursYear).toBe(2024);
-    expect(careerBars([])).toEqual({ years: [], bestHoursYear: null, bestFlightsYear: null });
+    expect(careerBars([])).toEqual({ years: [], bestHoursYear: null, bestFlightsYear: null, career: null });
   });
 });
 

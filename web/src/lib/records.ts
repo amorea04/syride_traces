@@ -460,37 +460,50 @@ export function computeCareer(
     const dayOfMonth = Number(f.date.slice(8, 10));
     return f.year < year || f.month < month || (f.month === month && dayOfMonth <= day);
   });
-  const years = [...new Set(d.map((f) => f.year))].sort((a, b) => a - b);
-  if (years.length < CAREER_MIN_YEARS) return null;
-  const rows: CareerYear[] = years.map((y) => {
-    const g = d.filter((f) => f.year === y);
+  const rows = careerYearRows(d);
+  if (rows.length < CAREER_MIN_YEARS) return null;
+  return careerFromRows(d, rows);
+}
+
+/** Une ligne par année avec vol, de la plus ancienne à la plus récente (heures et vols par discipline). */
+export function careerYearRows(flights: readonly Flight[]): CareerYear[] {
+  const rows: CareerYear[] = [];
+  for (const [year, g] of groupBy(flights, (f) => f.year)) {
     const p = g.filter((f) => f.activity === 'parapente');
     const m = g.filter((f) => f.activity === 'paramoteur');
-    return {
-      year: y,
+    rows.push({
+      year,
       pMin: sum(p.map(minutesOf)),
       mMin: sum(m.map(minutesOf)),
       pN: p.length,
       mN: m.length,
-    };
-  });
+    });
+  }
+  return rows.sort((a, b) => a.year - b.year);
+}
+
+/**
+ * Année qui maximise `score` ; à égalité la plus récente (`max` du Python : les clés incluent l'année, donc jamais
+ * d'égalité parfaite). `null` sans ligne.
+ */
+export function bestCareerYear(rows: readonly CareerYear[], score: (r: CareerYear) => number): number | null {
+  let best: CareerYear | null = null;
+  for (const r of rows) if (best === null || score(r) >= score(best)) best = r;
+  return best?.year ?? null;
+}
+
+/** Carrière d'un pilote à partir de ses vols `d` et de leurs lignes par année (déjà calculées, au moins une). */
+export function careerFromRows(d: readonly Flight[], rows: readonly CareerYear[]): Career {
   const dist = positives(d.map((f) => f.distKm));
-  // `max` du Python : à clé égale, la première ligne ; les clés incluent l'année, donc jamais d'égalité.
-  const bestBy = (score: (r: CareerYear) => number): number =>
-    (
-      rows.reduce((a, b) =>
-        score(b) > score(a) || (score(b) === score(a) && b.year > a.year) ? b : a,
-      ) as CareerYear
-    ).year;
   return {
-    years: rows,
+    years: [...rows],
     minutes: sum(d.map(minutesOf)),
     flights: d.length,
     sites: distinctCount(d.map((f) => f.site)),
     distance: sum(dist),
     distanceN: dist.length,
     firstDate: d.map((f) => f.date).sort()[0] as string,
-    bestYear: bestBy((r) => r.pMin + r.mMin),
-    bestFlightsYear: bestBy((r) => r.pN + r.mN),
+    bestYear: bestCareerYear(rows, (r) => r.pMin + r.mMin) as number,
+    bestFlightsYear: bestCareerYear(rows, (r) => r.pN + r.mN) as number,
   };
 }

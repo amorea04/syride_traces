@@ -1,9 +1,7 @@
 import { Stack, Text, Title } from '@mantine/core';
-import { useMemo, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { APP_NAME } from '@/components/navigation';
-import { useData } from '@/data/DataProvider';
-import { describeFilters } from '@/lib/sites';
-import { useFiltersStore } from '@/store/filters';
+import { useFilterSummary } from '@/store/useFilterSummary';
 
 interface Props {
   title: string;
@@ -16,14 +14,7 @@ interface Props {
 
 /** Titre de page, description et, quand des filtres réduisent la vue, la ligne « Vue filtrée : … ». */
 export function PageHeading({ title, description, omit, children }: Props) {
-  const { flights, siteById } = useData();
-  const filters = useFiltersStore((s) => s.filters);
-  const pilotNames = useMemo(() => new Map(flights.map((f) => [f.pilotSlug, f.pilot])), [flights]);
-  const labels = describeFilters(
-    filters,
-    { pilot: (slug) => pilotNames.get(slug) ?? slug, site: (id) => siteById.get(id)?.name ?? `Site ${id}` },
-    omit,
-  );
+  const labels = useFilterSummary(omit ? [omit] : []);
   return (
     <Stack gap={4}>
       <title>{`${title} · ${APP_NAME}`}</title>

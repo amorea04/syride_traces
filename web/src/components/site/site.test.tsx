@@ -189,6 +189,14 @@ describe('page Site', () => {
     setup('/site/1');
     expect(screen.getAllByTestId('latest-row')).toHaveLength(3);
     expect(screen.queryByTestId('filtered-view')).toBeNull();
+    expect(screen.queryByTestId('site-vs-others-filtered')).toBeNull();
+  });
+  it('signale que la comparaison aux autres sites suit la vue filtrée', () => {
+    useFiltersStore.getState().setFilters({ activity: 'parapente' });
+    setup('/site/1');
+    expect(screen.getByTestId('site-vs-others-filtered')).toHaveTextContent(
+      'Comparaison calculée sur la vue filtrée.',
+    );
   });
 });
 

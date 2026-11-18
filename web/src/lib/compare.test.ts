@@ -34,14 +34,18 @@ const flights = [
 describe('paramètres d’URL', () => {
   it('lit le mode et les identifiants, avec valeurs par défaut sûres', () => {
     expect(parseCompareParams(new URLSearchParams('mode=sites&ids=1,2,1'))).toEqual({ mode: 'sites', ids: ['1', '2'] });
-    expect(parseCompareParams(new URLSearchParams('mode=zzz'))).toEqual({ mode: 'pilotes', ids: [] });
+    expect(parseCompareParams(new URLSearchParams('mode=zzz'))).toEqual({ mode: 'pilotes', ids: null });
+    expect(parseCompareParams(new URLSearchParams('mode=sites&ids='))).toEqual({ mode: 'sites', ids: [] });
   });
   it('écrit sans casser les paramètres de filtre', () => {
     const out = writeCompareParams(new URLSearchParams('activite=paramoteur&ids=x'), { mode: 'pilotes', ids: ['a', 'b'] });
     expect(out.get('activite')).toBe('paramoteur');
     expect(out.get('ids')).toBe('a,b');
-    const bare = writeCompareParams(new URLSearchParams('mode=sites&ids=1,2'), { mode: 'pilotes', ids: [] });
+    const bare = writeCompareParams(new URLSearchParams('mode=sites&ids=1,2'), { mode: 'pilotes', ids: null });
     expect(bare.toString()).toBe('');
+    // `ids` présent mais vide : conservé dans l'URL (sélection vide voulue).
+    const empty = writeCompareParams(new URLSearchParams(), { mode: 'sites', ids: [] });
+    expect(parseCompareParams(empty)).toEqual({ mode: 'sites', ids: [] });
   });
 });
 
@@ -59,9 +63,32 @@ describe('population et sélection', () => {
   });
 
   it('propose par défaut les deux plus actifs, en le disant', () => {
-    const sel = resolveSelection('pilotes', [], flights);
+    const sel = resolveSelection('pilotes', null, flights);
     expect(sel).toMatchObject({ isDefault: true, valid: true, ids: ['a', 'c'] });
-    expect(resolveSelection('sites', [], flights).ids).toEqual(['1', '3']);
+    expect(resolveSelection('sites', null, flights).ids).toEqual(['1', '3']);
+  });
+  it('respecte une sélection vide (ids présent mais vide) au lieu de reproposer le défaut', () => {
+    const pilotes = resolveSelection('pilotes', [], flights);
+    expect(pilotes).toMatchObject({ isDefault: false, valid: false, ids: [], problem: 'Choisir 2 à 4 pilotes.' });
+    const sites = resolveSelection('sites', [], flights);
+    expect(sites).toMatchObject({ isDefault: false, ids: [], problem: 'Choisir 2 à 4 sites.' });
+    expect(resolveSelection('annees', [], flights)).toMatchObject({ isDefault: false, valid: false, ids: [] });
+  });
+  it('mode Années : le défaut est le pilote le plus actif parmi ceux qui ont au moins deux années', () => {
+    const data = [
+      ...Array.from({ length: 6 }, (_, i) => mk(`2025-05-0${i + 1}`, 'solo')),
+      mk('2024-05-01', 'duo'),
+      mk('2025-05-01', 'duo'),
+      mk('2023-05-01', 'duo'),
+    ];
+    expect(candidates('annees', data)[0]!.value).toBe('solo');
+    expect(resolveSelection('annees', null, data)).toMatchObject({
+      isDefault: true,
+      valid: true,
+      ids: ['duo', '2024', '2025'],
+    });
+    const onlySingles = [mk('2025-05-01', 'x'), mk('2025-05-02', 'y')];
+    expect(resolveSelection('annees', null, onlySingles)).toMatchObject({ isDefault: true, valid: false, ids: [] });
   });
   it('écarte les inconnus, plafonne à 4 et signale l’insuffisance', () => {
     expect(resolveSelection('pilotes', ['a', 'zz'], flights)).toMatchObject({ valid: false, isDefault: false });
@@ -70,7 +97,7 @@ describe('population et sélection', () => {
     expect(resolveSelection('pilotes', many.map((f) => f.pilotSlug), many).ids).toHaveLength(4);
   });
   it('mode Années : pilote et années, défaut = pilote à plusieurs années', () => {
-    expect(resolveSelection('annees', [], flights)).toMatchObject({ valid: true, ids: ['a', '2024', '2025'], isDefault: true });
+    expect(resolveSelection('annees', null, flights)).toMatchObject({ valid: true, ids: ['a', '2024', '2025'], isDefault: true });
     expect(resolveSelection('annees', ['a', '2025', '1999'], flights)).toMatchObject({ valid: false });
     expect(resolveSelection('annees', ['a', '2025', '2024'], flights).ids).toEqual(['a', '2024', '2025']);
     expect(pilotYears(flights, 'a')).toEqual([2025, 2024]);

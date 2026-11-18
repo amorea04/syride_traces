@@ -100,7 +100,7 @@ export function CompareSelector({
           nothingFoundMessage={`Aucun ${mode === 'pilotes' ? 'pilote' : 'site'}`}
         />
       )}
-      {selection.isDefault && (
+      {selection.isDefault && selection.valid && (
         <Text size="sm" c="dimmed" mt={8} data-testid="compare-default-note">
           {defaultNote}
         </Text>

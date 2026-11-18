@@ -14,6 +14,7 @@ import {
   buildSeries,
   candidates as candidatesOf,
   comparePool,
+  type CompareParams,
   parseCompareParams,
   pilotYears,
   resolveSelection,
@@ -23,7 +24,7 @@ import {
 } from '@/lib/compare';
 import { referenceDate } from '@/lib/dashboard';
 import type { FilterDimension } from '@/lib/filters';
-import { filterSummary } from '@/lib/pilots';
+import { useFilterSummary } from '@/store/useFilterSummary';
 import { useFiltersStore } from '@/store/filters';
 
 /** Dimensions des filtres globaux que le sélecteur de la page remplace, par mode. */
@@ -35,13 +36,14 @@ const REPLACED: Record<CompareMode, FilterDimension[]> = {
 
 const DEFAULT_NOTE: Record<CompareMode, string> = {
   pilotes: `Sélection proposée : les ${MIN_SERIES} pilotes les plus actifs de la vue filtrée.`,
-  annees: 'Sélection proposée : le pilote le plus actif et ses deux années les plus récentes.',
+  annees:
+    'Sélection proposée : le pilote le plus actif ayant au moins deux années de vols, avec ses deux années les plus récentes.',
   sites: `Sélection proposée : les ${MIN_SERIES} sites les plus fréquentés de la vue filtrée.`,
 };
 
 /** Comparer (§5.6) : pilotes, années d'un pilote ou sites, synchronisés dans l'URL (`?mode=…&ids=…`). */
 export function Compare() {
-  const { meta, flights: all, siteById } = useData();
+  const { meta, flights: all } = useData();
   const filters = useFiltersStore((s) => s.filters);
   const [params, setParams] = useSearchParams();
   const { mode, ids } = useMemo(() => parseCompareParams(params), [params]);
@@ -59,13 +61,10 @@ export function Compare() {
     () => (mode === 'annees' && selection.ids[0] ? pilotYears(pool, selection.ids[0]) : []),
     [mode, selection.ids, pool],
   );
-  const reduced = useMemo(
-    () => filterSummary(filters, REPLACED[mode], (id) => siteById.get(id)?.name ?? `site ${id}`),
-    [filters, mode, siteById],
-  );
+  const reduced = useFilterSummary(REPLACED[mode]);
 
   const write = useCallback(
-    (next: { mode: CompareMode; ids: string[] }) => setParams(writeCompareParams(params, next)),
+    (next: CompareParams) => setParams(writeCompareParams(params, next)),
     [params, setParams],
   );
   const onPilotChange = useCallback(
@@ -96,7 +95,7 @@ export function Compare() {
         years={years}
         visuals={visuals}
         defaultNote={DEFAULT_NOTE[mode]}
-        onModeChange={(m) => write({ mode: m, ids: [] })}
+        onModeChange={(m) => write({ mode: m, ids: null })}
         onIdsChange={(next) => write({ mode, ids: next })}
         onPilotChange={onPilotChange}
       />

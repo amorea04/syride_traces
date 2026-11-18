@@ -9,7 +9,7 @@ import type { Site } from '@/data/load';
 import type { Flight } from '@/data/flight';
 import { writeFilters } from '@/lib/filters';
 import { fmtDate, fmtNum, plural } from '@/lib/format';
-import { aggregateSites } from '@/lib/mapSites';
+import { siteMapData } from '@/lib/sites';
 import { distinctCount } from '@/lib/numeric';
 import { useFiltersStore } from '@/store/filters';
 import './site.css';
@@ -30,17 +30,17 @@ interface Props {
 
 /** En-tête de la page site : nom, coordonnées, chiffres d'identité, mini-carte (la position du site, jamais celle d'un vol). */
 export function SiteHeader({ site, flights }: Props) {
-  const { flights: allFlights, siteById } = useData();
+  const { flights: allFlights } = useData();
   const filters = useFiltersStore((s) => s.filters);
   const isMobile = useMediaQuery('(max-width: 48em)') ?? false;
-  // La mini-carte montre toujours le site, quels que soient les filtres.
+  // La mini-carte montre toujours le site (sa position, pas celle d'un vol), quels que soient les filtres.
   const mapData = useMemo(
     () =>
-      aggregateSites(
+      siteMapData(
+        site,
         allFlights.filter((f) => f.siteId === site.id),
-        siteById,
       ),
-    [allFlights, siteById, site.id],
+    [allFlights, site],
   );
   const dates = useMemo(() => flights.map((f) => f.date).sort(), [flights]);
   const hasCoords = site.lat !== null && site.lon !== null;

@@ -9,7 +9,6 @@ import '@/components/pilot/pilot.css';
 import type { Flight } from '@/data/flight';
 import { fmtDuration, fmtHm, fmtInt, fmtNum, NBSP } from '@/lib/format';
 import { careerBars } from '@/lib/pilots';
-import { computeCareer } from '@/lib/records';
 import { colors } from '@/theme/tokens';
 
 type Measure = 'heures' | 'vols';
@@ -22,8 +21,7 @@ export function CareerSection({ flights }: { flights: readonly Flight[] }) {
   const c = colors[scheme];
   const [measure, setMeasure] = useState<Measure>('heures');
   const bars = useMemo(() => careerBars(flights), [flights]);
-  const lastYear = bars.years[bars.years.length - 1]?.year ?? 0;
-  const career = useMemo(() => computeCareer(flights, lastYear), [flights, lastYear]);
+  const { career } = bars;
   const best = measure === 'heures' ? bars.bestHoursYear : bars.bestFlightsYear;
 
   const value = (y: (typeof bars.years)[number], d: 'p' | 'm'): number =>
