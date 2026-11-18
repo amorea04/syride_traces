@@ -75,6 +75,27 @@ class _Budget:
 # ------------------------ Driver ------------------------
 
 
+def _installed_chrome_major():
+    """
+    Version majeure du Chrome installé (ex. 157), ou None si introuvable.
+    Sans elle, undetected_chromedriver télécharge le ChromeDriver le plus récent, qui peut être
+    en avance d'une version sur Chrome (« only supports Chrome version N »).
+    """
+    import re
+    import subprocess
+
+    try:
+        binary = uc.find_chrome_executable()
+        if not binary:
+            return None
+        out = subprocess.run([binary, "--version"], capture_output=True, text=True,
+                             timeout=15).stdout
+        match = re.search(r"(\d+)\.\d+\.\d+", out)
+        return int(match.group(1)) if match else None
+    except Exception:
+        return None
+
+
 def create_driver(download_dir: str, profile_dir: str, private: bool = False):
     """
     Lance Chrome. private=True : fenêtre de navigation privée (--incognito) ; profile_dir doit
@@ -91,7 +112,8 @@ def create_driver(download_dir: str, profile_dir: str, private: bool = False):
     }
     options.add_experimental_option("prefs", prefs)
 
-    driver = uc.Chrome(options=options, user_data_dir=profile_dir, headless=False)
+    driver = uc.Chrome(options=options, user_data_dir=profile_dir, headless=False,
+                       version_main=_installed_chrome_major())
 
     try:
         driver.execute_cdp_cmd(
