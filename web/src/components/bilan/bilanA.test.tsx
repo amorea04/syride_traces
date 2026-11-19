@@ -15,6 +15,7 @@ import { BilanRhythm } from '@/components/bilan/BilanRhythm';
 import { BilanStory } from '@/components/bilan/BilanStory';
 import { BilanToc } from '@/components/bilan/BilanToc';
 import { pilotFlights, yearFlights } from '@/lib/bilan';
+import { useHighlightStore } from '@/store/highlight';
 import { syrideFlightUrl } from '@/lib/syride';
 import { mantineTheme } from '@/theme';
 import { installDomMocks } from '../../../tests/dom-mocks';
@@ -234,6 +235,13 @@ describe('BilanRhythm', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Ouvrir la fiche du jour' }));
     });
     expect(await screen.findByTestId('day-sheet-table')).toBeInTheDocument();
+  });
+
+  it('le surlignage de période est effacé au démontage', () => {
+    const { unmount } = renderWith(<BilanRhythm />);
+    act(() => useHighlightStore.getState().setHighlight({ kind: 'days', from: '2025-05-01', to: '2025-05-03' }));
+    unmount();
+    expect(useHighlightStore.getState().highlight).toBeNull();
   });
 });
 

@@ -49,8 +49,8 @@ export function defaultCompareYears(available: readonly number[], year: number):
 }
 
 /**
- * Années comparées lues dans l'URL. Paramètre absent : défaut. Valeurs inconnues, l'année du bilan elle-même et
- * doublons ignorés ; au plus 2 ; triées de la plus récente à la plus ancienne.
+ * Années comparées lues dans l'URL. Paramètre absent : défaut. Valeurs inconnues, l'année du bilan et les années
+ * postérieures, doublons ignorés ; au plus 2 ; triées de la plus récente à la plus ancienne.
  */
 export function parseCompareYears(
   params: URLSearchParams,
@@ -62,7 +62,7 @@ export function parseCompareYears(
   const picked = new Set<number>();
   for (const part of raw.split(',')) {
     const y = Number(part.trim());
-    if (Number.isInteger(y) && y !== year && available.includes(y)) picked.add(y);
+    if (Number.isInteger(y) && y < year && available.includes(y)) picked.add(y);
   }
   return [...picked].sort((a, b) => b - a).slice(0, MAX_COMPARE_YEARS);
 }

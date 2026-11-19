@@ -410,14 +410,15 @@ export function SitesMap({
 
   // Cadrage sur la sélection.
   const boundsKey = data.bounds ? data.bounds.join(',') : '';
+  const hasFocus = Boolean(focus);   // `focus` prime sur la sélection tant qu'il est posé
   useEffect(() => {
     const map = mapRef.current;
     const bounds: Bounds | null = data.bounds;
-    if (!ready || !map || !fitToSelection || !bounds) return;
+    if (!ready || !map || !fitToSelection || hasFocus || !bounds) return;
     fitBoundsOn(map, bounds);
     // `boundsKey` résume `data.bounds`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boundsKey, fitToSelection, ready]);
+  }, [boundsKey, fitToSelection, hasFocus, ready]);
 
   // Redimensionnement quand la hauteur change.
   useEffect(() => {

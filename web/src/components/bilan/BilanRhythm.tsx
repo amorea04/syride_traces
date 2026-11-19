@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BilanCumulative } from '@/components/bilan/BilanCumulative';
 import { useBilan } from '@/components/bilan/BilanContext';
 import { Section } from '@/components/common/Section';
@@ -51,8 +51,19 @@ function Tile({ label, value, note, range }: TileProps) {
  */
 export function BilanRhythm() {
   const { year, flights, cutoff, story } = useBilan();
-  const [openDay, setOpenDay] = useState<string | null>(null);
+  // Jour ouvert, lié au bilan (année + récit de la discipline) pour lequel il a été choisi : un autre bilan l'ignore.
+  const [opened, setOpened] = useState<{ iso: string | null; year: number; story: typeof story } | null>(null);
+  const openDay = opened && opened.year === year && opened.story === story ? opened.iso : null;
+  const setOpenDay = useCallback((iso: string | null) => setOpened({ iso, year, story }), [year, story]);
   const rhythm = useMemo(() => computeRhythm(flights, year, cutoff), [flights, year, cutoff]);
+
+  // Un autre bilan (année ou discipline) : la fiche du jour et le surlignage de période n'ont plus de sens.
+  useEffect(() => {
+    return () => {
+      const { highlight, setHighlight } = useHighlightStore.getState();
+      if (highlight?.kind === 'days') setHighlight(null);
+    };
+  }, [year, story]);
 
   useEffect(() => {
     const listener = (event: Event) => {
@@ -61,7 +72,7 @@ export function BilanRhythm() {
     };
     document.addEventListener(OPEN_DAY_EVENT, listener);
     return () => document.removeEventListener(OPEN_DAY_EVENT, listener);
-  }, []);
+  }, [setOpenDay]);
 
   return (
     <Section

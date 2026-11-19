@@ -113,10 +113,9 @@ def prepare_report_df(df: pd.DataFrame) -> pd.DataFrame:
     # Site : un nom vide (« », « nan », « none ») n'est pas un site -> NA. Le vol reste compté (durée, km…), mais
     # n'apparaît dans aucun tableau ni décompte de sites (nunique, groupby et value_counts ignorent NA).
     if "site" in out.columns:
-        names = out["site"].astype(object).where(out["site"].notna(), None)
-        names = names.map(lambda v: None if v is None else str(v).strip())
-        out["site"] = names.where(~names.isin(["", "nan", "none", "NaN", "None", "NAN", "NONE"]), None)
-        out["site"] = out["site"].where(out["site"].notna(), pd.NA)
+        text = out["site"].astype(str).str.strip()
+        missing = out["site"].isna() | text.str.lower().isin({"", "nan", "none"})
+        out["site"] = text.astype(object).where(~missing, pd.NA)
 
     if "heure_decolage" not in out.columns:
         source = out["heure"] if "heure" in out.columns else pd.Series(np.nan, index=out.index)

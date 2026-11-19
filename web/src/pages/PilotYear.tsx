@@ -144,6 +144,15 @@ export function PilotYear() {
       </Alert>
     );
   }
+  if (insights === null) {
+    return (
+      <NotFound title={`Bilan ${year} · ${pilot}`}>
+        <span data-testid="bilan-unavailable">
+          Le bilan {year} de {pilot} n’est pas encore disponible (données du récit absentes ; relancer l’export).
+        </span>
+      </NotFound>
+    );
+  }
   if (!value) {
     return (
       <NotFound title={`Bilan ${year} · ${pilot}`}>

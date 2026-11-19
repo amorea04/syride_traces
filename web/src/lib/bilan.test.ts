@@ -72,6 +72,11 @@ describe('années comparées', () => {
     expect(parseCompareYears(new URLSearchParams('comparer=2024,2023,2022'), available, 2025)).toEqual([2024, 2023]);
   });
 
+  it('refuse les années postérieures au bilan', () => {
+    expect(parseCompareYears(new URLSearchParams('comparer=2025,2023'), available, 2024)).toEqual([2023]);
+    expect(parseCompareYears(new URLSearchParams('comparer=2025'), available, 2024)).toEqual([]);
+  });
+
   it('écrit le choix, retire le paramètre s’il est celui par défaut, garde les autres paramètres', () => {
     const base = new URLSearchParams('activite=paramoteur');
     expect(writeCompareYears(base, [2022], available, 2025).toString()).toBe('activite=paramoteur&comparer=2022');

@@ -4,21 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBilan } from '@/components/bilan/BilanContext';
 import './bilanB.css';
 import { bilanCsvName, summaryText } from '@/lib/bilanDetails';
+import { downloadText } from '@/lib/download';
 import { DEFAULT_SORT, defaultVisibleColumns, flightsToCsv, sortFlights } from '@/lib/flightsTable';
 
 type Feedback = { kind: 'link' | 'summary' | 'csv'; ok: boolean } | null;
-
-/** Télécharge un texte en fichier CSV, sans appel réseau. */
-function downloadText(name: string, text: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
 
 /** Copie un texte dans le presse-papiers ; `false` si le navigateur refuse ou ne sait pas. */
 async function copyText(text: string): Promise<boolean> {

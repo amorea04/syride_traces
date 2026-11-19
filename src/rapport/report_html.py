@@ -1154,9 +1154,10 @@ class ReportBuilder:
     def _milestone_text(self, m: dict) -> Tuple[str, str]:
         """(titre, détail) d'un jalon."""
         f = m.get("flight")
-        where = []
+        where, has_site = [], False
         if f:
-            where = [f'à {f["site"]}'] + ([fmt_duration(f["minutes"])] if f["minutes"] else [])
+            where = ([f'à {f["site"]}'] if f["site"] else []) + ([fmt_duration(f["minutes"])] if f["minutes"] else [])
+            has_site = bool(f["site"])
         kind, ctx = m["type"], {}
         detail = list(where)
         if kind in ("nth_flight", "nth_hour"):
@@ -1165,7 +1166,7 @@ class ReportBuilder:
             words = [JALON_RECORD_WORDS[k] for k, _ in m["metrics"]]
             ctx["records"] = words[0] if len(words) == 1 else ", le plus ".join(words[:-1]) + " et le plus " + words[-1]
             values = [_fmt_value(JALON_RECORD_FMT[k][0], v, JALON_RECORD_FMT[k][1]) for k, v in m["metrics"]]
-            detail = where[:1] + values
+            detail = where[:has_site] + values
             personal = m.get("personal") or []
             if personal:
                 label = self.text("jalon_record_perso", block=False)
@@ -1178,7 +1179,7 @@ class ReportBuilder:
                       "à " + ", ".join(names) + ("…" if len(m["sites"]) > FACT_MAX_SITES else "")]
         elif kind == "new_site":
             ctx["site"] = f["site"]
-            detail = where[1:]
+            detail = where[has_site:]
             if m["others"]:
                 n = len(m["others"])
                 detail.append(f'puis {n} autre{"s" if n > 1 else ""} nouveau{"x" if n > 1 else ""} site{"s" if n > 1 else ""}')
@@ -1188,7 +1189,7 @@ class ReportBuilder:
                 n = len(m["others"])
                 detail.append(f'puis {n} autre{"s" if n > 1 else ""} nouvelle{"s" if n > 1 else ""} voile{"s" if n > 1 else ""}')
         elif kind == "comeback":
-            detail = [f'après {plural(m["gap"], "jour")} sans voler'] + where[:1]
+            detail = [f'après {plural(m["gap"], "jour")} sans voler'] + where[:has_site]
         if kind == "first" and m.get("new_site"):
             detail.append(self.text("jalon_first_new_site", block=False))
         title = self.text("jalon_" + kind, ctx, block=False)

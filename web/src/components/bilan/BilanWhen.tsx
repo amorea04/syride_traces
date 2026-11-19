@@ -2,20 +2,21 @@ import { Text } from '@mantine/core';
 import type { BarSeriesOption, EChartsOption } from 'echarts';
 import { useMemo } from 'react';
 import { useBilan } from '@/components/bilan/BilanContext';
+import { YearSwatch } from '@/components/bilan/YearSwatch';
 import { ChartFrame, type DataTable } from '@/components/common/ChartFrame';
 import { Section } from '@/components/common/Section';
+import { useSeriesVisuals } from '@/components/compare/visuals';
 import { useScheme } from '@/components/dashboard/shared';
 import type { Flight } from '@/data/flight';
+import type { CompareSeries } from '@/lib/compare';
 import { DAYS_LONG, DAYS_SHORT, fmtHours, fmtInt, MONTHS_SHORT, NBSP, plural } from '@/lib/format';
 import { monthDistribution, seasonsBreakdown, SEASONS, weekHourMatrix } from '@/lib/rhythm';
 import { favoriteSlot, hoursWindow, matrixLevel } from '@/lib/rhythmBlocks';
-import { yearPatterns } from '@/theme/tokens';
-import { colors, type ColorKey } from '@/theme/tokens';
+import { colors, yearPatterns } from '@/theme/tokens';
 import '@/components/rhythm/rhythm.css';
 import './bilanB.css';
 
 const SEASON_LABELS = { hiver: 'Hiver', printemps: 'Printemps', été: 'Été', automne: 'Automne' } as const;
-const YEAR_KEYS: readonly ColorKey[] = ['y0', 'y1', 'y2'];
 
 /** Teinte de la matrice : parapente seul, paramoteur seul, sinon les deux. */
 function matrixKind(flights: readonly Flight[]): 'p' | 'm' | 'b' {
@@ -108,41 +109,29 @@ function Matrix({ flights }: { flights: readonly Flight[] }) {
   );
 }
 
-/** Style CSS d'un échantillon de légende : couleur de l'année et hachures de son motif. */
-function swatchStyle(index: number, color: string): React.CSSProperties {
-  const angle = [null, 45, 135][index] ?? null;
-  if (angle === null) return { background: color };
-  return {
-    background: `repeating-linear-gradient(${angle}deg, ${color} 0 3px, transparent 3px 6px)`,
-    boxShadow: `inset 0 0 0 1px ${color}`,
-  };
-}
-
 /** Vols par mois : l'année du bilan et les années comparées côte à côte (couleur + hachures). */
 function MonthsChart() {
   const { year, flights, compareYears, compareFlights } = useBilan();
   const scheme = useScheme();
   const c = colors[scheme];
-  const series = useMemo(
+  const series = useMemo<CompareSeries[]>(
     () => [
-      { year, flights },
-      ...compareYears.map((y) => ({ year: y, flights: compareFlights.get(y) ?? [] })),
+      { id: String(year), label: String(year), flights, span: null },
+      ...compareYears.map((y) => ({ id: String(y), label: String(y), flights: compareFlights.get(y) ?? [], span: null })),
     ],
     [year, flights, compareYears, compareFlights],
   );
+  const visuals = useSeriesVisuals('annees', series);
   const counts = useMemo(() => series.map((s) => monthDistribution(s.flights).flights), [series]);
-  const hatch = useMemo(
-    () => [null, Math.PI / 4, -Math.PI / 4] as const,
-    [],
-  );
-  const colorOf = (i: number): string => c[YEAR_KEYS[i] ?? 'y2'];
 
   const option = useMemo<EChartsOption>(() => {
-    const bars = series.map((s, i): BarSeriesOption => {
-      const color = c[YEAR_KEYS[i] ?? 'y2'];
-      const rotation = hatch[i] ?? null;
+    const bars = visuals.map((v, i): BarSeriesOption => {
+      const color = v.color;
+      // Hachures de l'année (jetons y0 à y2) ; au-delà, couleur seule.
+      const angle = v.colorKey === 'y0' || v.colorKey === 'y1' || v.colorKey === 'y2' ? yearPatterns[v.colorKey].hatchAngle : null;
+      const rotation = angle === null ? null : (angle * Math.PI) / 180;
       return {
-        name: String(s.year),
+        name: v.label,
         type: 'bar',
         barMaxWidth: 16,
         color,
@@ -172,11 +161,11 @@ function MonthsChart() {
       yAxis: { type: 'value', name: 'vols', nameGap: 12, minInterval: 1 },
       series: bars,
     };
-  }, [series, counts, hatch, c]);
+  }, [visuals, counts, c]);
 
   const table = useMemo<DataTable>(
     () => ({
-      columns: ['Mois', ...series.map((s) => `${s.year} (vols)`)],
+      columns: ['Mois', ...series.map((s) => `${s.label} (vols)`)],
       rows: MONTHS_SHORT.map((m, i) => [m, ...counts.map((n) => n[i] ?? 0)]),
     }),
     [series, counts],
@@ -190,14 +179,14 @@ function MonthsChart() {
         option={option}
         height={260}
         table={table}
-        ariaLabel={`Vols par mois en ${series.map((s) => s.year).join(', ')}`}
+        ariaLabel={`Vols par mois en ${series.map((s) => s.label).join(', ')}`}
         footer={
           series.length > 1 ? (
             <div className="bb-legend">
-              {series.map((s, i) => (
-                <span key={s.year}>
-                  <i className="bb-swatch" style={swatchStyle(i, colorOf(i))} aria-hidden="true" />
-                  {s.year}
+              {visuals.map((v) => (
+                <span key={v.id}>
+                  <YearSwatch css={v.css} dash={v.dash} />
+                  {v.label}
                 </span>
               ))}
             </div>

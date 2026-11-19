@@ -14,7 +14,6 @@ import './bilanB.css';
 
 const MAP_HEIGHT = 460;
 const MAP_HEIGHT_MOBILE = 320;
-const ALL = 'tout';
 
 /**
  * Où : phrase du récit, carte des sites de l'année (cercles proportionnels, nouveaux sites cerclés d'or), boutons de
@@ -33,14 +32,17 @@ export function BilanWhere() {
   const reach = useMemo(() => reachView(story.reach), [story.reach]);
   const zones = story.map_zones;
 
-  // Zone choisie ; `seq` force un recadrage même en recliquant sur la zone courante.
-  const [view, setView] = useState<{ zone: number | typeof ALL; seq: number }>({ zone: ALL, seq: 0 });
+  // Zone choisie, par nom (null = tout) : une zone absente du récit courant (autre discipline) retombe sur « Tout ».
+  // `seq` force un recadrage même en recliquant sur la zone courante.
+  const [view, setView] = useState<{ zone: string | null; seq: number }>({ zone: null, seq: 0 });
+  const zone = view.zone === null ? undefined : zones.find((z) => z.name === view.zone);
   const focus = useMemo(() => {
-    const bounds: Bounds | null =
-      view.zone === ALL ? data.allBounds : (zones[view.zone] ? zoneBounds(zones[view.zone]!) : null);
+    const bounds: Bounds | null = zone ? zoneBounds(zone) : data.allBounds;
     return bounds ? { bounds } : null;
-  }, [view, data.allBounds, zones]);
-  const choose = useCallback((zone: number | typeof ALL) => setView((v) => ({ zone, seq: v.seq + 1 })), []);
+    // `seq` : un nouveau clic sur la même zone doit produire un nouvel objet `focus`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zone, view.seq, data.allBounds]);
+  const choose = useCallback((name: string | null) => setView((v) => ({ zone: name, seq: v.seq + 1 })), []);
 
   const openSite = useCallback(
     (siteId: number) => void navigate({ pathname: `/site/${siteId}`, search }),
@@ -64,20 +66,20 @@ export function BilanWhere() {
               <button
                 type="button"
                 className="bb-zone"
-                aria-pressed={view.zone === ALL}
-                onClick={() => choose(ALL)}
+                aria-pressed={!zone}
+                onClick={() => choose(null)}
                 data-testid="bilan-zone-all"
               >
                 <span className="bb-zone-name">Tout</span>
                 <span className="bb-zone-note">{plural(data.collection.features.length, 'site')}</span>
               </button>
-              {zones.map((z, i) => (
+              {zones.map((z) => (
                 <button
                   key={z.name}
                   type="button"
                   className="bb-zone"
-                  aria-pressed={view.zone === i}
-                  onClick={() => choose(i)}
+                  aria-pressed={zone === z}
+                  onClick={() => choose(z.name)}
                   data-testid="bilan-zone"
                 >
                   <span className="bb-zone-name">{z.name}</span>

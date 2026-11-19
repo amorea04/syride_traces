@@ -24,13 +24,6 @@
   align-items: center;
   gap: 6px;
 }
-.bb-swatch {
-  display: inline-block;
-  width: 18px;
-  height: 10px;
-  border-radius: 2px;
-  flex: none;
-}
 .bb-ring {
   display: inline-block;
   width: 12px;

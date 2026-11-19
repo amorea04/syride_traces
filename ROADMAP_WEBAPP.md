@@ -1006,19 +1006,21 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 - [x] PR relue et fusionnée (PR #6) · **`/clear`**
 
 ### Phase 5B : Bilan pilote × année
-- [ ] 5B.1 Route, chargement des insights, sélecteur d'année
-- [ ] 5B.2 En-tête du bilan (KPI, persona, écart, équivalences), fond sobre
-- [ ] 5B.3 Aperçu (8 KPI, sparklines, pastilles d'écart, faits marquants)
-- [ ] 5B.4 Frise des jalons
-- [ ] 5B.5 Courbe cumulée multi-années et blocs Rythme
-- [ ] 5B.6 Carte zonée, nouveaux sites, portée
-- [ ] 5B.7 Records battus, comparaison, haltères
+- [x] 5B.1 Route, chargement des insights, sélecteur d'année ; seul le filtre « activité » s'applique (les autres sont ignorés, mention affichée) ; années comparées dans l'URL (`comparer`)
+- [x] 5B.2 En-tête du bilan (KPI, persona, écart, équivalences ↻), fond sobre bleu nuit et lignes topographiques
+- [x] 5B.3 Aperçu (8 KPI avec sparkline mensuelle, pastilles d'écart par année comparée, meilleur jour, journée type, vol de l'année)
+- [x] 5B.4 Frise des jalons (or = records et nouveautés), vers la fiche vol ou la fiche jour
+- [x] 5B.5 Courbe cumulée multi-années (motifs, réticule, losanges des jalons) et blocs Rythme
+- [x] 5B.6 Carte avec cadrage par zone, nouveaux sites cerclés d'or, portée, tableau des sites
+- [x] 5B.7 Records (top 5 × 6, « Nouveau record ! » avec écart), comparaison KPI × années et haltères
 - ~~5B.8 Projection de fin d'année et jauge d'objectif~~ (retiré, D16)
-- [ ] 5B.9 Actions : copier le lien, copier le résumé, CSV
-- [ ] 5B.10 Données et limites, glossaire
-- [ ] 5B.11 Recette croisée avec 3 rapports HTML : identiques ou écarts justifiés
-- [ ] 5B.12 Tests e2e du Bilan
-- [ ] PR relue et fusionnée · **`/clear`**
+- [x] 5B.9 Actions : copier le lien, copier le résumé, CSV
+- [x] 5B.10 Données et limites (couverture année et carrière), glossaire
+- [x] 5B.11 Recette croisée (`web/RECETTE_5B11.md`) : AdrienM, j2f et JJvole 2025, 9 vues ; phrases identiques, écarts corrigés à la source (D18 : sites vides, durées à 4 décimales, `meta.data_refreshed_at`)
+- [x] 5B.12 Tests e2e du Bilan (`bilan.spec.ts`, `bilan-details.spec.ts`, 17 scénarios ; l'« export PNG » est remplacé par l'export CSV, le récap PNG restant en phase 8) ; 810 tests unitaires, 67 e2e et 62 pytest au vert
+- [x] Relecture `/code-review medium` : 10 constats, 9 corrigés ; reporté en phase 6 : les KPI de l'année sont recalculés par plusieurs sections (à mutualiser dans le contexte du Bilan)
+- [x] Grande recette d'Adrien (19/11/2026) : retours consignés en phase 5C
+- [x] PR relue et fusionnée · **`/clear`**
 
 ### Phase 5C : Retours de recette
 - [ ] 5C.1 Menu actif sur les pages de détail (vol, site, pilote, bilan)
