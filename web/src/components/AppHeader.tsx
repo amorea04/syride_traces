@@ -84,7 +84,7 @@ export function AppHeader({ filtersOpen, onToggleFilters }: Props) {
 
       <Group gap="xs" wrap="nowrap">
         <Text size="xs" c="dimmed" visibleFrom="lg" style={{ whiteSpace: 'nowrap' }}>
-          Données au {fmtDate(meta.data_updated_at, { withYear: true })}
+          Données au {fmtDate(meta.data_refreshed_at, { withYear: true })}
         </Text>
         <Button
           variant={filtersOpen ? 'light' : 'default'}

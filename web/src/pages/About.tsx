@@ -35,8 +35,8 @@ export function About() {
           . Outil personnel, non affilié à Syride.
         </Text>
         <Text size="sm" mt="xs" data-testid="about-dates">
-          Données à jour au <b>{longDate(meta.data_updated_at)}</b> ; exportées le{' '}
-          <b>{longDate(meta.generated_at)}</b>.
+          Données mises à jour le <b>{longDate(meta.data_refreshed_at)}</b> ; exportées le{' '}
+          <b>{longDate(meta.generated_at)}</b>. Dernier vol le <b>{longDate(meta.data_updated_at)}</b>.
         </Text>
         <Text size="sm" mt="xs" data-testid="about-d12">
           Aucune trace de vol n’est publiée ici : seule la position des sites apparaît sur les cartes. Pour

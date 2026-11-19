@@ -126,7 +126,8 @@ def run_export(df: pd.DataFrame, out_dir: Path, only: Optional[str] = None, pilo
     carried = [files[p] for p in ("flights", "sites") if p not in wanted] + [e["file"] for e in insights]
     meta_mod.check_files_exist(out_dir, carried)
 
-    meta = meta_mod.build_meta(flights_obj, fstats["excluded"], files, insights, now=now)
+    meta = meta_mod.build_meta(flights_obj, fstats["excluded"], files, insights, now=now,
+                               refreshed_at=meta_mod.refreshed_date(df))
     validate(meta, "MetaFile")
     meta_mod.write_meta(meta, out_dir)
     purged = meta_mod.purge_unreferenced(meta, out_dir)

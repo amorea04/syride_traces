@@ -141,7 +141,7 @@ def plain(value):
 
 
 def nan_to_none(text):
-    return None if text == "nan" else text
+    return None if text in ("nan", "") else text
 
 
 # ---------------------------------------------------------------------------

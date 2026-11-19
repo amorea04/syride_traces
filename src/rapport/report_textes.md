@@ -86,7 +86,7 @@ Tu as gagné **{{valeur}} fois** l'Everest en altitude cumulée (gain mesuré pa
 Ton mois le plus actif est **{{mois}}** ({{vols_mois}}).
 
 ## phrase_record_plafond
-Ton plus haut vol a atteint **{{plafond}}** le {{date_plafond}}, à {{site_plafond}}.
+Ton plus haut vol a atteint **{{plafond}}** le {{date_plafond}}{{?site_plafond}}, à {{site_plafond}}{{/site_plafond}}.
 
 ## portrait_titre
 Ton portrait de pilote
@@ -242,7 +242,7 @@ Tu voles surtout le **{{jour}}** ({{vols_jour}}).
 La moitié de tes décollages ont lieu entre **{{heure_debut}}** et **{{heure_fin}}**.
 
 ## phrase_journee_type
-Un **{{jour}}**{{?heure}}, décollage vers **{{heure}}**{{/heure}}, à **{{site}}** avec **{{voile}}**.
+Un **{{jour}}**{{?heure}}, décollage vers **{{heure}}**{{/heure}}{{?site}}, à **{{site}}**{{/site}} avec **{{voile}}**.
 
 ## phrase_meilleure_journee
 **{{vols}}** pour **{{duree}}** de vol{{?sites}}, à {{sites}}{{/sites}}.
@@ -558,7 +558,7 @@ Tu as volé sur {{sites}} cette année.
 {{vols}} et {{duree}} de vol : c'est ta voile la plus utilisée.
 
 ## recap_record
-Ton vol le plus long : le {{date}}, à {{site}}.
+Ton vol le plus long : le {{date}}{{?site}}, à {{site}}{{/site}}.
 
 ## recap_plafond
 Plafond maximum : **{{plafond}}**.

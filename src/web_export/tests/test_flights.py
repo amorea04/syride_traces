@@ -120,9 +120,11 @@ def test_types_and_rounding(files):
     for rec in decode(files["flights"]):
         for col in ("ceiling_m", "gain_m"):
             assert rec[col] is None or isinstance(rec[col], int)
-        for col in ("dist_km", "speed_avg", "vario_max", "g_max", "duration_min"):
+        for col in ("dist_km", "speed_avg", "vario_max", "g_max"):
             v = rec[col]
             assert v is None or round(v, 1) == v
+        v = rec["duration_min"]   # 4 décimales : totaux d'heures identiques à ceux du rapport
+        assert v is None or round(v, 4) == v
         assert rec["time"] is None or len(rec["time"]) == 5
         assert isinstance(rec["incomplete"], bool)
 

@@ -72,7 +72,8 @@ def _time(value: Any) -> Optional[str]:
 def _duration(value: Any) -> Optional[float]:
     if value is None or value != value:
         return None
-    return max(0.0, round(float(value), 1))
+    # 4 décimales : les durées Syride sont des secondes entières (s/60) ; les totaux d'heures du web égalent ceux du rapport
+    return max(0.0, round(float(value), 4))
 
 
 def _mode_dict(modes: List[str]) -> List[str]:

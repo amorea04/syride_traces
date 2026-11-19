@@ -1,0 +1,571 @@
+/* Bilan, lot A : en-tête, sommaire, aperçu, histoire, rythme, comparaison. Jetons --sr-* uniquement. */
+
+/* Conteneur de lecture (§6) : 1 120 px au plus, centré. */
+[data-testid='bilan-page'] {
+  max-width: 1120px;
+  margin-inline: auto;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ---------- En-tête ---------- */
+.bl-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--sr-radius-lg, 12px);
+  background: linear-gradient(135deg, var(--sr-hero-1), var(--sr-hero-2));
+  color: #fff;
+  isolation: isolate;
+}
+.bl-topo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+.bl-topo path {
+  fill: none;
+  stroke: #fff;
+  stroke-opacity: 0.08;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.bl-topo path.bl-topo-i {
+  stroke-opacity: 0.16;
+}
+.bl-hero-in {
+  padding: 22px clamp(16px, 4vw, 36px) 26px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.bl-yr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.bl-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 650;
+  color: rgba(255, 255, 255, 0.78);
+}
+.bl-glass {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  font: inherit;
+  padding: 0;
+}
+.bl-glass:hover:not([aria-disabled='true']) {
+  background: rgba(255, 255, 255, 0.22);
+}
+.bl-glass:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.bl-glass[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+.bl-year-select {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.bl-year-select option {
+  color: #14151c;
+  background: #fff;
+}
+.bl-year-select:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.bl-title {
+  margin: 0;
+  font-size: clamp(26px, 5vw, 44px);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.bl-hero a {
+  color: #fff;
+  text-decoration-color: rgba(255, 255, 255, 0.6);
+}
+.bl-sub {
+  margin: 0;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.86);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.bl-persona {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 70ch;
+  color: rgba(255, 255, 255, 0.92);
+}
+.bl-persona-more {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.82);
+}
+.bl-persona b,
+.bl-persona-more b {
+  font-weight: 700;
+  color: #fff;
+}
+.bl-hkpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px 20px;
+  margin: 4px 0;
+}
+.bl-hk {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.bl-hv {
+  font-size: clamp(24px, 4.6vw, 38px);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.bl-hv small {
+  font-size: 0.5em;
+  font-weight: 650;
+  margin-left: 3px;
+  opacity: 0.85;
+}
+.bl-hknote {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+}
+.bl-hkl {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+@media (max-width: 36em) {
+  .bl-hkpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.bl-gap {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  max-width: 70ch;
+}
+.bl-gap-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+}
+.bl-eq {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Barre de choix des années comparées */
+.bl-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 12px;
+}
+.bl-ctl-label {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 650;
+  color: var(--sr-muted);
+}
+.bl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--sr-line);
+  background: var(--sr-surface);
+  color: var(--sr-text);
+  font: inherit;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.bl-chip[aria-pressed='true'] {
+  border-color: var(--sr-accent);
+  box-shadow: inset 0 0 0 1px var(--sr-accent);
+}
+.bl-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.bl-chip:focus-visible {
+  outline: 2px solid var(--sr-accent);
+  outline-offset: 2px;
+}
+.bl-swatch {
+  display: inline-block;
+  width: 22px;
+  height: 0;
+  border-top: 3px solid currentColor;
+}
+.bl-note {
+  font-size: 13px;
+  color: var(--sr-muted);
+}
+
+/* ---------- Sommaire ---------- */
+.bl-toc {
+  position: sticky;
+  top: var(--app-shell-header-offset, 56px);
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 6px 0;
+  background: var(--sr-bg);
+  border-bottom: 1px solid var(--sr-line);
+  scrollbar-width: thin;
+}
+.bl-toc a {
+  flex: none;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: var(--sr-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.bl-toc a:hover {
+  background: var(--sr-surface-2);
+}
+.bl-toc a:focus-visible {
+  outline: 2px solid var(--sr-accent);
+  outline-offset: -2px;
+}
+.bl-toc a[aria-current='true'] {
+  background: var(--sr-surface-2);
+  font-weight: 650;
+}
+
+/* ---------- Aperçu ---------- */
+.bl-lead {
+  margin: 0 0 14px;
+  font-size: 16px;
+  line-height: 1.55;
+  max-width: 75ch;
+}
+.bl-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 62em) {
+  .bl-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.bl-kpi {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--sr-line);
+  border-radius: var(--sr-radius-md);
+}
+.bl-kpi-l {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sr-muted);
+}
+.bl-kpi-v {
+  font-size: 26px;
+  font-weight: 750;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.bl-kpi-v small {
+  font-size: 0.5em;
+  font-weight: 650;
+  margin-left: 3px;
+  color: var(--sr-muted);
+}
+.bl-kpi-na {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--sr-muted);
+}
+.bl-spark {
+  width: 100%;
+  height: 26px;
+  display: block;
+  color: var(--sr-accent-text);
+}
+.bl-kpi-note {
+  font-size: 12px;
+  color: var(--sr-muted);
+}
+.bl-deltas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.bl-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--sr-muted);
+}
+.bl-delta i {
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+.bl-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+@media (max-width: 62em) {
+  .bl-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.bl-fact {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--sr-line);
+  border-radius: var(--sr-radius-md);
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+.bl-fact-big {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.bl-fact-big.bl-gold {
+  color: var(--sr-gold-text);
+}
+.bl-fact-txt {
+  margin: 0;
+  font-size: 14px;
+  color: var(--sr-muted);
+  line-height: 1.45;
+}
+.bl-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--sr-accent-text);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  width: fit-content;
+}
+.bl-link:focus-visible {
+  outline: 2px solid var(--sr-accent);
+  outline-offset: 2px;
+}
+.bl-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: center;
+}
+
+/* ---------- Histoire : frise des jalons ---------- */
+.bl-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  column-count: 2;
+  column-gap: 36px;
+}
+@media (max-width: 62em) {
+  .bl-timeline {
+    column-count: 1;
+  }
+}
+.bl-ms {
+  break-inside: avoid;
+  position: relative;
+  min-width: 0;
+  padding: 0 0 16px 22px;
+  border-left: 2px solid var(--sr-line);
+}
+.bl-ms::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--sr-surface);
+  border: 2px solid var(--sr-muted);
+}
+.bl-ms[data-gold='true']::before {
+  background: var(--sr-gold);
+  border-color: var(--sr-gold);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+.bl-ms-date {
+  font-size: 13px;
+  color: var(--sr-muted);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.bl-ms-title {
+  display: block;
+  font-weight: 650;
+  line-height: 1.35;
+}
+.bl-ms-detail {
+  display: block;
+  font-size: 14px;
+  color: var(--sr-muted);
+  line-height: 1.4;
+}
+.bl-tag {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--sr-gold-bg);
+  color: var(--sr-gold-text);
+}
+
+/* ---------- Rythme ---------- */
+.bl-tiles-title {
+  font-size: 12px;
+  color: var(--sr-muted);
+  margin: 0 0 6px;
+}
+.bl-cumul-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--sr-muted);
+}
+.bl-cumul-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- Comparaison ---------- */
+.bl-cmp-wrap {
+  position: relative; /* contient les textes masqués (position absolue) des pastilles */
+  overflow-x: auto;
+}
+.bl-cmp {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.bl-cmp th,
+.bl-cmp td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--sr-line);
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.bl-cmp th:first-child,
+.bl-cmp td:first-child {
+  text-align: left;
+  white-space: normal;
+}
+.bl-cmp thead th {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--sr-muted);
+}
+.bl-cmp td.bl-cur {
+  font-weight: 700;
+}
+.bl-cmp .bl-meas {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--sr-muted);
+}
+.bl-sub-note {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--sr-muted);
+}
+.bl-empty {
+  margin: 0;
+  font-size: 14px;
+  color: var(--sr-muted);
+}
+
+[data-testid='bilan-page'] section[id] {
+  scroll-margin-top: 112px;
+}

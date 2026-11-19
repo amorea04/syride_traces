@@ -16,6 +16,7 @@ def test_meta_content(exported, files):
     validate(meta, "MetaFile")
     assert meta["counts"] == {"flights": 48, "pilots": 3, "sites": 6, "wings": 4, "excluded_flights": 2}
     assert meta["data_updated_at"] == max(r[2] for r in files["flights"]["rows"])
+    assert meta["data_refreshed_at"] == "2026-01-01"   # max de date_update du pkl synthétique
     assert meta["generated_at"].endswith("Z")
     assert [(e["pilot"], e["year"]) for e in meta["insights"]] == [("alpha-test", 2025), ("bravo-test2", 2025), ("zoe-test", 2025)]
     assert (Path(out) / "meta.json").exists() and "." not in "meta.json".replace(".json", "")
