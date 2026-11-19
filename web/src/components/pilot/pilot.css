@@ -54,26 +54,6 @@
   border-radius: 50%;
   flex: none;
 }
-.pl-years-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: flex-end;
-}
-.pl-years-nav a {
-  border: 1px solid var(--sr-line);
-  background: var(--sr-surface);
-  border-radius: var(--sr-radius-md, 5px);
-  padding: 3px 10px;
-  font-size: 14px;
-  color: var(--sr-text);
-  text-decoration: none;
-}
-.pl-years-nav a:hover {
-  border-color: var(--sr-accent);
-  text-decoration: none;
-}
-
 .pl-kpis {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -398,4 +378,10 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+/* Site de moins de 3 vols dans « Ses sites face à face » */
+.fv-few {
+  color: var(--sr-muted);
+  font-size: 12px;
 }

@@ -15,6 +15,7 @@ import { BilanStory } from '@/components/bilan/BilanStory';
 import { BilanToc } from '@/components/bilan/BilanToc';
 import { BilanWhen } from '@/components/bilan/BilanWhen';
 import { BilanWhere } from '@/components/bilan/BilanWhere';
+import { DetailNav } from '@/components/common/DetailNav';
 import { FilterLink } from '@/components/FilterLink';
 import { APP_NAME } from '@/components/navigation';
 import { useData, useInsights } from '@/data/DataProvider';
@@ -166,6 +167,13 @@ export function PilotYear() {
     <BilanContext.Provider value={value}>
       <Stack gap="xl" data-testid="bilan-page" data-slug={slug} data-year={year}>
         <title>{`Bilan ${year} · ${pilot} · ${APP_NAME}`}</title>
+        <DetailNav
+          crumbs={[
+            { label: 'Pilotes', to: '/pilotes' },
+            { label: pilot, to: `/pilote/${slug}` },
+            { label: `Bilan ${year}` },
+          ]}
+        />
         <BilanHeader />
         {ignored.length > 0 && (
           <Text size="sm" c="dimmed" data-testid="bilan-ignored-filters">

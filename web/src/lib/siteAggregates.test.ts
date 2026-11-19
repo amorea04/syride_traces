@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { parapenteShare, positionAmongSites, siteAggregates, SITE_INDICATORS } from '@/lib/siteAggregates';
+import {
+  FEW_SITE_FLIGHTS,
+  hasFewFlights,
+  MIN_SITE_FLIGHTS,
+  MIN_SITE_FLIGHTS_FACE_TO_FACE,
+  MIN_SITE_FLIGHTS_PILOT,
+  parapenteShare,
+  positionAmongSites,
+  siteAggregates,
+  SITE_INDICATORS,
+} from '@/lib/siteAggregates';
 import { makeFlight } from '../../tests/flightFactory';
 
 function site(siteId: number, n: number, over: Parameters<typeof makeFlight>[1] = {}) {
@@ -78,6 +88,14 @@ describe('positionAmongSites', () => {
       min: 500,
       max: 1500,
     });
+    expect(ceiling.valueSiteIds).toHaveLength(ceiling.values.length);
+    expect(ceiling.valueSiteIds.map((id, i) => [id, ceiling.values[i]])).toEqual(
+      expect.arrayContaining([
+        [1, 500],
+        [2, 1500],
+        [3, 1000],
+      ]),
+    );
     const flightsInd = pos.indicators.find((i) => i.id === 'flights')!;
     expect(flightsInd.rank).toBe(2);
     expect(pos.indicators.map((i) => i.id)).toEqual(SITE_INDICATORS.map((i) => i.id));
@@ -104,5 +122,25 @@ describe('positionAmongSites', () => {
 
   it('seuil réglable (vue pilote)', () => {
     expect(positionAmongSites(aggs, 4, 3)).not.toBeNull();
+  });
+});
+
+describe('« Ses sites face à face » sans seuil (D20)', () => {
+  it('la page pilote compte dès 1 vol, la fiche vol et la page site gardent 10', () => {
+    expect(MIN_SITE_FLIGHTS_FACE_TO_FACE).toBe(1);
+    expect(MIN_SITE_FLIGHTS).toBe(10);
+    expect(MIN_SITE_FLIGHTS_PILOT).toBe(10);
+  });
+  it('un site d’un seul vol est positionné parmi les autres, signalé « peu de vols » sous 3 vols', () => {
+    const flights = [
+      ...Array.from({ length: 5 }, () => makeFlight('2025-05-01', { siteId: 1, site: 'A' })),
+      makeFlight('2025-05-02', { siteId: 2, site: 'B' }),
+    ];
+    const aggregates = siteAggregates(flights);
+    const position = positionAmongSites(aggregates, 2, MIN_SITE_FLIGHTS_FACE_TO_FACE);
+    expect(position?.comparedSites).toBe(2);
+    expect(positionAmongSites(aggregates, 2, MIN_SITE_FLIGHTS_PILOT)).toBeNull();
+    expect(hasFewFlights(1)).toBe(true);
+    expect(hasFewFlights(FEW_SITE_FLIGHTS)).toBe(false);
   });
 });

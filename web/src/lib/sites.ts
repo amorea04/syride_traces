@@ -160,7 +160,9 @@ export function siteMapData(site: SiteInfo, siteFlights: readonly Flight[]): Sit
   }
   const collection: SiteCollection = { type: 'FeatureCollection', features };
   const point = features[0]?.geometry.coordinates;
-  const bounds = point ? ([point[0], point[1], point[0], point[1]] as [number, number, number, number]) : null;
+  const bounds = point
+    ? ([point[0], point[1], point[0], point[1]] as [number, number, number, number])
+    : null;
   return {
     collection,
     rows: [],
@@ -179,6 +181,8 @@ export function siteMapData(site: SiteInfo, siteFlights: readonly Flight[]): Sit
 export interface SeasonalityMatrix {
   /** [12][24] vols ; index 0 = janvier, colonne = heure entière de décollage. */
   counts: number[][];
+  /** [12][24] minutes de vol. */
+  minutes: number[][];
   /** Vols par mois, y compris ceux sans heure connue. */
   monthTotals: number[];
   /** Vols par heure (placés seulement). */
@@ -190,6 +194,7 @@ export interface SeasonalityMatrix {
 /** Matrice mois × heure de décollage (nombre de vols). */
 export function seasonalityMatrix(flights: readonly Flight[]): SeasonalityMatrix {
   const counts = Array.from({ length: 12 }, () => new Array<number>(24).fill(0));
+  const minutes = Array.from({ length: 12 }, () => new Array<number>(24).fill(0));
   const monthTotals = new Array<number>(12).fill(0);
   const hourTotals = new Array<number>(24).fill(0);
   let missing = 0;
@@ -201,12 +206,14 @@ export function seasonalityMatrix(flights: readonly Flight[]): SeasonalityMatrix
     const row = counts[m];
     if (hour !== null && hour >= 0 && hour < 24 && row) {
       row[hour] = (row[hour] ?? 0) + 1;
+      const mrow = minutes[m];
+      if (mrow) mrow[hour] = (mrow[hour] ?? 0) + minutesOf(f);
       hourTotals[hour] = (hourTotals[hour] ?? 0) + 1;
     } else {
       missing += 1;
     }
   }
-  return { counts, monthTotals, hourTotals, missing };
+  return { counts, minutes, monthTotals, hourTotals, missing };
 }
 
 /** Vols par mois (index 0 = janvier) et par discipline, pour les barres de saisonnalité. */

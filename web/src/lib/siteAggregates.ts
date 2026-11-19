@@ -15,6 +15,16 @@ export const MIN_SITE_FLIGHTS = 10;
 /** Seuil de la vue « Ce pilote » (D17) : sites d'au moins ce nombre de vols du pilote. */
 export const MIN_SITE_FLIGHTS_PILOT = 10;
 
+/** D20 : « Ses sites face à face » (page pilote) prend tous les sites du pilote, dès 1 vol. */
+export const MIN_SITE_FLIGHTS_FACE_TO_FACE = 1;
+/** Sous ce nombre de vols, la moyenne d'un site est fragile : la page pilote le signale (« peu de vols »). */
+export const FEW_SITE_FLIGHTS = 3;
+
+/** Vrai si la moyenne du site repose sur trop peu de vols. */
+export function hasFewFlights(flights: number): boolean {
+  return flights < FEW_SITE_FLIGHTS;
+}
+
 export interface SiteAggregate {
   siteId: number;
   flights: number;
@@ -120,6 +130,8 @@ export interface IndicatorPosition {
   othersMedian: number | null;
   /** Valeurs de tous les sites comparés (le site compris), pour la bande. */
   values: number[];
+  /** Site de chaque valeur de `values` (même ordre), pour nommer les points de la bande. */
+  valueSiteIds: number[];
   min: number | null;
   max: number | null;
 }
@@ -166,7 +178,14 @@ export function positionAmongSites(
 
   const indicators = SITE_INDICATORS.map((ind): IndicatorPosition => {
     const own = ind.of(self);
-    const values = present(compared.map(ind.of));
+    const values: number[] = [];
+    const valueSiteIds: number[] = [];
+    for (const a of compared) {
+      const [v] = present([ind.of(a)]);
+      if (v === undefined) continue;
+      values.push(v);
+      valueSiteIds.push(a.siteId);
+    }
     const otherValues = present(others.map(ind.of));
     const rank = own === null ? null : rankOf(own, values);
     return {
@@ -177,6 +196,7 @@ export function positionAmongSites(
       othersMean: mean(otherValues),
       othersMedian: median(otherValues),
       values,
+      valueSiteIds,
       min: values.length ? Math.min(...values) : null,
       max: values.length ? Math.max(...values) : null,
     };

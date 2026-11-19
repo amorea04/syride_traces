@@ -1,4 +1,6 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
+import { CellTooltip } from '@/components/common/CellTooltip';
+import { quarterCellTip } from '@/lib/cellTips';
 import { Section } from '@/components/common/Section';
 import { EmptyNote } from '@/components/dashboard/shared';
 import '@/components/pilot/pilot.css';
@@ -25,6 +27,16 @@ export function WingTimeline({ flights }: { flights: readonly Flight[] }) {
     return out;
   }, [timeline.quarters]);
 
+  const resolve = useCallback(
+    (el: HTMLElement) => {
+      const row = timeline.rows[Number(el.dataset['row'])];
+      const q = timeline.quarters[Number(el.dataset['col'])];
+      if (!row || !q) return null;
+      return quarterCellTip(row.wing, q.year, q.quarter, row.counts[Number(el.dataset['col'])] ?? 0);
+    },
+    [timeline],
+  );
+
   return (
     <Section
       id="voiles"
@@ -34,7 +46,7 @@ export function WingTimeline({ flights }: { flights: readonly Flight[] }) {
       {timeline.rows.length === 0 ? (
         <EmptyNote>Aucune voile renseignée pour ces vols.</EmptyNote>
       ) : (
-        <div className="pl-wings" data-testid="wing-timeline">
+        <CellTooltip resolve={resolve} roving className="pl-wings" testId="wing-timeline">
           <span />
           <div className="pl-wing-years" style={cols} aria-hidden="true">
             {yearSpans.map((y) => (
@@ -44,7 +56,7 @@ export function WingTimeline({ flights }: { flights: readonly Flight[] }) {
             ))}
           </div>
           <span />
-          {timeline.rows.map((row) => {
+          {timeline.rows.map((row, r) => {
             const dim = highlight?.kind === 'wing' && highlight.wing !== row.wing;
             return (
               <div
@@ -59,7 +71,7 @@ export function WingTimeline({ flights }: { flights: readonly Flight[] }) {
                 <div
                   className={`pl-wing-cells${dim ? ' pl-wing-dim' : ''}`}
                   style={cols}
-                  role="img"
+                  role="group"
                   aria-label={`${row.wing} : ${plural(row.flights, 'vol')}`}
                 >
                   {row.counts.map((n, i) => {
@@ -70,7 +82,15 @@ export function WingTimeline({ flights }: { flights: readonly Flight[] }) {
                         key={i}
                         className="pl-wing-cell"
                         data-level={level}
-                        title={q ? `T${q.quarter} ${q.year} : ${plural(n, 'vol')}` : undefined}
+                        role="img"
+                        aria-label={
+                          q
+                            ? `${row.wing}, ${q.quarter === 1 ? '1ᵉʳ' : `${q.quarter}ᵉ`} trimestre ${q.year} : ${plural(n, 'vol')}`
+                            : undefined
+                        }
+                        data-tip={`${r}-${i}`}
+                        data-row={r}
+                        data-col={i}
                         style={level > 0 ? { background: `var(--sr-cal-b${level})` } : undefined}
                       />
                     );
@@ -80,11 +100,12 @@ export function WingTimeline({ flights }: { flights: readonly Flight[] }) {
               </div>
             );
           })}
-        </div>
+        </CellTooltip>
       )}
       {timeline.hidden > 0 && (
         <p className="pl-legend" style={{ marginTop: 8 }}>
-          {plural(timeline.hidden, 'autre voile')} moins utilisée{timeline.hidden > 1 ? 's' : ''}, non affichée
+          {plural(timeline.hidden, 'autre voile')} moins utilisée{timeline.hidden > 1 ? 's' : ''}, non
+          affichée
           {timeline.hidden > 1 ? 's' : ''}.
         </p>
       )}

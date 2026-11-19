@@ -5,7 +5,7 @@ import { FilterLink } from '@/components/FilterLink';
 import { EmptyNote } from '@/components/dashboard/shared';
 import '@/components/pilot/pilot.css';
 import type { Flight } from '@/data/flight';
-import { fmtHm, plural } from '@/lib/format';
+import { fmtHm, NBSP, plural } from '@/lib/format';
 import { yearCards } from '@/lib/pilots';
 
 interface Props {
@@ -54,7 +54,11 @@ export function YearCards({ flights, slug, refDate }: Props) {
                   ) : (
                     <span className="pl-year-tag">{card.first ? 'première année' : ''}</span>
                   )}
-                  <span>Voir le bilan ›</span>
+                  <span>
+                    Bilan{NBSP}
+                    {card.year}
+                    {NBSP}→
+                  </span>
                 </span>
               </FilterLink>
             );

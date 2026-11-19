@@ -15,7 +15,17 @@ interface Props {
   flights: readonly Flight[];
 }
 
-function MedianTile({ label, median, format, total }: { label: string; median: MedianValue; format: (v: number) => string; total: number }) {
+function MedianTile({
+  label,
+  median,
+  format,
+  total,
+}: {
+  label: string;
+  median: MedianValue;
+  format: (v: number) => string;
+  total: number;
+}) {
   return (
     <div className="sr-tile">
       <div className="sr-tile-label">{label}</div>
@@ -39,21 +49,29 @@ export function DurationHistogram({ flights }: Props) {
       grid: { left: 40, right: 12, top: 16, bottom: 28 },
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'shadow' },
         valueFormatter: (v) => `${fmtInt(Number(v))} vols`,
       },
       xAxis: { type: 'category', data: [...DURATION_BIN_LABELS], axisTick: { show: false } },
-      yAxis: { type: 'value', minInterval: 1, axisLabel: { formatter: (v: number | string) => fmtInt(Number(v)) } },
+      yAxis: {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: { formatter: (v: number | string) => fmtInt(Number(v)) },
+      },
       series: [
         {
           type: 'bar',
           name: 'Vols',
           barMaxWidth: 56,
+          emphasis: { focus: 'self' },
           data: stats.bins.map((n, i) => ({
             value: n,
             itemStyle: { color: i === stats.medianBin ? c.accent : c.y2 },
           })),
-          label: { show: true, position: 'top', formatter: (p: { value?: unknown }) => fmtInt(Number(p.value)) },
+          label: {
+            show: true,
+            position: 'top',
+            formatter: (p: { value?: unknown }) => fmtInt(Number(p.value)),
+          },
         },
       ],
     };
@@ -75,7 +93,9 @@ export function DurationHistogram({ flights }: Props) {
     <Section
       id="durees"
       title="Durées"
-      subtitle={medianLabel ? `Le vol médian se situe dans la tranche « ${medianLabel} » (en accent).` : undefined}
+      subtitle={
+        medianLabel ? `Le vol médian se situe dans la tranche « ${medianLabel} » (en accent).` : undefined
+      }
       actions={<CoverageNotice flights={flights} measure="plafond" />}
     >
       <ChartFrame

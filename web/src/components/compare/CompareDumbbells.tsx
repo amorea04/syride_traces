@@ -13,7 +13,7 @@ interface Props {
 export function CompareDumbbells({ series, visuals }: Props) {
   const stats = useMemo(() => series.map((s) => seriesStats(s.flights)), [series]);
   const dbSeries = useMemo<DumbbellSeries[]>(
-    () => visuals.map((v) => ({ id: v.id, label: v.label, color: v.css, shape: v.shape })),
+    () => visuals.map((v) => ({ id: v.id, label: v.label, color: v.css, shape: v.shape, dash: v.dash })),
     [visuals],
   );
   const rows = useMemo<DumbbellRow[]>(

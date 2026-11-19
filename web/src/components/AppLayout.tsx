@@ -9,6 +9,7 @@ import { FilterPanel, PILOT_SEARCH_ID } from '@/components/FilterPanel';
 import { ShortcutsHelp } from '@/components/ShortcutsHelp';
 import { useFiltersStore } from '@/store/filters';
 import { useHighlightStore } from '@/store/highlight';
+import { useRecordNavigation } from '@/store/navHistory';
 
 /** En dessous de cette largeur (px) : filtres dans un tiroir du bas plutôt qu'une barre latérale. */
 export const MOBILE_MAX_WIDTH = 767;
@@ -20,6 +21,7 @@ const AZERTY_DIGITS = ['&', 'é', '"'] as const;
 export function AppLayout() {
   const isMobile =
     useMediaQuery(`(max-width: ${MOBILE_MAX_WIDTH}px)`, false, { getInitialValueInEffect: false }) ?? false;
+  useRecordNavigation();
   const [sidebarOpen, sidebar] = useDisclosure(true);
   const [drawerOpen, drawer] = useDisclosure(false);
   const setFilters = useFiltersStore((s) => s.setFilters);

@@ -1,5 +1,7 @@
 import { Group, SegmentedControl, Text, Title } from '@mantine/core';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { CellTooltip } from '@/components/common/CellTooltip';
+import { ribbonCellTip } from '@/lib/cellTips';
 import type { Flight } from '@/data/flight';
 import { fmtDuration, fmtHours, fmtInt, MONTHS_SHORT, plural } from '@/lib/format';
 import { lastMonthsFlights, matrixLevel, monthRange, RIBBON_MONTHS, wingRibbon } from '@/lib/rhythmBlocks';
@@ -31,6 +33,17 @@ export function WingRibbon({ flights }: Props) {
   const wingDim = (wing: string) => highlight?.kind === 'wing' && highlight.wing !== wing;
   const monthDim = (year: number, month: number) =>
     highlight?.kind === 'month' && (highlight.year !== year || highlight.month !== month);
+
+  const resolve = useCallback(
+    (el: HTMLElement) => {
+      const row = data.rows[Number(el.dataset['row'])];
+      const m = data.months[Number(el.dataset['col'])];
+      if (!row || !m) return null;
+      const i = Number(el.dataset['col']);
+      return ribbonCellTip(row.wing, m.year, m.month, row.n[i] ?? 0, row.minutes[i] ?? 0);
+    },
+    [data],
+  );
 
   if (data.rows.length === 0) {
     return (
@@ -64,7 +77,7 @@ export function WingRibbon({ flights }: Props) {
           ? ` Les ${RIBBON_MONTHS} derniers mois de la sélection sont montrés (jusqu'au dernier vol) ; les totaux ne portent que sur ces mois.`
           : ''}
       </Text>
-      <div className="sr-gear-wrap">
+      <CellTooltip resolve={resolve} className="sr-gear-wrap">
         <table className="sr-gear-table sr-ribbon">
           <caption style={{ position: 'absolute', left: -9999 }}>
             {measure === 'vols' ? 'Vols' : 'Heures de vol'} par voile et par mois
@@ -80,7 +93,7 @@ export function WingRibbon({ flights }: Props) {
                   data-dim={monthDim(m.year, m.month)}
                   onMouseEnter={() => setHighlight({ kind: 'month', year: m.year, month: m.month })}
                   onMouseLeave={() => setHighlight(null)}
-                  title={`${MONTHS_SHORT[m.month - 1]} ${m.year}`}
+                  aria-label={`${MONTHS_SHORT[m.month - 1]} ${m.year}`}
                 >
                   {MONTHS_SHORT[m.month - 1]?.slice(0, 3)}
                   {spansYears && m.month === 1 ? ` ${String(m.year).slice(2)}` : ''}
@@ -90,15 +103,21 @@ export function WingRibbon({ flights }: Props) {
             </tr>
           </thead>
           <tbody>
-            {data.rows.map((row) => (
+            {data.rows.map((row, r) => (
               <tr
                 key={row.wing}
                 data-dim={wingDim(row.wing)}
                 onMouseEnter={() => setHighlight({ kind: 'wing', wing: row.wing })}
                 onMouseLeave={() => setHighlight(null)}
               >
-                <th scope="row" style={{ textAlign: 'left', color: 'var(--sr-text)', fontWeight: 500 }} title={row.wing}>
-                  <div style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.wing}</div>
+                <th
+                  scope="row"
+                  style={{ textAlign: 'left', color: 'var(--sr-text)', fontWeight: 500 }}
+                  title={row.wing}
+                >
+                  <div style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {row.wing}
+                  </div>
                 </th>
                 {data.months.map((m, i) => {
                   const value = measure === 'vols' ? (row.n[i] ?? 0) : (row.minutes[i] ?? 0);
@@ -115,11 +134,15 @@ export function WingRibbon({ flights }: Props) {
                         data-empty={value === 0}
                         disabled={value === 0}
                         aria-label={value === 0 ? undefined : `${label}. Filtrer sur cette voile et ce mois.`}
-                        title={value === 0 ? undefined : label}
-                        style={value > 0 ? { background: `var(--sr-cal-b${matrixLevel(value, peak)})` } : undefined}
+                        data-tip={value === 0 ? undefined : `${r}-${i}`}
+                        data-row={r}
+                        data-col={i}
+                        style={
+                          value > 0 ? { background: `var(--sr-cal-b${matrixLevel(value, peak)})` } : undefined
+                        }
                         onClick={() => {
                           const [dateFrom, dateTo] = monthRange(m.year, m.month);
-                          setFilters({ wings: [row.wing], dateFrom, dateTo });
+                          setFilters({ wings: [row.wing], dateFrom, dateTo, years: [] });
                         }}
                       />
                     </td>
@@ -130,10 +153,11 @@ export function WingRibbon({ flights }: Props) {
             ))}
           </tbody>
         </table>
-      </div>
+      </CellTooltip>
       {data.hidden > 0 && (
         <Text size="xs" c="dimmed" mt={4}>
-          {plural(data.hidden, 'autre voile', 'autres voiles')} non affichée{data.hidden > 1 ? 's' : ''} (les 8 plus utilisées sont montrées).
+          {plural(data.hidden, 'autre voile', 'autres voiles')} non affichée{data.hidden > 1 ? 's' : ''} (les
+          8 plus utilisées sont montrées).
         </Text>
       )}
     </div>

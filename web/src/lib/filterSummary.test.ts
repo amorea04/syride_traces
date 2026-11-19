@@ -5,6 +5,12 @@ import { filterSummary } from '@/lib/filterSummary';
 const names = { pilot: (s: string) => `P:${s}`, site: (i: number) => `S:${i}` };
 
 describe('filterSummary', () => {
+  it('années : « 2023 et 2025 », omises avec la dimension période', () => {
+    const f = { ...defaultFilters(), years: [2025, 2023] };
+    expect(filterSummary(f, names)).toEqual(['2023 et 2025']);
+    expect(filterSummary({ ...f, years: [2025, 2022, 2023] }, names)).toEqual(['2022, 2023 et 2025']);
+    expect(filterSummary(f, names, ['period'])).toEqual([]);
+  });
   it('est vide sans filtre', () => {
     expect(filterSummary(defaultFilters(), names)).toEqual([]);
   });
@@ -15,7 +21,12 @@ describe('filterSummary', () => {
   it('liste jusqu’à deux noms puis décompte', () => {
     const two = { ...defaultFilters(), pilots: ['a', 'b'], sites: [1, 2], wings: ['W1', 'W2'] };
     expect(filterSummary(two, names)).toEqual(['P:a et P:b', 'W1 et W2', 'S:1 et S:2']);
-    const three = { ...defaultFilters(), pilots: ['a', 'b', 'c'], sites: [1, 2, 3], wings: ['W1', 'W2', 'W3'] };
+    const three = {
+      ...defaultFilters(),
+      pilots: ['a', 'b', 'c'],
+      sites: [1, 2, 3],
+      wings: ['W1', 'W2', 'W3'],
+    };
     expect(filterSummary(three, names)).toEqual(['3 pilotes', '3 voiles', '3 sites']);
   });
   it('ignore les dimensions omises', () => {
@@ -29,8 +40,8 @@ describe('filterSummary', () => {
     expect(filterSummary(year, names, ['period'])).toEqual([]);
     expect(filterSummary({ ...defaultFilters(), dateFrom: '2025-03-01' }, names)[0]).toContain('depuis le 1');
     expect(filterSummary({ ...defaultFilters(), dateTo: '2025-03-01' }, names)[0]).toContain('jusqu’au');
-    expect(filterSummary({ ...defaultFilters(), dateFrom: '2025-03-01', dateTo: '2025-04-02' }, names)[0]).toMatch(
-      /^du .* au /,
-    );
+    expect(
+      filterSummary({ ...defaultFilters(), dateFrom: '2025-03-01', dateTo: '2025-04-02' }, names)[0],
+    ).toMatch(/^du .* au /);
   });
 });

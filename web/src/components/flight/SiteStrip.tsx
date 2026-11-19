@@ -1,4 +1,8 @@
+import { useCallback } from 'react';
+import { CellTooltip } from '@/components/common/CellTooltip';
+import { useData } from '@/data/DataProvider';
 import '@/components/flight/flight.css';
+import { stripMarkTip } from '@/lib/cellTips';
 import { fmtWithUnit } from '@/components/flight/measureFormat';
 import { fmtNum, fmtSignedPct, NBSP } from '@/lib/format';
 import { fmtOrdinal, deltaPercent } from '@/lib/flightContext';
@@ -35,10 +39,42 @@ interface Props {
   ind: IndicatorPosition;
   /** Libellé du groupe de référence : « autres sites » ou « autres sites du pilote ». */
   othersLabel: string;
+  /** Nom du site situé, pour l'infobulle de son point (« Ce site » par défaut). */
+  siteName?: string;
+}
+
+/** Légende commune des bandes : point = ce site, trait épais = moyenne, barre grise = étendue min–max. */
+export function StripLegend({ siteName, othersLabel }: { siteName?: string; othersLabel: string }) {
+  return (
+    <div className="fv-legend" data-testid="strip-legend">
+      <span>
+        <i className="fv-sw" style={{ background: 'var(--sr-accent)', borderRadius: '50%' }} />
+        Point : {siteName ? `ce site (${siteName})` : 'ce site'}
+      </span>
+      <span>
+        <i className="fv-sw" style={{ background: 'var(--sr-b)', opacity: 0.4, borderRadius: '50%' }} />
+        Petit point : un autre site
+      </span>
+      <span>
+        <i
+          className="fv-sw"
+          style={{ width: 3, height: 14, background: 'var(--sr-text)', borderRadius: 1 }}
+        />
+        Trait : moyenne des {othersLabel}
+      </span>
+      <span>
+        <i
+          className="fv-sw"
+          style={{ width: 22, height: 0, borderTop: '1px solid var(--sr-line)', borderRadius: 0 }}
+        />
+        Barre : étendue du plus bas au plus haut des sites
+      </span>
+    </div>
+  );
 }
 
 /** Une bande : un point par site comparé, le site en accent, la moyenne des autres en trait. */
-export function SiteStrip({ ind, othersLabel }: Props) {
+export function SiteStrip({ ind, othersLabel, siteName }: Props) {
   const def = SITE_INDICATORS.find((d) => d.id === ind.id)!;
   const fmt = (v: number | null) => fmtWithUnit(v, def.unit, def.digits);
   const gap = gapLabel(ind, def.scale);
@@ -46,6 +82,19 @@ export function SiteStrip({ ind, othersLabel }: Props) {
   const hasRange = ind.min !== null && ind.max !== null && ind.value !== null;
   const pos = (v: number) => (hasRange ? stripPosition(v, ind.min!, ind.max!, def.scale) : 50);
   const aria = `${def.label} : ${fmt(ind.value)} ici, moyenne des ${othersLabel} ${fmt(ind.othersMean)}, ${rankText}`;
+  const { siteById } = useData();
+  const resolve = useCallback(
+    (el: HTMLElement) => {
+      const kind = el.dataset['mark'] as 'site' | 'mean' | 'other' | undefined;
+      const raw = Number(el.dataset['value']);
+      const otherId = Number(el.dataset['site']);
+      const otherName = Number.isFinite(otherId) ? siteById.get(otherId)?.name : undefined;
+      return kind ? stripMarkTip(kind, siteName ?? 'Ce site', fmt(raw), otherName) : null;
+    },
+    // `fmt` ne dépend que de l'indicateur.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [def, siteName, siteById],
+  );
   const pill = gap && {
     background: `var(--sr-${gap.up ? 'nup' : 'ndown'}-bg)`,
     color: `var(--sr-${gap.up ? 'nup' : 'ndown'}-text)`,
@@ -54,23 +103,34 @@ export function SiteStrip({ ind, othersLabel }: Props) {
     <div data-indicator={ind.id}>
       <div style={{ fontWeight: 650 }}>{def.label}</div>
       {hasRange && (
-        <span className="fv-trk" role="img" aria-label={aria}>
+        <CellTooltip resolve={resolve} className="fv-trk" role="img" ariaLabel={aria}>
           {ind.values.map((v, i) => (
-            <i key={i} style={{ left: `${pos(v)}%` }} />
+            <i
+              key={i}
+              style={{ left: `${pos(v)}%` }}
+              data-tip={`o${i}`}
+              data-mark="other"
+              data-value={v}
+              data-site={ind.valueSiteIds[i]}
+            />
           ))}
           {ind.othersMean !== null && (
             <b
               className="fv-mean"
               style={{ left: `${pos(ind.othersMean)}%` }}
-              title={`Moyenne des ${othersLabel} : ${fmt(ind.othersMean)}`}
+              data-tip="mean"
+              data-mark="mean"
+              data-value={ind.othersMean}
             />
           )}
           <b
             className="fv-me"
             style={{ left: `${pos(ind.value!)}%` }}
-            title={`Ce site : ${fmt(ind.value)}`}
+            data-tip="me"
+            data-mark="site"
+            data-value={ind.value!}
           />
-        </span>
+        </CellTooltip>
       )}
       <div className="fv-sv">
         <span>

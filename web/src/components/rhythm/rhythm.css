@@ -65,6 +65,9 @@ button.sr-tile:focus-visible {
 .sr-cal-cell[data-future='true'] {
   opacity: 0.45;
 }
+.sr-cal-cell[data-out='true'] {
+  opacity: 0.2;
+}
 .sr-cal-cell[data-hl='on'],
 .sr-cal-cell:focus-visible {
   outline: 2px solid var(--sr-accent);
@@ -115,6 +118,11 @@ button.sr-tile:focus-visible {
   font-size: var(--sr-text-xs);
   font-variant-numeric: tabular-nums;
 }
+/* Pleine largeur de la carte (5C.8) : les colonnes d'heures se partagent la place, cases d'au moins 12 px. */
+.sr-mx-full {
+  width: 100%;
+  table-layout: auto;
+}
 .sr-mx th {
   font-weight: 500;
   color: var(--sr-muted);
@@ -126,22 +134,59 @@ button.sr-tile:focus-visible {
 .sr-mx tfoot th {
   text-align: center;
 }
+.sr-mx thead th.sr-mx-corner {
+  text-align: left;
+  font-weight: 600;
+}
+.sr-mx thead th.sr-mx-axis {
+  font-weight: 600;
+  text-align: center;
+  padding-bottom: 2px;
+}
+.sr-mx td.sr-mx-blank {
+  background: transparent;
+  height: auto;
+  min-width: 0;
+}
 .sr-mx td {
-  min-width: 26px;
-  height: 24px;
+  min-width: 12px;
+  height: 26px;
   border-radius: 2px;
   text-align: center;
   background: var(--sr-cal-empty);
 }
+.sr-mx td[data-tip] {
+  cursor: default;
+}
+.sr-mx td:focus-visible {
+  outline: 2px solid var(--sr-accent);
+  outline-offset: 1px;
+}
 .sr-mx td[data-top='true'] {
   outline: 2px solid var(--sr-accent);
   outline-offset: 0;
+}
+.sr-mx td[data-tip-on='true'] {
+  outline: 2px solid var(--sr-text);
+  outline-offset: 1px;
 }
 .sr-mx td.sr-mx-total {
   background: transparent;
   color: var(--sr-muted);
   padding: 0 6px;
   text-align: right;
+  min-width: 0;
+  height: auto;
+}
+/* Petite largeur : une heure sur deux est écrite, les cases restent toutes là. */
+@media (max-width: 48em) {
+  .sr-mx th[data-alt='true'] {
+    font-size: 0;
+    padding: 0;
+  }
+  .sr-mx td {
+    height: 22px;
+  }
 }
 .sr-bar-track {
   display: flex;

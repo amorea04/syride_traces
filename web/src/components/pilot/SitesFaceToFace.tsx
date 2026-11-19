@@ -1,17 +1,19 @@
-import { Select } from '@mantine/core';
+import { Select, Text } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import { Section } from '@/components/common/Section';
 import { FilterLink } from '@/components/FilterLink';
 import '@/components/flight/flight.css';
 import { fmtWithUnit } from '@/components/flight/measureFormat';
-import { SiteStrip } from '@/components/flight/SiteStrip';
+import { SiteStrip, StripLegend } from '@/components/flight/SiteStrip';
 import { fmtWithShare } from '@/components/flight/shareFormat';
 import '@/components/pilot/pilot.css';
 import { useData } from '@/data/DataProvider';
 import type { Flight } from '@/data/flight';
 import { fmtInt, fmtPercent, plural } from '@/lib/format';
 import {
-  MIN_SITE_FLIGHTS_PILOT,
+  FEW_SITE_FLIGHTS,
+  hasFewFlights,
+  MIN_SITE_FLIGHTS_FACE_TO_FACE,
   parapenteShare,
   positionAmongSites,
   siteAggregates,
@@ -45,7 +47,7 @@ function ShareBar({ name, share }: { name: string; share: DisciplineShare }) {
 }
 
 /**
- * D17 : ses sites d'au moins 10 vols, positionnés les uns par rapport aux autres sur ses propres vols. Même
+ * D20 : tous ses sites (dès 1 vol), positionnés les uns par rapport aux autres sur ses propres vols. Même
  * langage visuel que « Ce site face aux autres » de la fiche vol.
  */
 export function SitesFaceToFace({ pilot, flights }: Props) {
@@ -54,50 +56,74 @@ export function SitesFaceToFace({ pilot, flights }: Props) {
   const eligible = useMemo(
     () =>
       [...aggregates.values()]
-        .filter((a) => a.flights >= MIN_SITE_FLIGHTS_PILOT)
+        .filter((a) => a.flights >= MIN_SITE_FLIGHTS_FACE_TO_FACE)
         .sort((a, b) => b.flights - a.flights || a.siteId - b.siteId),
     [aggregates],
   );
   const nameOf = (id: number): string => siteById.get(id)?.name ?? `Site ${id}`;
   const [chosen, setChosen] = useState<number | null>(null);
-  const siteId = chosen !== null && eligible.some((a) => a.siteId === chosen) ? chosen : (eligible[0]?.siteId ?? null);
+  const siteId =
+    chosen !== null && eligible.some((a) => a.siteId === chosen) ? chosen : (eligible[0]?.siteId ?? null);
   const position = useMemo(
-    () => (siteId === null ? null : positionAmongSites(aggregates, siteId, MIN_SITE_FLIGHTS_PILOT)),
+    () => (siteId === null ? null : positionAmongSites(aggregates, siteId, MIN_SITE_FLIGHTS_FACE_TO_FACE)),
     [aggregates, siteId],
   );
+  const selectedFlights = siteId === null ? 0 : (aggregates.get(siteId)?.flights ?? 0);
   const indicators = SITE_INDICATORS.filter((i) => i.id !== 'pilots');
 
   return (
     <Section
       id="sites-face"
       title="Ses sites face à face"
-      subtitle={`Ses sites d’au moins ${MIN_SITE_FLIGHTS_PILOT} vols, comparés les uns aux autres sur ses propres vols. Les vols sans mesure (valeur ≤ 0) sont ignorés dans les moyennes.`}
+      subtitle={`Tous ses sites, comparés les uns aux autres sur ses propres vols ; le nombre de vols est indiqué à côté de chaque nom. Les vols sans mesure (valeur ≤ 0) sont ignorés dans les moyennes.`}
     >
       {eligible.length < 2 || position === null || siteId === null ? (
         <p style={{ margin: 0 }} role="status" data-testid="sites-face-empty">
-          Moins de deux sites ont au moins {MIN_SITE_FLIGHTS_PILOT} vols de {pilot} : la comparaison entre ses
-          sites n’est pas possible.
+          Moins de deux sites pour {pilot} : la comparaison entre ses sites n’est pas possible.
         </p>
       ) : (
         <>
           <Select
             label="Site à situer"
-            data={eligible.map((a) => ({ value: String(a.siteId), label: `${nameOf(a.siteId)} (${a.flights})` }))}
+            data={eligible.map((a) => ({
+              value: String(a.siteId),
+              label: `${nameOf(a.siteId)} (${plural(a.flights, 'vol')})`,
+            }))}
             value={String(siteId)}
             allowDeselect={false}
             searchable
+            renderOption={({ option }) => {
+              const few = hasFewFlights(aggregates.get(Number(option.value))?.flights ?? 0);
+              return (
+                <span>
+                  {option.label}
+                  {few && <span className="fv-few"> · peu de vols</span>}
+                </span>
+              );
+            }}
             onChange={(v) => v !== null && setChosen(Number(v))}
             maw={420}
             mb="md"
             data-testid="face-select"
           />
+          {hasFewFlights(selectedFlights) && (
+            <Text size="sm" c="dimmed" mb="sm" data-testid="few-flights-note">
+              Peu de vols ({plural(selectedFlights, 'vol')}) : sa moyenne est fragile.
+            </Text>
+          )}
           <div className="fv-strips" data-testid="pilot-site-strips">
             {position.indicators
               .filter((i) => i.id !== 'pilots')
               .map((ind) => (
-                <SiteStrip key={ind.id} ind={ind} othersLabel="autres sites du pilote" />
+                <SiteStrip
+                  key={ind.id}
+                  ind={ind}
+                  othersLabel="autres sites du pilote"
+                  siteName={nameOf(siteId)}
+                />
               ))}
           </div>
+          <StripLegend siteName={nameOf(siteId)} othersLabel="autres sites du pilote" />
           <div style={{ marginTop: 22 }}>
             <div style={{ fontWeight: 650, marginBottom: 6 }}>Part parapente et paramoteur</div>
             <ShareBar name="Ce site" share={position.site} />
@@ -124,6 +150,7 @@ export function SitesFaceToFace({ pilot, flights }: Props) {
                     <tr key={a.siteId}>
                       <td>
                         <FilterLink to={`/site/${a.siteId}`}>{nameOf(a.siteId)}</FilterLink>
+                        {hasFewFlights(a.flights) && <span className="fv-few"> · peu de vols</span>}
                       </td>
                       <td>{fmtInt(a.flights)}</td>
                       {indicators
@@ -139,9 +166,10 @@ export function SitesFaceToFace({ pilot, flights }: Props) {
             </div>
           </details>
           <p className="fv-note">
-            {plural(eligible.length, 'site')} sur {fmtInt(aggregates.size)} atteignent {MIN_SITE_FLIGHTS_PILOT}{' '}
-            vols. Chaque site compte pour une voix : la moyenne des autres est la moyenne de leurs moyennes. Le
-            rang 1ᵉʳ désigne la valeur la plus haute.
+            {plural(eligible.length, 'site')}, quel que soit leur nombre de vols ; ceux de moins de{' '}
+            {FEW_SITE_FLIGHTS} vols sont signalés « peu de vols », car leur moyenne est fragile. Chaque site
+            compte pour une voix : la moyenne des autres est la moyenne de leurs moyennes, sans pondération
+            par le nombre de vols. Le rang 1ᵉʳ désigne la valeur la plus haute.
           </p>
         </>
       )}

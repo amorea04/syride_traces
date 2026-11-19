@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultFilters } from '@/lib/filters';
 import {
   characteristics,
+  comparisonPeriods,
   currentPeriodRange,
   dateOfPosition,
   stepValueAt,
@@ -52,21 +53,70 @@ describe('périodes', () => {
     expect(previous && current && days(previous)).toBe(current && days(current));
     // Fin antérieure à la date de référence : inchangée ; période entièrement future : fin conservée.
     expect(filteredPeriod('2026-03-01', '2026-03-31', today)?.to).toBe('2026-03-31');
-    expect(filteredPeriod('2026-12-01', '2026-12-31', today)).toEqual({ from: '2026-12-01', to: '2026-12-31' });
+    expect(filteredPeriod('2026-12-01', '2026-12-31', today)).toEqual({
+      from: '2026-12-01',
+      to: '2026-12-31',
+    });
   });
   it('dateFrom seul : jusqu’à la date de référence ; dateTo seul ou rien : pas de période', () => {
-    expect(filteredPeriod('2026-06-01', null, '2026-06-10')).toEqual({ from: '2026-06-01', to: '2026-06-10' });
-    expect(previousPeriod('2026-06-01', null, '2026-06-10')).toEqual({ from: '2026-05-22', to: '2026-05-31' });
+    expect(filteredPeriod('2026-06-01', null, '2026-06-10')).toEqual({
+      from: '2026-06-01',
+      to: '2026-06-10',
+    });
+    expect(previousPeriod('2026-06-01', null, '2026-06-10')).toEqual({
+      from: '2026-05-22',
+      to: '2026-05-31',
+    });
     expect(previousPeriod(null, '2026-06-01', '2026-06-10')).toBeNull();
     expect(previousPeriod(null, null, '2026-06-10')).toBeNull();
     expect(filteredPeriod('2026-06-20', '2026-06-10', '2026-06-30')).toBeNull();
   });
 });
 
+describe('comparisonPeriods', () => {
+  const base = defaultFilters();
+  it('année passée entière : année précédente entière ; 29 février ramené au 28', () => {
+    expect(comparisonPeriods({ ...base, years: [2025] }, '2026-03-01')).toEqual({
+      kind: 'annee',
+      period: { from: '2025-01-01', to: '2025-12-31' },
+      previous: { from: '2024-01-01', to: '2024-12-31' },
+    });
+    expect(comparisonPeriods({ ...base, years: [2024] }, '2024-02-29')?.previous.to).toBe('2023-02-28');
+  });
+  it('années contiguës : étendue comparée à la période précédente de même durée', () => {
+    const c = comparisonPeriods({ ...base, years: [2024, 2025] }, '2026-03-01');
+    expect(c?.kind).toBe('periode');
+    expect(c?.period).toEqual({ from: '2024-01-01', to: '2025-12-31' });
+    expect(c?.previous.to).toBe('2023-12-31');
+  });
+  it('années et période : intersection', () => {
+    const c = comparisonPeriods({ ...base, years: [2025], dateFrom: '2025-06-01' }, '2026-03-01');
+    expect(c?.period).toEqual({ from: '2025-06-01', to: '2025-12-31' });
+  });
+  it('non contiguës : null ; sans filtre : null', () => {
+    expect(comparisonPeriods({ ...base, years: [2023, 2025] }, '2026-03-01')).toBeNull();
+    expect(comparisonPeriods(base, '2026-03-01')).toBeNull();
+  });
+});
+
 describe('kpiBand', () => {
   const flights = [
-    makeFlight('2026-01-10', { durationMin: 60, ceilingM: 1500, distCumKm: 10, pilot: 'A', pilotSlug: 'a', site: 'S1' }),
-    makeFlight('2026-02-10', { durationMin: 60, ceilingM: 2000, distCumKm: 20, pilot: 'A', pilotSlug: 'a', site: 'S2' }),
+    makeFlight('2026-01-10', {
+      durationMin: 60,
+      ceilingM: 1500,
+      distCumKm: 10,
+      pilot: 'A',
+      pilotSlug: 'a',
+      site: 'S1',
+    }),
+    makeFlight('2026-02-10', {
+      durationMin: 60,
+      ceilingM: 2000,
+      distCumKm: 20,
+      pilot: 'A',
+      pilotSlug: 'a',
+      site: 'S2',
+    }),
     makeFlight('2026-02-12', { durationMin: 120, ceilingM: 1000, pilot: 'B', pilotSlug: 'b', site: 'S2' }),
     makeFlight('2025-12-20', { durationMin: 60, ceilingM: 3000, pilot: 'A', pilotSlug: 'a', site: 'S1' }),
   ];
@@ -94,6 +144,22 @@ describe('kpiBand', () => {
     expect(onlyB.previous?.flights).toBe(0);
     expect(onlyB.deltas?.vols).toBeNull();
   });
+  it('une année : comparée à l’année précédente jusqu’au même jour', () => {
+    const filters = { ...defaultFilters(), years: [2026] };
+    const selection = flights.filter((f) => f.year === 2026);
+    const r = kpiBand(flights, selection, filters, '2026-03-01');
+    expect(r.comparisonKind).toBe('annee');
+    expect(r.previousPeriod).toEqual({ from: '2025-01-01', to: '2025-03-01' });
+    expect(r.period).toEqual({ from: '2026-01-01', to: '2026-03-01' });
+    expect(r.previous?.flights).toBe(0);
+    expect(r.deltas).not.toBeNull();
+  });
+  it('années non contiguës : pas de variation', () => {
+    const filters = { ...defaultFilters(), years: [2023, 2026] };
+    const r = kpiBand(flights, [], filters, '2026-03-01');
+    expect(r.deltas).toBeNull();
+    expect(r.previousPeriod).toBeNull();
+  });
   it('sélection vide', () => {
     const r = kpiBand([], [], defaultFilters(), '2026-03-01');
     expect(r.current.flights).toBe(0);
@@ -120,10 +186,16 @@ describe('seasonGap', () => {
     expect(seasonPhrase(gap)).toMatch(/^Le groupe a 11\s*h d.avance sur 2025 à date\.$/);
   });
   it('retard, autant, pas de comparaison', () => {
-    const late = [makeFlight('2025-02-01', { durationMin: 600 }), makeFlight('2026-02-01', { durationMin: 120 })];
+    const late = [
+      makeFlight('2025-02-01', { durationMin: 600 }),
+      makeFlight('2026-02-01', { durationMin: 120 }),
+    ];
     expect(seasonPhrase(seasonGap(late, '2026-05-01'))).toMatch(/Le groupe a 8\s*h de retard sur 2025/);
     expect(seasonPhrase(seasonGap([makeFlight('2026-02-01')], '2026-05-01'))).toContain('pas de comparaison');
-    const even = [makeFlight('2025-02-01', { durationMin: 60 }), makeFlight('2026-02-01', { durationMin: 60 })];
+    const even = [
+      makeFlight('2025-02-01', { durationMin: 60 }),
+      makeFlight('2026-02-01', { durationMin: 60 }),
+    ];
     expect(seasonPhrase(seasonGap(even, '2026-05-01'))).toContain('autant');
     expect(seasonPhrase(seasonGap([], '2026-05-01'))).toContain('Aucun vol');
   });
@@ -138,7 +210,11 @@ describe('position dans l’année', () => {
     for (const iso of ['2026-01-01', '2026-02-28', '2026-03-31', '2026-12-31', '2024-02-29']) {
       expect(dateOfPosition(xOfDate(iso), Number(iso.slice(0, 4)))).toBe(iso);
     }
-    const curve: [number, number][] = [[0, 0], [0.5, 3], [1, 5]];
+    const curve: [number, number][] = [
+      [0, 0],
+      [0.5, 3],
+      [1, 5],
+    ];
     expect(stepValueAt(curve, 0.4)).toBe(0);
     expect(stepValueAt(curve, 0.5)).toBe(3);
     expect(stepValueAt(curve, 0.9)).toBe(3);
@@ -242,7 +318,12 @@ describe('characteristics', () => {
     expect(duree?.maxFlight?.key).toBe(flights[2]?.key);
     const plafond = rows.find((r) => r.id === 'plafond');
     expect(plafond).toMatchObject({ count: 2, mean: 2000, median: 2000, max: 3000 });
-    expect(rows.find((r) => r.id === 'g')).toMatchObject({ count: 0, mean: null, max: null, maxFlight: null });
+    expect(rows.find((r) => r.id === 'g')).toMatchObject({
+      count: 0,
+      mean: null,
+      max: null,
+      maxFlight: null,
+    });
     expect(formatMeasure({ unit: 'min', digits: 0 }, 135)).toMatch(/2.h.15.min/);
   });
   it('sélection vide', () => {
@@ -258,7 +339,10 @@ describe('statBars', () => {
   ];
   it('pilote : décroissant, filtre pilote et surlignage', () => {
     const { bars } = statBars(groupFlights(flights, 'pilote'), 'nb_vols', 'pilote', flights);
-    expect(bars.map((b) => [b.label, b.value])).toEqual([['Zoé', 2], ['Abel', 1]]);
+    expect(bars.map((b) => [b.label, b.value])).toEqual([
+      ['Zoé', 2],
+      ['Abel', 1],
+    ]);
     expect(bars[0]?.target).toEqual({ pilots: ['zoe'] });
     expect(bars[0]?.highlight).toEqual({ kind: 'pilot', pilotSlug: 'zoe' });
   });
@@ -301,7 +385,7 @@ describe('statBars', () => {
   it('année : chronologique, filtre sur l’année ; mois : pas de filtre', () => {
     const y = statBars(groupFlights(flights, 'annee'), 'nb_vols', 'annee', flights);
     expect(y.bars.map((b) => b.key)).toEqual(['2025', '2026']);
-    expect(y.bars[1]?.target).toEqual({ dateFrom: '2026-01-01', dateTo: '2026-12-31' });
+    expect(y.bars[1]?.target).toEqual({ years: [2026], dateFrom: null, dateTo: null });
     const m = statBars(groupFlights(flights, 'mois'), 'nb_vols', 'mois', flights);
     expect(m.bars.map((b) => b.label)).toEqual(['mars', 'avr.']);
     expect(m.bars.every((b) => b.target === null)).toBe(true);

@@ -8,7 +8,12 @@ import {
   disciplineShares,
   favoriteSlot,
   flightsOfDay,
+  defaultCalendarView,
   hoursWindow,
+  rollingGrid,
+  rollingMonths,
+  rollingWindowMonths,
+  rollingStart,
   lastMonthsFlights,
   matrixLevel,
   monthGrid,
@@ -32,7 +37,9 @@ describe('calendrier', () => {
     expect(calendarKind(['parapente'])).toBe('p');
     expect(calendarKind(['paramoteur'])).toBe('m');
     expect(calendarKind(['parapente', 'paramoteur'])).toBe('b');
-    expect(calendarToken({ date: '2025-05-01', n: 1, minutes: 100, disciplines: ['paramoteur'] })).toBe('cal-m3');
+    expect(calendarToken({ date: '2025-05-01', n: 1, minutes: 100, disciplines: ['paramoteur'] })).toBe(
+      'cal-m3',
+    );
   });
   it('années et fin d’année', () => {
     const fl = [makeFlight('2023-05-01'), makeFlight('2025-06-01'), makeFlight('2025-07-01')];
@@ -71,7 +78,12 @@ describe('calendrier', () => {
     expect(dayMap([a, b]).get('2025-05-01')?.n).toBe(2);
   });
   it('part week-end et parts de disciplines', () => {
-    const fl = [makeFlight('2025-05-03'), makeFlight('2025-05-04'), makeFlight('2025-05-05', { activity: 'paramoteur' }), makeFlight('2025-05-06')];
+    const fl = [
+      makeFlight('2025-05-03'),
+      makeFlight('2025-05-04'),
+      makeFlight('2025-05-05', { activity: 'paramoteur' }),
+      makeFlight('2025-05-06'),
+    ];
     expect(weekendShareOf(fl)).toBe(0.5);
     expect(weekendShareOf([])).toBe(0);
     expect(disciplineShares(fl)).toEqual({ parapente: 0.75, paramoteur: 0.25, n: 4 });
@@ -83,19 +95,27 @@ describe('matrice jour × heure', () => {
     expect([1, 2, 3, 4].map((n) => matrixLevel(n, 4))).toEqual([1, 2, 3, 4]);
     expect(matrixLevel(1, 0)).toBe(1);
   });
-  it('fenêtre d’heures : 8 colonnes minimum, 8 h–18 h sans vol', () => {
+  it('fenêtre d’heures : 8 h à 20 h, élargie seulement si des vols en sortent', () => {
     const empty = Array.from({ length: 7 }, () => new Array<number>(24).fill(0));
-    expect(hoursWindow(empty)).toEqual([8, 18]);
-    const one = empty.map((r) => [...r]);
-    (one[0] as number[])[12] = 1;
-    const [lo, hi] = hoursWindow(one);
-    expect(hi - lo).toBeGreaterThanOrEqual(7); // comme le rapport, la fenêtre s’élargit des deux côtés à la fois
-    expect(lo).toBeLessThanOrEqual(12);
-    expect(hi).toBeGreaterThanOrEqual(12);
+    expect(hoursWindow(empty)).toEqual([8, 20]);
+    const inside = empty.map((r) => [...r]);
+    (inside[0] as number[])[12] = 1;
+    expect(hoursWindow(inside)).toEqual([8, 20]);
+    const out = empty.map((r) => [...r]);
+    (out[0] as number[])[6] = 1;
+    (out[1] as number[])[22] = 2;
+    expect(hoursWindow(out)).toEqual([6, 22]);
   });
   it('créneau favori : au moins 3 vols, à égalité le plus long', () => {
     const sat = (time: string, minutes: number) => makeFlight('2025-05-03', { time, durationMin: minutes });
-    const fl = [sat('11:00', 10), sat('11:10', 10), sat('11:20', 10), sat('15:00', 50), sat('15:10', 50), sat('15:20', 50)];
+    const fl = [
+      sat('11:00', 10),
+      sat('11:10', 10),
+      sat('11:20', 10),
+      sat('15:00', 50),
+      sat('15:10', 50),
+      sat('15:20', 50),
+    ];
     expect(favoriteSlot(weekHourMatrix(fl))).toEqual({ weekday: 5, hour: 15, n: 3 });
     expect(favoriteSlot(weekHourMatrix(fl.slice(0, 2)))).toBeNull();
   });
@@ -162,7 +182,10 @@ describe('nuage et données partielles', () => {
     expect(p.missingSources).toEqual({ gpx: 0, fiche: 1, aucune: 1 });
     expect(partialData(fl.slice(0, 1), 'plafond').partial).toBe(false);
     expect(partialData([], 'plafond')).toMatchObject({ n: 0, partial: false });
-    const five = [...Array.from({ length: 4 }, () => makeFlight('2025-05-01', { ceilingM: 100 })), makeFlight('2025-05-01')];
+    const five = [
+      ...Array.from({ length: 4 }, () => makeFlight('2025-05-01', { ceilingM: 100 })),
+      makeFlight('2025-05-01'),
+    ];
     expect(partialData(five, 'plafond').partial).toBe(false); // exactement 20 % : pas au-delà
   });
 });
@@ -177,5 +200,37 @@ describe('lastMonthsFlights', () => {
   it('ne tronque pas une courte sélection ni une sélection vide', () => {
     expect(lastMonthsFlights([makeFlight('2025-01-01')]).truncated).toBe(false);
     expect(lastMonthsFlights([])).toEqual({ flights: [], truncated: false });
+  });
+});
+
+describe('calendrier sur 12 mois glissants', () => {
+  it('365 jours jusqu’au dernier jour, sur 53 colonnes au plus', () => {
+    const g = rollingGrid('2026-05-10');
+    expect(g.cells).toHaveLength(365);
+    expect(g.cells[0]?.iso).toBe(rollingStart('2026-05-10'));
+    expect(g.cells[g.cells.length - 1]?.iso).toBe('2026-05-10');
+    expect(g.columns).toBeLessThanOrEqual(54);
+    expect(g.months.map((m) => m.month)).toContain(0);
+    expect(g.months.every((m, i, a) => i === 0 || m.col > (a[i - 1]?.col ?? 0))).toBe(true);
+  });
+  it('12 mois se terminant au mois de référence', () => {
+    const m = rollingMonths('2026-03-02');
+    expect(m).toHaveLength(12);
+    expect(m[0]).toEqual({ year: 2025, month: 4 });
+    expect(m[11]).toEqual({ year: 2026, month: 3 });
+  });
+  it('mois touchés par la fenêtre : le premier est partiel quand la fenêtre ne commence pas un 1er', () => {
+    const m = rollingWindowMonths('2025-12-28');
+    expect(rollingStart('2025-12-28')).toBe('2024-12-29');
+    expect(m).toHaveLength(13);
+    expect(m[0]).toEqual({ year: 2024, month: 12 });
+    expect(m[12]).toEqual({ year: 2025, month: 12 });
+    expect(rollingWindowMonths('2025-12-31')).toHaveLength(12);
+  });
+  it('vue par défaut : 12 mois glissants avant 6 mois écoulés, sinon l’année', () => {
+    expect(defaultCalendarView(2026, '2026-05-10')).toEqual({ kind: 'rolling' });
+    expect(defaultCalendarView(2026, '2026-09-10')).toEqual({ kind: 'year', year: 2026 });
+    expect(defaultCalendarView(2025, '2026-02-01')).toEqual({ kind: 'year', year: 2025 });
+    expect(defaultCalendarView(null, '2026-02-01')).toBeNull();
   });
 });

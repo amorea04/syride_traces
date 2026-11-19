@@ -9,7 +9,7 @@
 
 import type { Flight } from '@/data/flight';
 import { groupBy } from '@/lib/collections';
-import { flightMatches, todayIso, type Filters } from '@/lib/filters';
+import { flightMatches, sortYears, todayIso, yearsContiguous, type Filters } from '@/lib/filters';
 import { fmtDuration, fmtHours, fmtInt, fmtNum, MONTHS_LONG, MONTHS_SHORT, NBSP } from '@/lib/format';
 import { daysInMonth, epochDay, isoOfEpochDay, mondayOfEpochDay } from '@/lib/isoDay';
 import { MEASURES, type MeasureDef } from '@/lib/measures';
@@ -81,6 +81,60 @@ export function previousPeriod(
   return { from: isoOfEpochDay(start - days), to: isoOfEpochDay(start - 1) };
 }
 
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/** Même jour de l'année précédente (le 29 février devient le 28). */
+function sameDayPreviousYear(iso: string): string {
+  const y = Number(iso.slice(0, 4)) - 1;
+  const m = Number(iso.slice(5, 7));
+  const d = Math.min(Number(iso.slice(8, 10)), daysInMonth(y, m));
+  return `${y}-${pad2(m)}-${pad2(d)}`;
+}
+
+export interface Comparison {
+  period: DateRange;
+  previous: DateRange;
+  /** `annee` : comparaison à l'année précédente ; `periode` : à la période précédente de même durée. */
+  kind: 'annee' | 'periode';
+}
+
+/**
+ * Période filtrée et période de comparaison des KPI, d'après la période Du / Au et les années cochées.
+ * - une seule année, sans période : l'année précédente, jusqu'au même jour si l'année est en cours ;
+ * - années contiguës : leur étendue (du 1er janvier au 31 décembre), comparée à la période précédente de même durée ;
+ * - années non contiguës : pas de comparaison (`null`) ;
+ * - années et période : l'intersection, comparée à la période précédente de même durée.
+ */
+export function comparisonPeriods(filters: Filters, today: string): Comparison | null {
+  const years = sortYears(filters.years);
+  if (years.length === 0) {
+    const period = filteredPeriod(filters.dateFrom, filters.dateTo, today);
+    const previous = previousPeriod(filters.dateFrom, filters.dateTo, today);
+    return period && previous ? { period, previous, kind: 'periode' } : null;
+  }
+  if (!yearsContiguous(years)) return null;
+  const first = years[0] ?? 0;
+  const last = years[years.length - 1] ?? 0;
+  let from = `${first}-01-01`;
+  let to = `${last}-12-31`;
+  const hasPeriod = filters.dateFrom !== null || filters.dateTo !== null;
+  if (hasPeriod) {
+    if (filters.dateFrom !== null && filters.dateFrom > from) from = filters.dateFrom;
+    if (filters.dateTo !== null && filters.dateTo < to) to = filters.dateTo;
+  }
+  const period = filteredPeriod(from, to, today);
+  if (!period) return null;
+  if (years.length === 1 && !hasPeriod) {
+    return {
+      period,
+      previous: { from: `${first - 1}-01-01`, to: sameDayPreviousYear(period.to) },
+      kind: 'annee',
+    };
+  }
+  const previous = previousPeriod(period.from, period.to, today);
+  return previous ? { period, previous, kind: 'periode' } : null;
+}
+
 // ---------------------------------------------------------------------------
 // Meilleur vol d'un critère
 // ---------------------------------------------------------------------------
@@ -141,6 +195,8 @@ export interface KpiBandResult {
   /** Période précédente équivalente (`null` si aucune période n'est filtrée). */
   period: DateRange | null;
   previousPeriod: DateRange | null;
+  /** Nature de la comparaison (`null` sans comparaison). */
+  comparisonKind: Comparison['kind'] | null;
   previous: KpiValues | null;
   /** Variation en % par tuile ; `null` en bloc sans période, `null` par tuile si non calculable. */
   deltas: Record<KpiId, number | null> | null;
@@ -157,11 +213,12 @@ export function kpiBand(
   today: string,
 ): KpiBandResult {
   const current = kpiValues(selection);
-  const period = filteredPeriod(filters.dateFrom, filters.dateTo, today);
-  const prevRange = previousPeriod(filters.dateFrom, filters.dateTo, today);
-  if (!prevRange) {
-    return { current, period, previousPeriod: null, previous: null, deltas: null };
+  const comparison = comparisonPeriods(filters, today);
+  if (!comparison) {
+    const period = filters.years.length > 0 ? null : filteredPeriod(filters.dateFrom, filters.dateTo, today);
+    return { current, period, previousPeriod: null, comparisonKind: null, previous: null, deltas: null };
   }
+  const { period, previous: prevRange } = comparison;
   const previousFlights = allFlights.filter(
     (f) => f.date >= prevRange.from && f.date <= prevRange.to && flightMatches(f, filters, 'period'),
   );
@@ -170,6 +227,7 @@ export function kpiBand(
     current,
     period,
     previousPeriod: prevRange,
+    comparisonKind: comparison.kind,
     previous,
     deltas: {
       vols: deltaPct(current.flights, previous.flights),
@@ -209,9 +267,7 @@ export function seasonGap(flights: readonly Flight[], today: string): SeasonGap 
   const currentFlights = flights.filter((f) => f.year === year && f.date <= today);
   const previousFlights = flights.filter((f) => f.year === year - 1);
   const minutes = sum(currentFlights.map(minutesOf));
-  const previousMinutes = sum(
-    previousFlights.filter((f) => f.date.slice(5) <= monthDay).map(minutesOf),
-  );
+  const previousMinutes = sum(previousFlights.filter((f) => f.date.slice(5) <= monthDay).map(minutesOf));
   const xToday = xOfDate(today);
   const curve: [number, number][] = [[0, 0], ...cumulativeSteps(currentFlights), [xToday, minutes / 60]];
   const previousTotal = sum(previousFlights.map(minutesOf)) / 60;
@@ -255,7 +311,8 @@ export function seasonPhrase(gap: SeasonGap): string {
   if (gap.previousMinutes === 0 && gap.minutes === 0) {
     return `Aucun vol en ${gap.previousYear} ni en ${gap.year} à date.`;
   }
-  if (gap.previousMinutes === 0) return `Aucun vol en ${gap.previousYear} à la même date : pas de comparaison.`;
+  if (gap.previousMinutes === 0)
+    return `Aucun vol en ${gap.previousYear} à la même date : pas de comparaison.`;
   const abs = Math.abs(gap.gapMinutes);
   if (abs < GAP_EVEN_MINUTES) return `Le groupe a volé autant qu'en ${gap.previousYear} à date.`;
   const tenths = Math.round(abs / 6);
@@ -435,7 +492,15 @@ export function recentRecords(
 // Caractéristiques de vol
 // ---------------------------------------------------------------------------
 
-export const CHARACTERISTIC_IDS = ['duree', 'distance', 'vitesseMoyenne', 'vitesseMax', 'plafond', 'vario', 'g'] as const;
+export const CHARACTERISTIC_IDS = [
+  'duree',
+  'distance',
+  'vitesseMoyenne',
+  'vitesseMax',
+  'plafond',
+  'vario',
+  'g',
+] as const;
 export type CharacteristicId = (typeof CHARACTERISTIC_IDS)[number];
 
 export interface CharacteristicRow {
@@ -598,14 +663,22 @@ export function statBars(
         target = { wings: [row.key] };
         highlight = { kind: 'wing', wing: row.key };
       } else if (axis === 'annee') {
-        target = { dateFrom: `${row.key}-01-01`, dateTo: `${row.key}-12-31` };
+        target = { years: [Number(row.key)], dateFrom: null, dateTo: null };
       }
-      all.push({ key: row.key, label: axis === 'mois' ? shortMonth(row.label) : row.label, value, target, highlight });
+      all.push({
+        key: row.key,
+        label: axis === 'mois' ? shortMonth(row.label) : row.label,
+        value,
+        target,
+        highlight,
+      });
     }
   }
   if (axis === 'annee') all = all.reverse();
   if (isHorizontalAxis(axis)) {
-    all = all.sort((a, b) => b.value - a.value || compareStrings(a.label, b.label) || compareStrings(a.key, b.key));
+    all = all.sort(
+      (a, b) => b.value - a.value || compareStrings(a.label, b.label) || compareStrings(a.key, b.key),
+    );
   }
   const total = all.length;
   const bars = limit !== null && isHorizontalAxis(axis) ? all.slice(0, limit) : all;

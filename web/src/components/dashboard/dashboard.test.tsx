@@ -169,7 +169,7 @@ describe('StatChart', () => {
   it('axe année : le clic filtre l’année ; axe mois : aucune action', () => {
     renderUi(<StatChart flights={flights} defaultAxis="annee" />);
     chart.props?.onEvents?.click?.({ dataIndex: 1 });
-    expect(useFiltersStore.getState().filters).toMatchObject({ dateFrom: '2026-01-01', dateTo: '2026-12-31' });
+    expect(useFiltersStore.getState().filters).toMatchObject({ years: [2026], dateFrom: null, dateTo: null });
     cleanup();
     useFiltersStore.setState({ filters: defaultFilters() });
     renderUi(<StatChart flights={flights} defaultAxis="mois" />);
@@ -220,7 +220,10 @@ describe('EvolutionChart', () => {
   });
   it('un surlignage de mois fusionne l’option sans réinitialiser le zoom', () => {
     renderUi(<EvolutionChart flights={flights} />);
-    const props = chart.props as unknown as { notMerge?: boolean; option: { dataZoom: Record<string, unknown>[] } };
+    const props = chart.props as unknown as {
+      notMerge?: boolean;
+      option: { dataZoom: Record<string, unknown>[] };
+    };
     expect(props.notMerge).toBe(false);
     for (const z of props.option.dataZoom) {
       expect(z).not.toHaveProperty('start');

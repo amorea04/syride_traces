@@ -5,7 +5,14 @@ import { Section } from '@/components/common/Section';
 import type { Flight } from '@/data/flight';
 import { EMPTY, fmtDuration, fmtHours, fmtInt, fmtPercent, fmtRange, plural } from '@/lib/format';
 import { computeRhythm, seasonsBreakdown, SEASONS, type DateSpan } from '@/lib/rhythm';
-import { weekendShareOf, yearEnd, yearsOf } from '@/lib/rhythmBlocks';
+import {
+  defaultCalendarView,
+  rollingStart,
+  weekendShareOf,
+  yearEnd,
+  yearsOf,
+  type CalendarView,
+} from '@/lib/rhythmBlocks';
 import { useHighlightStore } from '@/store/highlight';
 import { CalendarHeatmap } from './CalendarHeatmap';
 import { DaySheet } from './DaySheet';
@@ -56,18 +63,33 @@ function Tile({ label, value, note, range }: TileProps) {
  */
 export function RhythmBlock({ flights, referenceDate: reference }: Props) {
   const years = useMemo(() => yearsOf(flights), [flights]);
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<CalendarView | null>(null);
   const [openDay, setOpenDay] = useState<string | null>(null);
-  const year = selected !== null && years.includes(selected) ? selected : (years[0] ?? null);
-  const end = year === null ? '' : yearEnd(year, reference);
-  const rhythm = useMemo(
-    () => (year === null ? null : computeRhythm(flights.filter((f) => f.year === year), year, end)),
-    [flights, year, end],
-  );
+  const hasRollingFlights = useMemo(() => {
+    const from = rollingStart(reference);
+    return flights.some((f) => f.date >= from && f.date <= reference);
+  }, [flights, reference]);
+  // Choix de l'utilisateur s'il est encore valable, sinon vue par défaut (12 derniers mois en début d'année).
+  const view = useMemo<CalendarView | null>(() => {
+    if (selected?.kind === 'rolling' && hasRollingFlights) return selected;
+    if (selected?.kind === 'year' && years.includes(selected.year)) return selected;
+    return defaultCalendarView(years[0] ?? null, reference);
+  }, [selected, years, reference, hasRollingFlights]);
+  const rolling = view?.kind === 'rolling';
+  const year = view === null ? null : view.kind === 'year' ? view.year : Number(reference.slice(0, 4));
+  const end = view === null ? '' : view.kind === 'rolling' ? reference : yearEnd(view.year, reference);
+  const start = rolling ? rollingStart(end) : undefined;
+  const rhythm = useMemo(() => {
+    if (view === null || year === null) return null;
+    const inPeriod = flights.filter((f) =>
+      rolling ? f.date >= (start ?? '') && f.date <= end : f.year === year,
+    );
+    return computeRhythm(inPeriod, year, end, start);
+  }, [flights, view, year, end, start, rolling]);
   const seasons = useMemo(() => seasonsBreakdown(flights), [flights]);
   const weekend = useMemo(() => weekendShareOf(flights), [flights]);
 
-  if (year === null) {
+  if (view === null || year === null) {
     return (
       <Section id="rythme" title="Rythme">
         <Text size="sm" c="dimmed">
@@ -77,57 +99,75 @@ export function RhythmBlock({ flights, referenceDate: reference }: Props) {
     );
   }
 
-  const index = years.indexOf(year);
-  const older = years[index + 1];
-  const newer = years[index - 1];
+  // Ordre des choix : 12 derniers mois, puis les années de la plus récente à la plus ancienne.
+  const choices: CalendarView[] = [
+    { kind: 'rolling' },
+    ...years.map((y): CalendarView => ({ kind: 'year', year: y })),
+  ];
+  const keyOf = (v: CalendarView): string => (v.kind === 'rolling' ? 'rolling' : String(v.year));
+  const index = choices.findIndex((c) => keyOf(c) === keyOf(view));
+  const earlier = choices[index + 1];
+  const later = choices[index - 1];
+  const periodName = rolling ? 'les 12 derniers mois' : String(year);
   const totalN = flights.length;
 
   return (
     <Section
       id="rythme"
       title="Rythme"
-      subtitle={`Une case par jour de ${year} ; plus elle est foncée, plus la journée est longue.`}
+      subtitle={
+        <>
+          Une case par jour sur <b>{rolling ? 'les 12 derniers mois' : year}</b>, les semaines en colonnes ;
+          plus la case est foncée, plus la journée est longue.
+        </>
+      }
       actions={
         <Group gap={4} wrap="nowrap">
           <ActionIcon
             variant="default"
             aria-label="Année précédente"
-            disabled={older === undefined}
-            onClick={() => older !== undefined && setSelected(older)}
+            disabled={earlier === undefined}
+            onClick={() => earlier !== undefined && setSelected(earlier)}
           >
             <IconChevronLeft size={16} />
           </ActionIcon>
           <Select
-            aria-label="Année du calendrier"
-            data={years.map(String)}
-            value={String(year)}
-            onChange={(v) => v !== null && setSelected(Number(v))}
+            aria-label="Période du calendrier"
+            data={choices.map((c) => ({
+              value: keyOf(c),
+              label: c.kind === 'rolling' ? '12 derniers mois' : String(c.year),
+            }))}
+            value={keyOf(view)}
+            onChange={(v) => {
+              if (v === null) return;
+              setSelected(v === 'rolling' ? { kind: 'rolling' } : { kind: 'year', year: Number(v) });
+            }}
             allowDeselect={false}
-            w={92}
+            w={rolling ? 150 : 100}
             size="xs"
           />
           <ActionIcon
             variant="default"
             aria-label="Année suivante"
-            disabled={newer === undefined}
-            onClick={() => newer !== undefined && setSelected(newer)}
+            disabled={later === undefined}
+            onClick={() => later !== undefined && setSelected(later)}
           >
             <IconChevronRight size={16} />
           </ActionIcon>
         </Group>
       }
     >
-      {rhythm && (
-        <Text size="xs" c="dimmed" mb={6} data-testid="rhythm-year-heading">
-          Sur {year}
-        </Text>
-      )}
+      <Text size="xs" c="dimmed" mb={6} data-testid="rhythm-year-heading">
+        Sur {periodName}
+      </Text>
       {rhythm && (
         <div className="sr-tiles" data-testid="rhythm-tiles" style={{ marginBottom: 14 }}>
           <Tile
             label="Plus longue série"
             value={rhythm.streak ? plural(rhythm.streak.days, 'jour') : EMPTY}
-            note={rhythm.streak ? fmtRange(rhythm.streak.start, rhythm.streak.end) : 'Pas de jours consécutifs'}
+            note={
+              rhythm.streak ? fmtRange(rhythm.streak.start, rhythm.streak.end) : 'Pas de jours consécutifs'
+            }
             range={rhythm.streak}
           />
           <Tile
@@ -150,7 +190,13 @@ export function RhythmBlock({ flights, referenceDate: reference }: Props) {
         </div>
       )}
 
-      <CalendarHeatmap flights={flights} year={year} end={end} onOpenDay={setOpenDay} />
+      <CalendarHeatmap
+        flights={flights}
+        year={year}
+        mode={rolling ? 'rolling' : 'year'}
+        end={end}
+        onOpenDay={setOpenDay}
+      />
 
       <Text size="xs" c="dimmed" mt={16} mb={6} data-testid="rhythm-selection-heading">
         Sur toute la sélection

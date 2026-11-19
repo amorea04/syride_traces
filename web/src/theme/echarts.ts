@@ -40,7 +40,13 @@ export function buildEchartsTheme(scheme: ColorScheme): Record<string, unknown> 
     timeAxis: axis,
     logAxis: axis,
     line: { symbol: 'circle', symbolSize: 5, lineStyle: { width: 2 }, smooth: false },
-    bar: { itemStyle: { borderRadius: [2, 2, 0, 0] }, barMaxWidth: 28 },
+    // 5C.6 : jamais d'aplat au-dessus des barres. Survol d'une barre : sa série est mise en avant, les autres sont estompées.
+    bar: {
+      itemStyle: { borderRadius: [2, 2, 0, 0] },
+      barMaxWidth: 28,
+      emphasis: { focus: 'series', itemStyle: { opacity: 1 } },
+      blur: { itemStyle: { opacity: 0.4 } },
+    },
     tooltip: {
       backgroundColor: c.surface,
       borderColor: c.line,
@@ -48,10 +54,13 @@ export function buildEchartsTheme(scheme: ColorScheme): Record<string, unknown> 
       padding: [8, 10],
       textStyle: { color: c.text, fontFamily: font.sans, fontSize: fontSize.sm },
       extraCssText: 'box-shadow:none;font-variant-numeric:tabular-nums;',
+      // Par défaut un trait fin (jamais l'aplat `shadow`, qui masquait les barres en mode sombre) ; si un graphique
+      // demande `shadow`, l'aplat reste très léger.
       axisPointer: {
+        type: 'line',
         lineStyle: { color: c.muted, width: 1 },
         crossStyle: { color: c.muted },
-        shadowStyle: { color: c['surface-2'] },
+        shadowStyle: { color: c.muted, opacity: 0.1 },
       },
     },
     visualMap: { textStyle: { color: c.muted } },

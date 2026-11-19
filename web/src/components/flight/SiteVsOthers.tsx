@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Section } from '@/components/common/Section';
 import { FilterLink } from '@/components/FilterLink';
 import '@/components/flight/flight.css';
-import { SiteStrip } from '@/components/flight/SiteStrip';
+import { SiteStrip, StripLegend } from '@/components/flight/SiteStrip';
 import type { Flight } from '@/data/flight';
 import { fmtInt, fmtPercent, fmtWithShare } from '@/components/flight/shareFormat';
 import {
@@ -79,7 +79,7 @@ function Strips({
     <>
       <div className="fv-strips" data-testid="site-strips">
         {indicators.map((ind) => (
-          <SiteStrip key={ind.id} ind={ind} othersLabel={othersLabel} />
+          <SiteStrip key={ind.id} ind={ind} othersLabel={othersLabel} siteName={siteName} />
         ))}
       </div>
       <div style={{ marginTop: 22 }}>
@@ -90,22 +90,8 @@ function Strips({
           share={pos.others}
         />
       </div>
-      <div className="fv-legend">
-        <span>
-          <i className="fv-sw" style={{ background: 'var(--sr-accent)', borderRadius: '50%' }} />
-          Ce site ({siteName})
-        </span>
-        <span>
-          <i className="fv-sw" style={{ background: 'var(--sr-b)', opacity: 0.4, borderRadius: '50%' }} />
-          Un autre site
-        </span>
-        <span>
-          <i
-            className="fv-sw"
-            style={{ width: 3, height: 14, background: 'var(--sr-text)', borderRadius: 1 }}
-          />
-          Moyenne des autres sites
-        </span>
+      <StripLegend siteName={siteName} othersLabel={othersLabel} />
+      <div className="fv-legend" style={{ marginTop: 6 }}>
         <span>
           <i className="fv-sw" style={{ background: 'var(--sr-p)' }} />
           Parapente

@@ -79,13 +79,18 @@ export function writeCompareParams(params: URLSearchParams, next: CompareParams)
 // ---------------------------------------------------------------------------
 
 /** Vols sur lesquels on compare : filtres globaux sans la dimension que le sélecteur de la page remplace. */
-export function comparePool(mode: CompareMode, flights: readonly Flight[], filters: Filters): readonly Flight[] {
+export function comparePool(
+  mode: CompareMode,
+  flights: readonly Flight[],
+  filters: Filters,
+): readonly Flight[] {
   const f: Filters = { ...filters };
   if (mode === 'pilotes') f.pilots = [];
   if (mode === 'annees') {
     f.pilots = [];
     f.dateFrom = null;
     f.dateTo = null;
+    f.years = [];
   }
   if (mode === 'sites') f.sites = [];
   return applyFilters(flights, f);
@@ -234,8 +239,7 @@ export function buildSeries(
   return ids.map((id) => {
     const flights = pool.filter((f) => (mode === 'sites' ? String(f.siteId) === id : f.pilotSlug === id));
     const first = flights[0];
-    const label =
-      mode === 'sites' ? (first?.site ?? `Site ${id}`) : (first?.pilot ?? id);
+    const label = mode === 'sites' ? (first?.site ?? `Site ${id}`) : (first?.pilot ?? id);
     return { id, label, flights, span: null };
   });
 }
@@ -309,9 +313,29 @@ export const COMPARE_KPIS: readonly CompareKpiDef[] = [
   { id: 'vols', label: 'Vols', kind: 'volume', value: (s) => s.kpis.nFlights, format: fmtInt },
   { id: 'heures', label: 'Heures de vol', kind: 'volume', value: (s) => s.kpis.minutes, format: fmtHm },
   { id: 'jours', label: 'Jours volés', kind: 'volume', value: (s) => s.kpis.daysFlown, format: fmtInt },
-  { id: 'sites', label: 'Sites visités', kind: 'neutre', hideInMode: 'sites', value: (s) => s.kpis.nSites, format: fmtInt },
-  { id: 'pilotes', label: 'Pilotes', kind: 'neutre', onlyMode: 'sites', value: (s) => s.pilots, format: fmtInt },
-  { id: 'duree', label: 'Durée moyenne', kind: 'neutre', value: (s) => s.kpis.durationMean, format: fmtDuration },
+  {
+    id: 'sites',
+    label: 'Sites visités',
+    kind: 'neutre',
+    hideInMode: 'sites',
+    value: (s) => s.kpis.nSites,
+    format: fmtInt,
+  },
+  {
+    id: 'pilotes',
+    label: 'Pilotes',
+    kind: 'neutre',
+    onlyMode: 'sites',
+    value: (s) => s.pilots,
+    format: fmtInt,
+  },
+  {
+    id: 'duree',
+    label: 'Durée moyenne',
+    kind: 'neutre',
+    value: (s) => s.kpis.durationMean,
+    format: fmtDuration,
+  },
 ];
 
 export function kpisForMode(mode: CompareMode): CompareKpiDef[] {
@@ -332,11 +356,36 @@ export interface DumbbellMetricDef {
 }
 
 export const DUMBBELL_METRICS: readonly DumbbellMetricDef[] = [
-  { id: 'duree', label: 'Durée moyenne', value: (s) => s.kpis.durationMean, format: (v) => formatMeasure(MEASURES.duree, v) },
-  { id: 'distance', label: 'Distance moyenne', value: (s) => s.kpis.distanceMean, format: (v) => formatMeasure(MEASURES.distance, v) },
-  { id: 'plafond', label: 'Plafond moyen', value: (s) => s.kpis.ceilingMean, format: (v) => formatMeasure(MEASURES.plafond, v) },
-  { id: 'vitesse', label: 'Vitesse max moyenne', value: (s) => s.kpis.speedMaxMean, format: (v) => formatMeasure(MEASURES.vitesseMax, v) },
-  { id: 'vario', label: 'Vario max moyen', value: (s) => s.kpis.varioMean, format: (v) => formatMeasure(MEASURES.vario, v) },
+  {
+    id: 'duree',
+    label: 'Durée moyenne',
+    value: (s) => s.kpis.durationMean,
+    format: (v) => formatMeasure(MEASURES.duree, v),
+  },
+  {
+    id: 'distance',
+    label: 'Distance moyenne',
+    value: (s) => s.kpis.distanceMean,
+    format: (v) => formatMeasure(MEASURES.distance, v),
+  },
+  {
+    id: 'plafond',
+    label: 'Plafond moyen',
+    value: (s) => s.kpis.ceilingMean,
+    format: (v) => formatMeasure(MEASURES.plafond, v),
+  },
+  {
+    id: 'vitesse',
+    label: 'Vitesse max moyenne',
+    value: (s) => s.kpis.speedMaxMean,
+    format: (v) => formatMeasure(MEASURES.vitesseMax, v),
+  },
+  {
+    id: 'vario',
+    label: 'Vario max moyen',
+    value: (s) => s.kpis.varioMean,
+    format: (v) => formatMeasure(MEASURES.vario, v),
+  },
   { id: 'vols', label: 'Vols', value: (s) => s.kpis.nFlights, format: fmtInt },
   { id: 'heures', label: 'Heures de vol', value: (s) => s.hours, format: (v) => `${fmtNum(v, 1)}${NBSP}h` },
 ];
@@ -436,7 +485,8 @@ export function cumulativeCurves(
     };
   }
   const all = series.flatMap((s) => s.flights.map((f) => f.date));
-  if (all.length === 0) return { kind: 'date', axis: [], series: series.map((s) => ({ id: s.id, values: [] })) };
+  if (all.length === 0)
+    return { kind: 'date', axis: [], series: series.map((s) => ({ id: s.id, values: [] })) };
   let lo = Infinity;
   let hi = -Infinity;
   for (const d of all) {

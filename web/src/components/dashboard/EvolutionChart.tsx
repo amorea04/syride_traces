@@ -42,7 +42,8 @@ export function EvolutionChart({ flights }: Props) {
     const cat = categoricalColors(scheme);
     return data.series.map((s, i) => {
       if (stack === 'none') return c.accent;
-      if (stack === 'activity') return disciplineColor(s.key === 'parapente' ? 'parapente' : 'paramoteur', scheme);
+      if (stack === 'activity')
+        return disciplineColor(s.key === 'parapente' ? 'parapente' : 'paramoteur', scheme);
       return s.key === OTHERS_KEY ? c.flat : (cat[i] ?? c.flat);
     });
   }, [data.series, stack, scheme, c]);
@@ -87,7 +88,7 @@ export function EvolutionChart({ flights }: Props) {
       legend: stacked ? { top: 0, left: 0, type: 'scroll' } : { show: false },
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: mode === 'cumule' ? 'cross' : 'shadow' },
+        axisPointer: { type: mode === 'cumule' ? 'cross' : 'line' },
         valueFormatter: (v) => (typeof v === 'number' ? formatValue(measure, v) : String(v ?? '')),
       },
       xAxis: { type: 'category', data: labels, axisLabel: { hideOverlap: true } },
@@ -132,7 +133,14 @@ export function EvolutionChart({ flights }: Props) {
     [data.months, setHighlight],
   );
 
-  const shapeKey = [mode, measure, stack, data.months[0], data.months.length, ...data.series.map((s) => s.key)].join('|');
+  const shapeKey = [
+    mode,
+    measure,
+    stack,
+    data.months[0],
+    data.months.length,
+    ...data.series.map((s) => s.key),
+  ].join('|');
   const first = data.months[0];
   const last = data.months[data.months.length - 1];
   return (
