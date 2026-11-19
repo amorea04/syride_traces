@@ -1032,7 +1032,7 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 - [x] 5C.8 Matrices et calendrier pleine largeur, plage horaire fixe 8 h à 20 h, 12 derniers mois (diagnostic confirmé le 19/11/2026)
 - [x] 5C.9 Légende et infobulles des haltères et des « face à face »
 - [x] 5C.10 Tests, contrôle visuel, `/code-review medium`
-- [ ] Revue par Adrien, PR relue et fusionnée · **`/clear`**
+- [x] Revue par Adrien, PR relue et fusionnée · **`/clear`**
 
 ### Phase 6 : Finitions
 - [ ] 6.1 Découpage du code, imports à la carte
