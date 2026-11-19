@@ -1033,7 +1033,6 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 - [x] 5C.9 Légende et infobulles des haltères et des « face à face »
 - [x] 5C.10 Tests, contrôle visuel, `/code-review medium`
 - [ ] Revue par Adrien, PR relue et fusionnée · **`/clear`**
-- [ ] Revue par Adrien, puis fusion dans `main`
 
 ### Phase 6 : Finitions
 - [ ] 6.1 Découpage du code, imports à la carte
