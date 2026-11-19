@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { CellTooltip } from '@/components/common/CellTooltip';
+import { useData } from '@/data/DataProvider';
 import '@/components/flight/flight.css';
 import { stripMarkTip } from '@/lib/cellTips';
 import { fmtWithUnit } from '@/components/flight/measureFormat';
@@ -81,15 +82,18 @@ export function SiteStrip({ ind, othersLabel, siteName }: Props) {
   const hasRange = ind.min !== null && ind.max !== null && ind.value !== null;
   const pos = (v: number) => (hasRange ? stripPosition(v, ind.min!, ind.max!, def.scale) : 50);
   const aria = `${def.label} : ${fmt(ind.value)} ici, moyenne des ${othersLabel} ${fmt(ind.othersMean)}, ${rankText}`;
+  const { siteById } = useData();
   const resolve = useCallback(
     (el: HTMLElement) => {
       const kind = el.dataset['mark'] as 'site' | 'mean' | 'other' | undefined;
       const raw = Number(el.dataset['value']);
-      return kind ? stripMarkTip(kind, siteName ?? 'Ce site', fmt(raw)) : null;
+      const otherId = Number(el.dataset['site']);
+      const otherName = Number.isFinite(otherId) ? siteById.get(otherId)?.name : undefined;
+      return kind ? stripMarkTip(kind, siteName ?? 'Ce site', fmt(raw), otherName) : null;
     },
     // `fmt` ne dépend que de l'indicateur.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [def, siteName],
+    [def, siteName, siteById],
   );
   const pill = gap && {
     background: `var(--sr-${gap.up ? 'nup' : 'ndown'}-bg)`,
@@ -101,7 +105,14 @@ export function SiteStrip({ ind, othersLabel, siteName }: Props) {
       {hasRange && (
         <CellTooltip resolve={resolve} className="fv-trk" role="img" ariaLabel={aria}>
           {ind.values.map((v, i) => (
-            <i key={i} style={{ left: `${pos(v)}%` }} data-tip={`o${i}`} data-mark="other" data-value={v} />
+            <i
+              key={i}
+              style={{ left: `${pos(v)}%` }}
+              data-tip={`o${i}`}
+              data-mark="other"
+              data-value={v}
+              data-site={ind.valueSiteIds[i]}
+            />
           ))}
           {ind.othersMean !== null && (
             <b

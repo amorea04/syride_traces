@@ -88,6 +88,14 @@ describe('positionAmongSites', () => {
       min: 500,
       max: 1500,
     });
+    expect(ceiling.valueSiteIds).toHaveLength(ceiling.values.length);
+    expect(ceiling.valueSiteIds.map((id, i) => [id, ceiling.values[i]])).toEqual(
+      expect.arrayContaining([
+        [1, 500],
+        [2, 1500],
+        [3, 1000],
+      ]),
+    );
     const flightsInd = pos.indicators.find((i) => i.id === 'flights')!;
     expect(flightsInd.rank).toBe(2);
     expect(pos.indicators.map((i) => i.id)).toEqual(SITE_INDICATORS.map((i) => i.id));

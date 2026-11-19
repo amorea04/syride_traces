@@ -130,6 +130,8 @@ export interface IndicatorPosition {
   othersMedian: number | null;
   /** Valeurs de tous les sites comparés (le site compris), pour la bande. */
   values: number[];
+  /** Site de chaque valeur de `values` (même ordre), pour nommer les points de la bande. */
+  valueSiteIds: number[];
   min: number | null;
   max: number | null;
 }
@@ -176,7 +178,14 @@ export function positionAmongSites(
 
   const indicators = SITE_INDICATORS.map((ind): IndicatorPosition => {
     const own = ind.of(self);
-    const values = present(compared.map(ind.of));
+    const values: number[] = [];
+    const valueSiteIds: number[] = [];
+    for (const a of compared) {
+      const [v] = present([ind.of(a)]);
+      if (v === undefined) continue;
+      values.push(v);
+      valueSiteIds.push(a.siteId);
+    }
     const otherValues = present(others.map(ind.of));
     const rank = own === null ? null : rankOf(own, values);
     return {
@@ -187,6 +196,7 @@ export function positionAmongSites(
       othersMean: mean(otherValues),
       othersMedian: median(otherValues),
       values,
+      valueSiteIds,
       min: values.length ? Math.min(...values) : null,
       max: values.length ? Math.max(...values) : null,
     };

@@ -9,11 +9,17 @@ import {
   nearestInDirection,
   quarterCellTip,
   ribbonCellTip,
+  stripMarkTip,
   tipPlacement,
 } from '@/lib/cellTips';
 import { makeFlight } from '../../tests/flightFactory';
 
 describe('infobulles', () => {
+  it('point d’une bande : nom du site survolé', () => {
+    expect(stripMarkTip('other', 'Montbron', '31,0 km', 'Magnac Lavalette').title).toBe('Magnac Lavalette');
+    expect(stripMarkTip('other', 'Montbron', '31,0 km').title).toBe('Un autre site');
+    expect(stripMarkTip('site', 'Montbron', '10 km').title).toBe('Montbron');
+  });
   it('tranche horaire et en-tête de colonne avec espaces insécables', () => {
     expect(hourSlot(14)).toBe('entre 14 h et 15 h');
     expect(hourHeading(8)).toBe('8 h');

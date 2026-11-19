@@ -112,12 +112,14 @@ export function stripMarkTip(
   kind: 'site' | 'mean' | 'other',
   siteLabel: string,
   valueText: string,
+  /** Nom du site d'un petit point (`kind === 'other'`). */
+  otherLabel?: string,
 ): TipContent {
   if (kind === 'mean')
     return { title: 'Moyenne', lines: [valueText], hint: 'Trait : moyenne des autres sites' };
   if (kind === 'site') return { title: siteLabel, lines: [valueText], hint: 'Point : la valeur de ce site' };
   return {
-    title: 'Un autre site',
+    title: otherLabel ?? 'Un autre site',
     lines: [valueText],
     hint: 'La barre va du plus bas au plus haut des sites',
   };
