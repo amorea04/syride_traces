@@ -13,7 +13,7 @@ export function AppFooter() {
       </Text>
       <Group gap="md">
         <Text size="xs" c="dimmed">
-          Données mises à jour le {fmtDate(meta.data_updated_at, { withYear: true })}
+          Données mises à jour le {fmtDate(meta.data_refreshed_at, { withYear: true })}
         </Text>
         <FilterLink to="/a-propos" size="xs">
           À propos

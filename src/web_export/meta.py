@@ -17,8 +17,9 @@ PURGE_PATTERNS = ["flights.*.json", "sites.*.json", "insights/*.json"]
 
 
 def build_meta(flights_obj: dict, excluded: int, files: Dict[str, str], insights: List[dict],
-               now: Optional[datetime] = None) -> dict:
-    """MetaFile. `data_updated_at` = date du vol le plus récent exporté."""
+               now: Optional[datetime] = None, refreshed_at: Optional[str] = None) -> dict:
+    """MetaFile. `data_updated_at` = date du vol le plus récent exporté ; `data_refreshed_at` = date de mise à jour
+    des données (max de `date_update` du pkl, AAAA-MM-JJ ; repli : date du dernier vol)."""
     dates = [row[COL_DATE] for row in flights_obj["rows"] if row[COL_DATE]]
     if not dates:
         raise ValueError("aucun vol exporté : impossible de construire meta.json")
@@ -28,12 +29,22 @@ def build_meta(flights_obj: dict, excluded: int, files: Dict[str, str], insights
         "schema_version": SCHEMA_VERSION,
         "generated_at": now.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "data_updated_at": max(dates),
+        "data_refreshed_at": refreshed_at or max(dates),
         "counts": {"flights": len(flights_obj["rows"]), "pilots": len(dictionary["pilot"]),
                    "sites": len(dictionary["site"]), "wings": len(dictionary["wing"]),
                    "excluded_flights": int(excluded)},
         "files": {"flights": files["flights"], "sites": files["sites"]},
         "insights": sorted(insights, key=lambda e: (e["pilot"], e["year"])),
     }
+
+
+def refreshed_date(df) -> Optional[str]:
+    """Max de `date_update` du pkl (AAAA-MM-JJ), comme le rapport ; None si absente ou illisible."""
+    import pandas as pd
+    if df is None or "date_update" not in df.columns:
+        return None
+    value = pd.to_datetime(df["date_update"], errors="coerce").max()
+    return None if value != value else value.strftime("%Y-%m-%d")
 
 
 def read_previous_meta(out_dir: Path) -> Optional[dict]:

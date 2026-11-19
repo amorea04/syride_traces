@@ -15,6 +15,9 @@ import { FIXTURES_DIR, fixtureFlights } from '../tests/fixtures';
 
 // La page d'accueil (tableau de bord) monte des graphiques ECharts (canvas) et une carte MapLibre
 // (WebGL), absents de jsdom : on les remplace par des éléments inertes.
+// Rendu de l'application entière : 1 à 3 s seul, davantage quand les 46 fichiers tournent en parallèle.
+vi.setConfig({ testTimeout: 20_000 });
+
 vi.mock('echarts-for-react', () => ({ default: () => <div data-testid="echarts" /> }));
 vi.mock('@/components/map/SitesMap', () => ({ SitesMap: () => <div data-testid="sites-map" /> }));
 

@@ -44,7 +44,7 @@ describe('decodeFlights', () => {
       instrument: 'Instrument B',
       mode: 'Moteur',
       source: 'gpx',
-      durationMin: 174.8,
+      durationMin: 174.79,
       incomplete: false,
       syrideNum: 1048,
       year: 2024,

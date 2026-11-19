@@ -23,6 +23,18 @@ export const DIM_OPACITY = 0.25;
 export interface LayerState {
   heatmap: boolean;
   highlightSiteId: number | null;
+  /** Sites cerclés d'or (nouveautés), optionnel. */
+  goldSiteIds?: readonly number[];
+}
+
+/** Couleur et épaisseur du contour d'un point : or pour les sites listés, sinon le liseré de surface. */
+export function pointStroke(
+  c: { surface: string; gold: string },
+  goldSiteIds: readonly number[] | undefined,
+): { color: Expr; width: Expr } {
+  if (!goldSiteIds || goldSiteIds.length === 0) return { color: c.surface, width: 1.5 };
+  const isGold = ['in', ['get', 'siteId'], ['literal', [...goldSiteIds]]];
+  return { color: ['case', isGold, c.gold, c.surface], width: ['case', isGold, 3.5, 1.5] };
 }
 
 /** Hex `#rrggbb` → `rgba(r,g,b,a)` (la heatmap a besoin d'une rampe transparente → opaque). */
@@ -56,6 +68,7 @@ export function buildStyle(
   const vis = layerVisibility(state.heatmap);
   const hasGlyphs = typeof base.glyphs === 'string';
   const opacity = pointOpacity(state.highlightSiteId);
+  const stroke = pointStroke(c, state.goldSiteIds);
 
   const layers: unknown[] = [
     {
@@ -106,8 +119,8 @@ export function buildStyle(
         'circle-color': ['match', ['get', 'dominant'], 'parapente', c.p, 'paramoteur', c.m, c.b],
         'circle-opacity': ['*', 0.9, opacity],
         'circle-stroke-opacity': opacity,
-        'circle-stroke-color': c.surface,
-        'circle-stroke-width': 1.5,
+        'circle-stroke-color': stroke.color,
+        'circle-stroke-width': stroke.width,
         'circle-radius': ['interpolate', ['linear'], ['sqrt', ['get', 'flights']], 1, 5, 5, 10, 20, 24],
       },
     },

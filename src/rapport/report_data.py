@@ -77,6 +77,11 @@ def _hour_of(value) -> float:
     return float(hour) if hour == hour else np.nan  # NaT -> NaN
 
 
+def _site_name(value) -> str:
+    """Nom du site d'un vol ; « » si le vol n'a pas de site."""
+    return "" if value is None or value is pd.NA or (isinstance(value, float) and value != value) else str(value)
+
+
 def _hhmm_of(value) -> Optional[str]:
     """Heure de décollage « HH:MM » d'un datetime.time / datetime / « HH:MM[:SS] » ; None si inconnue."""
     if isinstance(value, str):
@@ -104,6 +109,14 @@ def prepare_report_df(df: pd.DataFrame) -> pd.DataFrame:
     out["date"] = pd.to_datetime(out["date"], errors="coerce")
     out = out[out["date"].notna()].copy()
     out["duree_vol_minutes"] = pd.to_numeric(out["duree_vol_minutes"], errors="coerce").fillna(0.0)
+
+    # Site : un nom vide (« », « nan », « none ») n'est pas un site -> NA. Le vol reste compté (durée, km…), mais
+    # n'apparaît dans aucun tableau ni décompte de sites (nunique, groupby et value_counts ignorent NA).
+    if "site" in out.columns:
+        names = out["site"].astype(object).where(out["site"].notna(), None)
+        names = names.map(lambda v: None if v is None else str(v).strip())
+        out["site"] = names.where(~names.isin(["", "nan", "none", "NaN", "None", "NAN", "NONE"]), None)
+        out["site"] = out["site"].where(out["site"].notna(), pd.NA)
 
     if "heure_decolage" not in out.columns:
         source = out["heure"] if "heure" in out.columns else pd.Series(np.nan, index=out.index)
@@ -320,7 +333,7 @@ def _records(d: pd.DataFrame, top: int = 5) -> Dict[str, List[dict]]:
         ).head(top)
         result[key] = [
             {
-                "value": float(r["_v"]), "date": r["date"].date(), "site": str(r["site"]),
+                "value": float(r["_v"]), "date": r["date"].date(), "site": _site_name(r["site"]),
                 "voile": str(r["voile"]), "url": str(r["flight_url"]), "discipline": str(r["type_vol"]),
             }
             for _, r in best.iterrows()
@@ -337,7 +350,7 @@ def _best_flight(d: pd.DataFrame, column: str) -> Optional[dict]:
     if ok.empty:
         return None
     r = ok.sort_values(["_v", "date"], ascending=[False, True]).iloc[0]
-    return {"value": float(r["_v"]), "date": r["date"].date(), "year": int(r["date"].year), "site": str(r["site"]),
+    return {"value": float(r["_v"]), "date": r["date"].date(), "year": int(r["date"].year), "site": _site_name(r["site"]),
             "voile": str(r["voile"]), "url": str(r["flight_url"]), "discipline": str(r["type_vol"])}
 
 
@@ -399,12 +412,12 @@ def _highlights(d: pd.DataFrame, dist_month: dict, dist_day: dict, sites: List[d
     dates = sorted(set(d["date"].dt.date))
     gap = _longest_gap(dates)
     out["longest_gap_days"] = gap[0] if gap else 0
-    per_day = d.groupby(d["date"].dt.date).agg(minutes=("duree_vol_minutes", "sum"), n=("site", "count"))
+    per_day = d.groupby(d["date"].dt.date).agg(minutes=("duree_vol_minutes", "sum"), n=("duree_vol_minutes", "size"))
     best_date = per_day["minutes"].idxmax()
     day = d[d["date"].dt.date == best_date]
     out["best_day"] = {"date": best_date, "minutes": float(per_day.loc[best_date, "minutes"]),
                        "n": int(per_day.loc[best_date, "n"]),
-                       "sites": [str(x) for x in day["site"].astype(str).value_counts().index]}
+                       "sites": [str(x) for x in day["site"].dropna().astype(str).value_counts().index]}
     return out
 
 
@@ -560,7 +573,7 @@ def compute_indicators(d: pd.DataFrame) -> dict:
     month = _distribution(d, d["date"].dt.month, 12, offset=1)
     monthly_details = [""] * 12
     for month_number, group in d.groupby(d["date"].dt.month):
-        sites = group["site"].astype(str).value_counts().head(2)
+        sites = group["site"].dropna().astype(str).value_counts().head(2)
         wings = group["voile"].astype(str).value_counts().head(2)
         site_text = ", ".join(f"{name} ({n})" for name, n in sites.items())
         wing_text = ", ".join(f"{name} ({n})" for name, n in wings.items())
@@ -570,7 +583,7 @@ def compute_indicators(d: pd.DataFrame) -> dict:
 
     daily = {}
     for date, g in d.groupby(d["date"].dt.date):
-        site_counts = g["site"].astype(str).value_counts()
+        site_counts = g["site"].dropna().astype(str).value_counts()
         wing_counts = g["voile"].astype(str).value_counts()
         daily[date] = {
             "n": int(len(g)), "minutes": float(g["duree_vol_minutes"].sum()),
@@ -606,7 +619,7 @@ def compute_indicators(d: pd.DataFrame) -> dict:
         "durations": _duration_stats(d),
         "flights": [
             {
-                "date": r["date"].date(), "site": str(r["site"]), "voile": str(r["voile"]),
+                "date": r["date"].date(), "site": _site_name(r["site"]), "voile": str(r["voile"]),
                 "discipline": str(r["type_vol"]), "mode": str(r["mode"]), "minutes": float(r["duree_vol_minutes"]),
                 "distance": r.get("distance"), "ceiling": r.get("plafond"),
                 "speed_max": r.get("vitesse_max"), "url": str(r["flight_url"]),
@@ -701,7 +714,7 @@ def compute_report(
 
     # Sites découverts cette année-là (jamais volés avant, toutes disciplines)
     earlier = df[(df["pilote"] == pilot) & (df["date"].dt.year < year)]
-    known = set(earlier["site"])
+    known = set(earlier["site"].dropna())
     new_sites = []
     for site, g in main_all.groupby("site"):
         if site not in known:
@@ -918,7 +931,7 @@ def _story_frame(d: pd.DataFrame) -> pd.DataFrame:
 
 def _flight_ref(row) -> dict:
     """Vol cité par un jalon."""
-    return {"date": row["_day"], "site": str(row["site"]), "voile": str(row["voile"]),
+    return {"date": row["_day"], "site": _site_name(row["site"]), "voile": str(row["voile"]),
             "minutes": float(row["duree_vol_minutes"]), "url": str(row["flight_url"]),
             "time": _hhmm_of(row.get("heure"))}
 
@@ -937,14 +950,15 @@ def _persona_metrics(s: pd.DataFrame, ctx: dict) -> dict:
     hours = s["_h"].dropna()
     start, end = ctx["period"]
     weeks_active, weeks_total = _weeks_active_total(s["_day"], start.year, end)   # même définition que la tuile « Régularité »
-    site_counts = s["site"].astype(str).value_counts()
+    site_counts = s["site"].dropna().astype(str).value_counts()
     modes = s["mode"].astype(str).value_counts()
     ceiling = _positive(s["plafond"]) if "plafond" in s.columns else pd.Series(dtype=float)
     return {
         "n": n,
         "hour_median": float(hours.median()) if len(hours) >= n * STORY_MIN_COVER and len(hours) else None,
         "weekend": float((s["date"].dt.dayofweek >= 5).mean()),
-        "top_site": str(site_counts.index[0]), "top_site_share": float(site_counts.iloc[0] / n),
+        "top_site": str(site_counts.index[0]) if len(site_counts) else "",
+        "top_site_share": float(site_counts.iloc[0] / n) if len(site_counts) else 0.0,
         "n_sites": int(site_counts.size), "n_new_sites": ctx["n_new_sites"],
         "duration_median": float(s["duree_vol_minutes"].median()),
         "weeks_share": weeks_active / max(1, weeks_total),
@@ -1121,11 +1135,11 @@ def compute_milestones(s: pd.DataFrame, ctx: dict) -> List[dict]:
         else:
             add("record", s.loc[i], metrics=metrics, personal=personal)
 
-    days = s.groupby("_day").agg(minutes=("duree_vol_minutes", "sum"), n=("site", "count"))
+    days = s.groupby("_day").agg(minutes=("duree_vol_minutes", "sum"), n=("duree_vol_minutes", "size"))
     if len(days) >= 2:
         best = days["minutes"].idxmax()
         if days.loc[best, "n"] >= 2:   # un seul vol ce jour-là : déjà raconté par le record de durée
-            sites = list(s[s["_day"] == best]["site"].astype(str).value_counts().index)
+            sites = list(s[s["_day"] == best]["site"].dropna().astype(str).value_counts().index)
             add("best_day", day=best, n_flights=int(days.loc[best, "n"]), minutes=float(days.loc[best, "minutes"]),
                 sites=sites)
 
@@ -1184,11 +1198,11 @@ def compute_story(df: pd.DataFrame, pilot: str, year: int, cutoff: Optional[tupl
             out[disc] = None
             continue
         s = _story_frame(d)
-        known_sites = set(earlier["site"])
+        known_sites = set(earlier["site"].dropna())
         ctx = {
             "disc": disc, "period": _elapsed(year, end), "has_history": len(earlier) > 0,
             "known_sites": known_sites, "known_wings": set(earlier["voile"]),
-            "n_new_sites": int(len(set(s["site"]) - known_sites)) if len(earlier) else 0,
+            "n_new_sites": int(len(set(s["site"].dropna()) - known_sites)) if len(earlier) else 0,
             "share": share if disc == "all" else None,
             "beaten": (beaten or {}).get(disc, {}),
             "n_parapente": int((s["type_vol"] == "parapente").sum()),

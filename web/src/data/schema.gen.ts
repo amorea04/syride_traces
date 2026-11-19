@@ -38,6 +38,10 @@ export type IsoDate1 = string;
  */
 export type IsoDate2 = string;
 /**
+ * Date ISO AAAA-MM-JJ (1980 ou après : la date sentinelle 1901 est refusée).
+ */
+export type IsoDate3 = string;
+/**
  * Récit d'une discipline pour un pilote et une année ; null si le pilote n'a aucun vol dans cette discipline cette année. Textes en texte brut, identiques à ceux du rapport HTML.
  */
 export type Story = null | {
@@ -231,6 +235,7 @@ export interface MetaFile {
    */
   generated_at: string;
   data_updated_at: IsoDate1;
+  data_refreshed_at: IsoDate2;
   counts: {
     flights: number;
     pilots: number;
@@ -351,7 +356,7 @@ export interface InsightsFile {
   v: 1;
   pilot: Slug;
   year: number;
-  cutoff: IsoDate2;
+  cutoff: IsoDate3;
   by_disc: {
     tout: Story;
     parapente: Story;

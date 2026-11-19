@@ -40,11 +40,12 @@
       "description": "Petit fichier d'amorce, jamais mis en cache (Cache-Control: no-cache). Donne les noms hashés des autres fichiers.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["schema_version", "generated_at", "data_updated_at", "counts", "files", "insights"],
+      "required": ["schema_version", "generated_at", "data_updated_at", "data_refreshed_at", "counts", "files", "insights"],
       "properties": {
         "schema_version": { "$ref": "#/$defs/SchemaVersion" },
         "generated_at": { "type": "string", "format": "date-time", "description": "Horodatage UTC de l'export." },
-        "data_updated_at": { "$ref": "#/$defs/Date", "description": "Date du vol le plus récent (ou de la dernière mise à jour du pkl)." },
+        "data_updated_at": { "$ref": "#/$defs/Date", "description": "Date du vol le plus récent exporté (référence des calculs « à date »)." },
+        "data_refreshed_at": { "$ref": "#/$defs/Date", "description": "Date de la dernière mise à jour des données (max de date_update du pkl, comme le rapport) ; repli : date du dernier vol." },
         "counts": {
           "type": "object",
           "additionalProperties": false,
@@ -131,7 +132,7 @@
               { "$ref": "#/$defs/NullableIndex", "description": "wing" },
               { "$ref": "#/$defs/NullableIndex", "description": "instrument" },
               { "$ref": "#/$defs/NullableIndex", "description": "mode" },
-              { "type": ["number", "null"], "minimum": 0, "description": "duration_min (minutes, 1 décimale)" },
+              { "type": ["number", "null"], "minimum": 0, "description": "duration_min (minutes, 4 décimales : secondes entières à 0,003 s près)" },
               { "$ref": "#/$defs/PositiveMeasure", "description": "dist_km : colonne `distance`, référence (1 décimale)" },
               { "$ref": "#/$defs/PositiveMeasure", "description": "dist_cum_km : `distance_cumulee` (1 décimale)" },
               { "$ref": "#/$defs/PositiveMeasure", "description": "speed_avg km/h (1 décimale)" },

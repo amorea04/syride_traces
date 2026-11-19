@@ -105,6 +105,7 @@ function flights(): Flight[] {
 
 const META = {
   data_updated_at: '2025-12-28',
+  data_refreshed_at: '2025-12-30',
   generated_at: '2026-01-01T12:00:00Z',
   counts: { flights: 5, pilots: 2, sites: 2, wings: 2, excluded_flights: 3 },
 };

@@ -761,6 +761,51 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - **5B.12** e2e : ouvrir un Bilan, changer d'année, clic sur un jalon qui mène à la fiche vol, export PNG.
 - **Sortie** : le rapport HTML a son équivalent interactif dans la webapp, sans double maintenance des règles de récit.
 
+### Phase 5C : Retours de la recette d'Adrien (≈ 1 à 2 sessions) · Sonnet (front), relecture Opus
+
+Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en phases 3 à 5B. Prérequis : phase 5B fusionnée. **Deux lots parallèles possibles** dans le même dossier, sans fichier commun : lot A = navigation, filtres et pages pilote, vol et site (5C.1 à 5C.5) ; lot B = graphiques, infobulles et calendriers (5C.6 à 5C.9).
+
+**Navigation**
+- **5C.1 Menu actif sur les pages de détail.** Sur `/pilote/:slug`, `/pilote/:slug/:annee`, `/vol/:key` et `/site/:id`, aucune entrée du menu n'est soulignée. Cause trouvée : `isNavActive` (`components/navigation.ts`) gère déjà ces préfixes, mais `FilterLink` en mode `nav` passe par le `NavLink` de React Router. Celui-ci calcule son propre `aria-current` : il ne le pose que sur `/pilotes` exact et écrase la valeur fournie. Correction : dans `AppHeader`, un `Link` simple dont `aria-current` vient uniquement de `isNavActive`. Règles : un vol sous « Vols », un pilote ou un bilan sous « Pilotes », un site sous « Sites ». Test unitaire sur `isNavActive`, et un e2e qui vérifie `aria-current="page"` sur les 4 pages de détail.
+- **5C.2 Retour et fermeture.** Sur les fiches vol et site, la page pilote et le Bilan :
+  - **fil d'Ariane** sobre sous l'en-tête, avec les filtres conservés : « Vols › 12 juin 2025 · AdrienM », « Sites › Montbron », « Pilotes › AdrienM › Bilan 2025 » ;
+  - **bouton « ← Retour »** qui revient à la page précédente de l'historique s'il en existe une dans l'app (`location.key !== 'default'`), sinon à la liste parente ;
+  - la touche Échap fait de même, sauf si un tiroir ou une fenêtre est ouvert.
+  - Composant unique `components/common/DetailNav.tsx`, utilisé par les 4 pages.
+- **5C.3 Accès au Bilan depuis la page pilote.** Dans l'en-tête de la page pilote, bouton principal « Voir le bilan {dernière année} » et menu des autres années. Les cartes par année restent. Le texte des cartes devient explicite : « Bilan 2025 → ».
+
+**Filtres**
+- **5C.4 Plusieurs années dans le filtre.** Le menu « Année… » devient un choix multiple : on coche 2025 et 2023, par exemple. La décision de phase 3 (« années non contiguës non reprises », `PARITE_DASH.md` #12) est annulée (D19).
+  - Nouvelle dimension `years: number[]` dans `Filters` (`lib/filters.ts`), à côté de la période Du / Au. Un vol passe s'il est dans l'une des années cochées **et** dans la période, si elle est renseignée.
+  - Choisir des années vide la période. Choisir une période ne touche pas aux années, mais l'intersection vide est signalée par l'état vide existant.
+  - Paramètre d'URL `annees=2025,2023`, compteurs en cascade, ligne « Vue filtrée » (`filterSummary`) : « 2023 et 2025 ».
+  - Un clic sur une barre d'année de `StatChart` coche cette seule année.
+  - La variation des KPI (« vs période précédente ») est masquée quand des années non contiguës sont cochées, et comparée à l'année précédente pour une seule année.
+  - Les raccourcis « Cette année » et « 12 derniers mois » restent des périodes.
+  - Mettre à jour `PARITE_DASH.md` #12 (statut « présente »), les tests de `filters.ts`, `filterSummary.ts` et `useFiltersUrlSync`, ainsi que l'e2e `filtres.spec.ts`.
+  - Le Bilan continue d'ignorer ce filtre ; sa mention des filtres ignorés le cite.
+- **5C.5 « Ses sites face à face » sans seuil.** La page pilote prend **tous** les sites du pilote, et non plus ceux d'au moins 10 vols (`MIN_SITE_FLIGHTS_PILOT` passe à 1 pour cet usage ; le seuil de la fiche vol et de la page site ne change pas). Le nombre de vols de chaque site est affiché à côté de son nom. Une note « peu de vols » en gris signale un site de moins de 3 vols, car sa moyenne est fragile. Il faut au moins 2 sites, sinon le message actuel s'affiche.
+
+**Graphiques et infobulles**
+- **5C.6 Fin du cadre gris qui masque les barres.** Les histogrammes utilisent `axisPointer: { type: 'shadow' }` : au survol, un aplat `surface-2` est dessiné au-dessus des barres et les masque en mode sombre. Fichiers concernés : `SiteSeasonality`, `CareerSection`, `DurationHistogram` et `BilanWhen`, et tout autre graphique en barres à vérifier. On le remplace par une **mise en avant de la barre survolée**, avec `emphasis` et les autres barres estompées, et par une infobulle par barre (`trigger: 'item'`), ou bien par une ombre placée **derrière** les barres avec une opacité faible. La même règle est posée dans le thème ECharts (`theme/echarts.ts`) pour tous les graphiques.
+- **5C.7 Infobulle sur tous les calendriers et toutes les matrices.** Une infobulle légère (composant commun `components/common/CellTooltip.tsx`, avec Mantine `Tooltip` ou `Popover`, ou une bulle positionnée en CSS) apparaît au survol **et** au focus clavier, sur mobile au toucher. Elle concerne :
+  - le **calendrier** du bloc Rythme (`CalendarHeatmap`), au tableau de bord, sur la page pilote et dans le Bilan : date, nombre de vols, durée, disciplines, sites, et « Clic : fiche du jour » ;
+  - la **matrice mois × heure** de la saisonnalité d'un site (`SiteSeasonality`) : mois, tranche horaire, vols et durée ;
+  - la **matrice jour × heure** (`WeekHourMatrix`, et sa copie dans `BilanWhen`) ;
+  - le **ruban voile × mois** (`WingRibbon`) et la **frise des voiles** (`WingTimeline`).
+
+  La cellule survolée reçoit un contour. Les attributs `title` natifs éventuels sont retirés pour éviter une double bulle.
+- **5C.8 Le calendrier « ne comporte que peu de jours ».** Le calendrier montre **une seule année** : la plus récente de la sélection, choisie dans un sélecteur, et estompée au-delà de la date des données. Avec les filtres par défaut, c'est donc 2026, arrêtée au dernier vol. À confirmer avec Adrien au début de la phase sur une capture, puis :
+  - afficher clairement l'année montrée et le sélecteur d'année à côté du titre ;
+  - option « 12 derniers mois » glissants, qui devient le défaut quand l'année en cours a moins de 6 mois écoulés ;
+  - agrandir les cases à large écran (le calendrier doit occuper la largeur de la carte, avec des cases ≥ 12 px) ;
+  - si le problème est autre (peu de jours colorés, par exemple), le diagnostiquer avant de corriger.
+- **5C.9 Légende des haltères.** Dans Comparer, section « Métrique par métrique », et dans le Bilan (`BilanComparison`), le composant `common/Dumbbell` affiche une **légende** au-dessus des lignes : symbole (disque, carré, anneau), couleur et motif de chaque série, avec son nom (pilote, année ou site). Une infobulle au survol d'un point donne la série et la valeur. « Ses sites face à face » et « Ce site face aux autres » reçoivent aussi une **légende** et une **infobulle** sur les barres et les points : la barre est l'étendue min–max des sites, le point la valeur du site, le trait la moyenne.
+
+**Fin de phase**
+- **5C.10** Tests : unitaires sur la logique nouvelle (filtre années, navigation, contenu des infobulles) et e2e sur le menu actif, le retour, les années multiples et l'infobulle d'une case de calendrier. Contrôle clair, sombre et 360 px. `/code-review medium`.
+- **Sortie** : chaque remarque de la recette du 19/11/2026 est traitée, ou justifiée par écrit si elle ne l'est pas, et revue par Adrien.
+
 ### Phase 6 : Finitions, performance, accessibilité, PWA (≈ 1 à 2 sessions) · Sonnet, audit Opus
 
 - **6.1** Découpage du code par route (`React.lazy`) ; ECharts importé à la carte (modules utilisés seulement) ; MapLibre chargé paresseusement.
@@ -866,6 +911,9 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 | D15 | Fiche vol | Ajout de **« Ce site face aux autres »** : les vols du site comparés aux autres sites (durée, distance, plafond, vitesse, vario, vols, pilotes, part des disciplines), même langage visuel que « Ce vol face aux moyennes ». Agrégat réutilisé sur la page site. | §5.3, §5.5 |
 | D17 | Comparaison de sites par pilote ou groupe | **Oui** : « Ce site face aux autres » existe aussi pour un pilote (bascule « Tous / Ce pilote » sur la fiche vol, section « Ses sites face à face » sur la page pilote), et la page Comparer reçoit un **mode « Sites »** (2 à 4 sites côte à côte, calculés sur la sélection de pilotes des filtres globaux). Un seul module TS d'agrégats par site, réutilisé partout. | §5.3, §5.4, §5.5, §5.6 |
 | D16 | Projection de fin d'année et objectif personnel dans le Bilan (T31) | **Retirés** | §5.4 bis point 8 et 5B.8 supprimés |
+| D18 | Écarts de la recette croisée 5B.11 | **Corrigés à la source** (19/11/2026) : (1) un site vide (chaîne vide, 3 vols) n'est plus compté comme un site dans le rapport Python et les insights ; (2) les durées sont exportées avec plus de précision, pour retrouver les minutes exactes du rapport ; (3) `meta.json` porte la vraie date de mise à jour des données, et la date du dernier vol est affichée à part | 5B.11, `web/RECETTE_5B11.md` |
+| D19 | Sélection de plusieurs années non contiguës | **Oui** (recette du 19/11/2026), ce qui annule la décision de phase 3 | 5C.4 |
+| D20 | Seuil de 10 vols dans « Ses sites face à face » (page pilote) | **Supprimé** : tous les sites du pilote | 5C.5 |
 
 **Détail D8 : pourquoi un dépôt public suffit.**
 - Avec cette architecture, **le code** va sur GitHub et **les données** vont directement du Mac vers Cloudflare (`wrangler`). Elles ne passent jamais par GitHub. La `.gitignore` en liste blanche l'impose déjà.
@@ -971,6 +1019,19 @@ Prérequis : phases 1.5 bis (insights) et 3 (composants génériques).
 - [ ] 5B.11 Recette croisée avec 3 rapports HTML : identiques ou écarts justifiés
 - [ ] 5B.12 Tests e2e du Bilan
 - [ ] PR relue et fusionnée · **`/clear`**
+
+### Phase 5C : Retours de recette
+- [ ] 5C.1 Menu actif sur les pages de détail (vol, site, pilote, bilan)
+- [ ] 5C.2 Fil d'Ariane, bouton « ← Retour » et Échap sur les fiches vol et site, la page pilote et le Bilan
+- [ ] 5C.3 Bouton « Voir le bilan » sur la page pilote
+- [ ] 5C.4 Filtre multi-années (D19)
+- [ ] 5C.5 « Ses sites face à face » sans seuil de 10 vols (D20)
+- [ ] 5C.6 Plus de cadre gris qui masque les barres au survol
+- [ ] 5C.7 Infobulle sur tous les calendriers et toutes les matrices
+- [ ] 5C.8 Calendrier : diagnostic « peu de jours », année affichée, 12 derniers mois, taille des cases
+- [ ] 5C.9 Légende et infobulles des haltères et des « face à face »
+- [ ] 5C.10 Tests, contrôle visuel, `/code-review medium`
+- [ ] Revue par Adrien, PR relue et fusionnée · **`/clear`**
 
 ### Phase 6 : Finitions
 - [ ] 6.1 Découpage du code, imports à la carte

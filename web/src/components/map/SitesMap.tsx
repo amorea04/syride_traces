@@ -21,6 +21,7 @@ import {
   LAYER_POINT,
   layerVisibility,
   pointOpacity,
+  pointStroke,
   SRC_CLUSTERED,
   SRC_RAW,
   type MapStyle,
@@ -31,7 +32,7 @@ import { useFiltersStore } from '@/store/filters';
 import { useHighlightStore } from '@/store/highlight';
 import { mapStyleUrl } from '@/theme/map';
 import type { StyleLike } from '@/theme/map';
-import type { ColorScheme } from '@/theme/tokens';
+import { colors, type ColorScheme } from '@/theme/tokens';
 
 /** Marge autour de la sélection au cadrage (px), zoom maximal et durée d'animation (ms). */
 const FIT_PADDING = 48;
@@ -64,6 +65,22 @@ function loadBaseStyle(scheme: ColorScheme): Promise<BaseStyle> {
     p.catch(() => baseStyleCache.delete(url));
   }
   return p;
+}
+
+/** Recadre la carte sur une emprise (un seul site : centrage à un zoom fixe). */
+function fitBoundsOn(map: MapLibreMap, bounds: Bounds): void {
+  const [w, s, e, n] = bounds;
+  if (w === e && s === n) {
+    map.easeTo({ center: [w, s], zoom: SINGLE_SITE_ZOOM, duration: FIT_DURATION_MS });
+  } else {
+    map.fitBounds(
+      [
+        [w, s],
+        [e, n],
+      ],
+      { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, duration: FIT_DURATION_MS },
+    );
+  }
 }
 
 interface PopupActions {
@@ -141,6 +158,13 @@ export interface SitesMapProps {
   fitToSelection?: boolean;
   /** Ouvre la fenêtre d'information au clic sur un site (défaut : oui). */
   popup?: boolean;
+  /** Sites cerclés d'or (nouveautés), optionnel. */
+  goldSiteIds?: readonly number[];
+  /**
+   * Cadrage demandé (boutons de zone) : la carte se recadre à chaque nouvel objet, même sur la même emprise.
+   * Prioritaire sur `fitToSelection` tant qu'il est renseigné.
+   */
+  focus?: { bounds: Bounds } | null;
 }
 
 /**
@@ -156,6 +180,8 @@ export function SitesMap({
   highlightSiteId,
   fitToSelection = true,
   popup: showPopup = true,
+  goldSiteIds,
+  focus,
 }: SitesMapProps) {
   const scheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
   const isMobile = useMediaQuery(MOBILE_QUERY) ?? false;
@@ -188,6 +214,7 @@ export function SitesMap({
     navigate,
     isMobile,
     showPopup,
+    goldSiteIds,
   });
   useLayoutEffect(() => {
     live.current = {
@@ -200,6 +227,7 @@ export function SitesMap({
       navigate,
       isMobile,
       showPopup,
+      goldSiteIds,
     };
   });
 
@@ -221,6 +249,7 @@ export function SitesMap({
         style: buildStyle(base, l.scheme, l.data.collection, {
           heatmap: l.heatmap,
           highlightSiteId: l.effectiveHighlight,
+          goldSiteIds: l.goldSiteIds,
         }),
         center: INITIAL_CENTER,
         zoom: INITIAL_ZOOM,
@@ -329,6 +358,7 @@ export function SitesMap({
           buildStyle(base, scheme, l.data.collection, {
             heatmap: l.heatmap,
             highlightSiteId: l.effectiveHighlight,
+            goldSiteIds: l.goldSiteIds,
           }) as MapStyle,
           { diff: false },
         );
@@ -361,24 +391,30 @@ export function SitesMap({
     map.setPaintProperty(LAYER_POINT, 'circle-stroke-opacity', opacity as never);
   }, [heatmap, effectiveHighlight, ready, scheme]);
 
+  // Contour or des nouveautés.
+  const goldKey = goldSiteIds ? goldSiteIds.join(',') : '';
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !map.getLayer(LAYER_POINT)) return;
+    const stroke = pointStroke(colors[scheme], live.current.goldSiteIds);
+    map.setPaintProperty(LAYER_POINT, 'circle-stroke-color', stroke.color as never);
+    map.setPaintProperty(LAYER_POINT, 'circle-stroke-width', stroke.width as never);
+  }, [goldKey, ready, scheme]);
+
+  // Cadrage demandé par le parent (boutons de zone).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !focus) return;
+    fitBoundsOn(map, focus.bounds);
+  }, [focus, ready]);
+
   // Cadrage sur la sélection.
   const boundsKey = data.bounds ? data.bounds.join(',') : '';
   useEffect(() => {
     const map = mapRef.current;
     const bounds: Bounds | null = data.bounds;
     if (!ready || !map || !fitToSelection || !bounds) return;
-    const [w, s, e, n] = bounds;
-    if (w === e && s === n) {
-      map.easeTo({ center: [w, s], zoom: SINGLE_SITE_ZOOM, duration: FIT_DURATION_MS });
-    } else {
-      map.fitBounds(
-        [
-          [w, s],
-          [e, n],
-        ],
-        { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, duration: FIT_DURATION_MS },
-      );
-    }
+    fitBoundsOn(map, bounds);
     // `boundsKey` résume `data.bounds`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boundsKey, fitToSelection, ready]);
