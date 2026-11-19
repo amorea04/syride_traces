@@ -47,6 +47,9 @@ export function ActiveFilters() {
         chip('activite', filters.activity === 'parapente' ? 'Parapente' : 'Paramoteur', () =>
           setFilters({ activity: 'tout' }),
         )}
+      {filters.years.map((y) =>
+        chip(`a-${y}`, String(y), () => setFilters({ years: filters.years.filter((x) => x !== y) })),
+      )}
       {period && chip('periode', period, () => setFilters({ dateFrom: null, dateTo: null }))}
       {filters.wings.map((w) =>
         chip(`w-${w}`, w, () => setFilters({ wings: filters.wings.filter((x) => x !== w) })),

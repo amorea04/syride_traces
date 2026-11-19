@@ -1,6 +1,7 @@
 import { Stack, Text, Title } from '@mantine/core';
 import { useMemo } from 'react';
 import { useParams } from 'react-router';
+import { DetailNav } from '@/components/common/DetailNav';
 import { AverageComparison } from '@/components/flight/AverageComparison';
 import { ContextRanks } from '@/components/flight/ContextRanks';
 import { FlightFigures } from '@/components/flight/FlightFigures';
@@ -13,6 +14,7 @@ import { FilterLink } from '@/components/FilterLink';
 import { APP_NAME } from '@/components/navigation';
 import { useData } from '@/data/DataProvider';
 import { buildFlightContext } from '@/lib/flightContext';
+import { fmtDate } from '@/lib/format';
 import '@/components/flight/flight.css';
 
 /**
@@ -46,6 +48,12 @@ export function Flight() {
   return (
     <Stack key={flight.key} gap={28} data-testid="flight-page" data-flight-key={flight.key}>
       <title>{`${flight.site ?? 'Vol'} · ${flight.pilot} · ${fmtFlightMoment(flight)} · ${APP_NAME}`}</title>
+      <DetailNav
+        crumbs={[
+          { label: 'Vols', to: '/vols' },
+          { label: `${fmtDate(flight.date, { withYear: true })} · ${flight.pilot}` },
+        ]}
+      />
       <FlightHeader flight={flight} />
       <div className="fv-grid">
         <div className="fv-stack">

@@ -190,10 +190,15 @@ export interface Rhythm {
 }
 
 /**
- * Port de `compute_rhythm`. `year` : année du rapport (semaine du 1er janvier) ; `end` : dernier jour écoulé
+ * Port de `compute_rhythm`. `year` : année du rapport (semaine du 1er janvier) ; `start` : premier jour de la période si ce n'est pas le 1er janvier (12 mois glissants) ; `end` : dernier jour écoulé
  * (aujourd'hui pour l'année en cours, le 31 décembre sinon). `null` sans vol.
  */
-export function computeRhythm(flights: readonly Flight[], year: number, end: string): Rhythm | null {
+export function computeRhythm(
+  flights: readonly Flight[],
+  year: number,
+  end: string,
+  start?: string,
+): Rhythm | null {
   const daily = dailySummaries(flights);
   if (daily.length === 0) return null;
   const dates = daily.map((d) => d.date);
@@ -226,7 +231,7 @@ export function computeRhythm(flights: readonly Flight[], year: number, end: str
   }
 
   const mondayOfEnd = mondayOfEpochDay(epochDay(end));
-  const mondayOfJan1 = mondayOfEpochDay(epochDay(`${year}-01-01`));
+  const mondayOfJan1 = mondayOfEpochDay(epochDay(start ?? `${year}-01-01`));
   const weeksTotal = Math.max(Math.floor((mondayOfEnd - mondayOfJan1) / 7) + 1, weeks.size);
   // Un lundi vaut 7k + 4 en jours depuis 1970 : k est continu d'une semaine à l'autre.
   const weekStreak = longestRun([...weeks.keys()].map((m) => Math.floor(m / 7)).sort((a, b) => a - b));

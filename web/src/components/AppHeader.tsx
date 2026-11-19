@@ -11,7 +11,7 @@ import {
 } from '@mantine/core';
 import { IconAdjustmentsHorizontal, IconMoon, IconSun } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router';
-import { FilterLink, useFilterSearch } from '@/components/FilterLink';
+import { useFilterSearch } from '@/components/FilterLink';
 import { APP_NAME, NAV_ITEMS, isNavActive } from '@/components/navigation';
 import { useData } from '@/data/DataProvider';
 import { countActiveFilters } from '@/lib/filters';
@@ -65,17 +65,17 @@ export function AppHeader({ filtersOpen, onToggleFilters }: Props) {
             const active = isNavActive(item, pathname);
             return (
               <li key={item.to}>
-                <FilterLink
-                  to={item.to}
-                  nav
-                  end={item.to === '/'}
-                  isActive={active}
+                {/* Lien simple : `aria-current` ne vient que de `isNavActive` (un `NavLink` le recalculerait). */}
+                <Anchor
+                  component={Link}
+                  to={{ pathname: item.to, search }}
+                  aria-current={active ? 'page' : undefined}
                   underline="never"
                   className="sr-nav-link"
                   size="sm"
                 >
                   {item.label}
-                </FilterLink>
+                </Anchor>
               </li>
             );
           })}

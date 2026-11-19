@@ -58,7 +58,6 @@ export function CareerSection({ flights }: { flights: readonly Flight[] }) {
       legend: { show: false },
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'shadow' },
         valueFormatter: (v) => (typeof v === 'number' ? fmtValue(v) : String(v ?? '')),
       },
       xAxis: { type: 'category', data: labels },

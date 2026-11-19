@@ -47,7 +47,14 @@ const me = { pilot: 'Tof Torsac', pilotSlug: 'tof' };
 const many = (n: number, over: Parameters<typeof makeFlight>[1]) =>
   Array.from({ length: n }, (_, i) => makeFlight(`2025-0${(i % 9) + 1}-10`, { ...me, ...over }));
 const flights = [
-  makeFlight('2024-05-01', { ...me, durationMin: 90, ceilingM: 1800, wing: 'daytona', siteId: 0, site: 'Site A' }),
+  makeFlight('2024-05-01', {
+    ...me,
+    durationMin: 90,
+    ceilingM: 1800,
+    wing: 'daytona',
+    siteId: 0,
+    site: 'Site A',
+  }),
   ...many(10, { siteId: 0, site: 'Site A', wing: 'daytona', durationMin: 40, ceilingM: 900 }),
   ...many(10, { siteId: 1, site: 'Site B', wing: 'leaf', durationMin: 20, ceilingM: 500 }),
 ];
@@ -117,12 +124,23 @@ describe('composants pilote', () => {
     expect(screen.getByTestId('sites-map')).toBeInTheDocument();
   });
 
-  it('SitesFaceToFace : deux sites éligibles, sinon message sobre', () => {
+  it('SitesFaceToFace : tous les sites sans seuil, sinon message sobre', () => {
     renderUi(<SitesFaceToFace pilot="Tof Torsac" flights={flights} />);
     expect(screen.getByTestId('pilot-site-strips')).toBeInTheDocument();
+    expect(screen.getByTestId('strip-legend')).toHaveTextContent('moyenne');
     cleanup();
-    renderUi(<SitesFaceToFace pilot="Tof Torsac" flights={flights.slice(0, 12)} />);
+    // Un seul site : message sobre.
+    renderUi(<SitesFaceToFace pilot="Tof Torsac" flights={flights.filter((f) => f.siteId === 0)} />);
     expect(screen.getByTestId('sites-face-empty')).toHaveTextContent('Moins de deux sites');
+  });
+
+  it('SitesFaceToFace : un site de 1 vol est comparé et signalé « peu de vols »', () => {
+    const few = [...flights.filter((f) => f.siteId === 0), flights.find((f) => f.siteId === 1)!];
+    renderUi(<SitesFaceToFace pilot="Tof Torsac" flights={few} />);
+    expect(screen.getByTestId('pilot-site-strips')).toBeInTheDocument();
+    expect(screen.queryByTestId('sites-face-empty')).toBeNull();
+    // Le site proposé en premier est le plus volé ; le site d'un vol est dans la liste avec sa note.
+    expect(screen.getByTestId('face-select')).toBeInTheDocument();
   });
 
   it('WingTimeline : une ligne par voile, vide sans voile', () => {

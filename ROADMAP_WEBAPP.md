@@ -795,11 +795,10 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
   - le **ruban voile × mois** (`WingRibbon`) et la **frise des voiles** (`WingTimeline`).
 
   La cellule survolée reçoit un contour. Les attributs `title` natifs éventuels sont retirés pour éviter une double bulle.
-- **5C.8 Le calendrier « ne comporte que peu de jours ».** Le calendrier montre **une seule année** : la plus récente de la sélection, choisie dans un sélecteur, et estompée au-delà de la date des données. Avec les filtres par défaut, c'est donc 2026, arrêtée au dernier vol. À confirmer avec Adrien au début de la phase sur une capture, puis :
-  - afficher clairement l'année montrée et le sélecteur d'année à côté du titre ;
-  - option « 12 derniers mois » glissants, qui devient le défaut quand l'année en cours a moins de 6 mois écoulés ;
-  - agrandir les cases à large écran (le calendrier doit occuper la largeur de la carte, avec des cases ≥ 12 px) ;
-  - si le problème est autre (peu de jours colorés, par exemple), le diagnostiquer avant de corriger.
+- **5C.8 Les matrices et le calendrier « ne comportent que peu de jours ».** Diagnostic confirmé par Adrien le 19/11/2026 sur une capture de la page site (Saisonnalité d'un site de 44 vols) : la plage horaire se réduit aux heures volées (`hoursWindow`, ici 12 h à 19 h) et les cases gardent une taille fixe, si bien que la matrice n'occupe qu'un coin de la carte. Le constat porte sur les pages pilote et site, peu fournies. Surtout, Adrien a lu les colonnes 12 à 19 comme des **jours du mois**, et non comme des heures de décollage : les axes ne sont pas assez explicites. Corrections :
+  - **axes nommés** sur toutes les matrices à heures : « Heure de décollage » au-dessus des colonnes, « Mois » ou « Jour » pour les lignes, en-têtes « 8 h », « 9 h »…, infobulle « Août, entre 14 h et 15 h : 3 vols » ;
+  - **matrices** mois × heure (`SiteSeasonality`) et jour × heure (`WeekHourMatrix`, `BilanWhen`) : plage horaire **fixe de 8 h à 20 h**, élargie seulement si des vols en sortent, pour que toutes les pages aient la même grille ; le tableau **occupe la largeur de la carte** (cases ≥ 12 px, hauteur plafonnée), défilement horizontal conservé sous 360 px ;
+  - **calendrier** (`CalendarHeatmap`) : il occupe la largeur de la carte (cases ≥ 12 px) ; l'année montrée et son sélecteur sont visibles à côté du titre ; option « 12 derniers mois » glissants, qui devient le défaut quand l'année en cours a moins de 6 mois écoulés.
 - **5C.9 Légende des haltères.** Dans Comparer, section « Métrique par métrique », et dans le Bilan (`BilanComparison`), le composant `common/Dumbbell` affiche une **légende** au-dessus des lignes : symbole (disque, carré, anneau), couleur et motif de chaque série, avec son nom (pilote, année ou site). Une infobulle au survol d'un point donne la série et la valeur. « Ses sites face à face » et « Ce site face aux autres » reçoivent aussi une **légende** et une **infobulle** sur les barres et les points : la barre est l'étendue min–max des sites, le point la valeur du site, le trait la moyenne.
 
 **Fin de phase**
@@ -1023,17 +1022,18 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 - [x] PR relue et fusionnée · **`/clear`**
 
 ### Phase 5C : Retours de recette
-- [ ] 5C.1 Menu actif sur les pages de détail (vol, site, pilote, bilan)
-- [ ] 5C.2 Fil d'Ariane, bouton « ← Retour » et Échap sur les fiches vol et site, la page pilote et le Bilan
-- [ ] 5C.3 Bouton « Voir le bilan » sur la page pilote
-- [ ] 5C.4 Filtre multi-années (D19)
-- [ ] 5C.5 « Ses sites face à face » sans seuil de 10 vols (D20)
-- [ ] 5C.6 Plus de cadre gris qui masque les barres au survol
-- [ ] 5C.7 Infobulle sur tous les calendriers et toutes les matrices
-- [ ] 5C.8 Calendrier : diagnostic « peu de jours », année affichée, 12 derniers mois, taille des cases
-- [ ] 5C.9 Légende et infobulles des haltères et des « face à face »
-- [ ] 5C.10 Tests, contrôle visuel, `/code-review medium`
+- [x] 5C.1 Menu actif sur les pages de détail (vol, site, pilote, bilan)
+- [x] 5C.2 Fil d'Ariane, bouton « ← Retour » et Échap sur les fiches vol et site, la page pilote et le Bilan
+- [x] 5C.3 Bouton « Voir le bilan » sur la page pilote
+- [x] 5C.4 Filtre multi-années (D19)
+- [x] 5C.5 « Ses sites face à face » sans seuil de 10 vols (D20)
+- [x] 5C.6 Plus de cadre gris qui masque les barres au survol
+- [x] 5C.7 Infobulle sur tous les calendriers et toutes les matrices
+- [x] 5C.8 Matrices et calendrier pleine largeur, plage horaire fixe 8 h à 20 h, 12 derniers mois (diagnostic confirmé le 19/11/2026)
+- [x] 5C.9 Légende et infobulles des haltères et des « face à face »
+- [x] 5C.10 Tests, contrôle visuel, `/code-review medium`
 - [ ] Revue par Adrien, PR relue et fusionnée · **`/clear`**
+- [ ] Revue par Adrien, puis fusion dans `main`
 
 ### Phase 6 : Finitions
 - [ ] 6.1 Découpage du code, imports à la carte

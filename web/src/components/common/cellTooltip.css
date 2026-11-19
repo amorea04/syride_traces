@@ -1,0 +1,28 @@
+/* Infobulle commune des grilles (calendrier, matrices, ruban, frise, haltères) : jetons --sr-* uniquement. */
+.sr-tip {
+  position: fixed;
+  z-index: 1000;
+  max-width: min(280px, calc(100vw - 12px));
+  padding: 7px 10px;
+  background: var(--sr-surface);
+  color: var(--sr-text);
+  border: 1px solid var(--sr-line);
+  border-radius: var(--sr-radius-md);
+  font-size: var(--sr-text-sm);
+  line-height: 1.35;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.sr-tip-title {
+  font-weight: 650;
+}
+.sr-tip-hint {
+  margin-top: 3px;
+  font-size: var(--sr-text-xs);
+  color: var(--sr-muted);
+}
+/* Case désignée : contour net. */
+[data-tip-on='true'] {
+  outline: 2px solid var(--sr-text);
+  outline-offset: 1px;
+}

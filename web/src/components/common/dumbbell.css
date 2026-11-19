@@ -1,11 +1,11 @@
 /* Haltères (composant générique) : jetons --sr-* uniquement. */
-.sr-db {
+.sr-db-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px 36px;
 }
 @media (max-width: 48em) {
-  .sr-db {
+  .sr-db-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -64,13 +64,33 @@
 .sr-db-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
+  gap: 6px 18px;
+  align-items: center;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
   font-size: 13px;
-  color: var(--sr-muted);
-  margin-top: 14px;
 }
-.sr-db-legend span {
+.sr-db-legend li {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+}
+.sr-db-pattern {
+  display: inline-block;
+  width: 22px;
+  border-top: 2px solid;
+}
+.sr-db-legend-note {
+  color: var(--sr-muted);
+}
+.sr-db-legend-bar {
+  display: inline-block;
+  width: 22px;
+  border-top: 3px solid var(--sr-muted);
+  opacity: 0.55;
+}
+.sr-db-dot[data-tip] {
+  cursor: default;
 }

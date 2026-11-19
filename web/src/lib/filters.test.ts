@@ -8,17 +8,21 @@ import {
   countActiveFilters,
   defaultFilters,
   filtersEqual,
+  flightMatches,
   hasFilterParams,
   historyModeFor,
   isDefaultFilters,
   lastTwelveMonths,
   parseFilters,
+  resolveUrlFilters,
   parseIsoDate,
   periodShortcuts,
   thisYear,
   todayIso,
+  sortYears,
   writeFilters,
   yearPeriod,
+  yearsContiguous,
   type Filters,
 } from '@/lib/filters';
 import { fixtureFlights } from '../../tests/fixtures';
@@ -284,6 +288,7 @@ describe('query string', () => {
     dateTo: '2024-12-31',
     wings: ['Ozone Rush 6', 'A, B & C'],
     sites: [12, 7],
+    years: [2023, 2025],
   };
 
   it('défauts absents de l’URL', () => {
@@ -310,6 +315,7 @@ describe('query string', () => {
       { dateTo: '2020-02-29' },
       { wings: ['é/è?&=#'] },
       { sites: [0] },
+      { years: [2021, 2025] },
     ];
     for (const c of cases) expect(parseFilters(writeFilters('', f(c)))).toEqual(f(c));
   });
@@ -330,6 +336,17 @@ describe('query string', () => {
     expect(parseIsoDate('2024-1-1')).toBeNull();
     expect(parseIsoDate(null)).toBeNull();
   });
+  it('années : paramètre annees lisible, trié, valeurs invalides ignorées', () => {
+    expect(writeFilters('', f({ years: [2025, 2023] }))).toBe('?annees=2023,2025');
+    expect(parseFilters('?annees=2025,2023,2025,abc,99').years).toEqual([2023, 2025]);
+    expect(parseFilters('?annees=2024&annees=2022').years).toEqual([2022, 2024]);
+    expect(parseFilters('?annees=').years).toEqual([]);
+  });
+  it('résolution d’URL : années invalides = valeur courante, absentes = défaut', () => {
+    expect(resolveUrlFilters('?annees=xx', f({ years: [2024] })).years).toEqual([2024]);
+    expect(resolveUrlFilters('?site=1', f({ years: [2024] })).years).toEqual([]);
+    expect(resolveUrlFilters('?annees=2022', f({ years: [2024] })).years).toEqual([2022]);
+  });
   it('détecte la présence de paramètres de filtre', () => {
     expect(hasFilterParams('?x=1')).toBe(false);
     expect(hasFilterParams('?site=1')).toBe(true);
@@ -338,6 +355,41 @@ describe('query string', () => {
   it('filtersEqual compare en profondeur', () => {
     expect(filtersEqual(full, { ...full, pilots: [...full.pilots] })).toBe(true);
     expect(filtersEqual(full, { ...full, sites: [7, 12] })).toBe(false);
+  });
+});
+
+describe('filtre par années', () => {
+  const flights = [
+    flight({ date: '2022-05-01' }),
+    flight({ date: '2023-05-01' }),
+    flight({ date: '2024-05-01' }),
+    flight({ date: '2025-05-01' }),
+    flight({ date: '2025-11-01' }),
+  ];
+  it('garde les vols des années cochées, non contiguës comprises', () => {
+    const out = applyFilters(flights, f({ years: [2025, 2023] }));
+    expect(out.map((x) => x.date)).toEqual(['2023-05-01', '2025-05-01', '2025-11-01']);
+  });
+  it('se combine avec la période (intersection)', () => {
+    const out = applyFilters(flights, f({ years: [2025, 2023], dateFrom: '2025-06-01' }));
+    expect(out.map((x) => x.date)).toEqual(['2025-11-01']);
+    expect(applyFilters(flights, f({ years: [2022], dateFrom: '2025-06-01' }))).toHaveLength(0);
+  });
+  it('la dimension « period » omise ignore aussi les années', () => {
+    expect(flightMatches(flights[0]!, f({ years: [2025] }), 'period')).toBe(true);
+    expect(flightMatches(flights[0]!, f({ years: [2025] }))).toBe(false);
+  });
+  it('compte une dimension active, distincte de la période', () => {
+    expect(countActiveFilters(f({ years: [2024] }))).toBe(1);
+    expect(countActiveFilters(f({ years: [2024], dateFrom: '2024-01-01' }))).toBe(2);
+    expect(isDefaultFilters(f({ years: [2024] }))).toBe(false);
+  });
+  it('trie les années et détecte la contiguïté', () => {
+    expect(sortYears([2025, 2023, 2025])).toEqual([2023, 2025]);
+    expect(yearsContiguous([])).toBe(true);
+    expect(yearsContiguous([2024])).toBe(true);
+    expect(yearsContiguous([2025, 2024])).toBe(true);
+    expect(yearsContiguous([2023, 2025])).toBe(false);
   });
 });
 

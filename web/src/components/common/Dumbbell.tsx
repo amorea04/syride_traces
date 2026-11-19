@@ -1,5 +1,7 @@
 import { Button, ScrollArea, Table } from '@mantine/core';
-import { useId, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
+import { CellTooltip } from '@/components/common/CellTooltip';
+import { dumbbellPointTip } from '@/lib/cellTips';
 import '@/components/common/dumbbell.css';
 
 export type DumbbellShape = 'circle' | 'square' | 'diamond' | 'triangle';
@@ -11,6 +13,8 @@ export interface DumbbellSeries {
   color: string;
   /** Forme du point : doublure de la couleur pour le daltonisme. */
   shape: DumbbellShape;
+  /** Motif de trait de la série (tirets d'ECharts, `null` = plein) ; absent : aucun motif à montrer dans la légende. */
+  dash?: number[] | null;
 }
 
 export interface DumbbellRow {
@@ -41,6 +45,12 @@ export function dumbbellRange(values: readonly (number | null)[]): { min: number
   return present.length === 0 ? null : { min: Math.min(...present), max: Math.max(...present) };
 }
 
+/** Style de trait CSS d'un motif de tirets. */
+function dashStyle(dash: number[] | null): 'solid' | 'dotted' | 'dashed' {
+  if (dash === null) return 'solid';
+  return (dash[0] ?? 0) <= 2 ? 'dotted' : 'dashed';
+}
+
 export function Marker({ shape, color, size = 14 }: { shape: DumbbellShape; color: string; size?: number }) {
   const s = size;
   const h = s / 2;
@@ -48,8 +58,12 @@ export function Marker({ shape, color, size = 14 }: { shape: DumbbellShape; colo
     <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} aria-hidden="true" style={{ flex: 'none' }}>
       {shape === 'circle' && <circle cx={h} cy={h} r={h - 1} fill={color} />}
       {shape === 'square' && <rect x={1.5} y={1.5} width={s - 3} height={s - 3} rx={1.5} fill={color} />}
-      {shape === 'diamond' && <polygon points={`${h},0.5 ${s - 0.5},${h} ${h},${s - 0.5} 0.5,${h}`} fill={color} />}
-      {shape === 'triangle' && <polygon points={`${h},1 ${s - 0.5},${s - 1.5} 0.5,${s - 1.5}`} fill={color} />}
+      {shape === 'diamond' && (
+        <polygon points={`${h},0.5 ${s - 0.5},${h} ${h},${s - 0.5} 0.5,${h}`} fill={color} />
+      )}
+      {shape === 'triangle' && (
+        <polygon points={`${h},1 ${s - 0.5},${s - 1.5} 0.5,${s - 1.5}`} fill={color} />
+      )}
     </svg>
   );
 }
@@ -62,8 +76,39 @@ export function Marker({ shape, color, size = 14 }: { shape: DumbbellShape; colo
 export function Dumbbell({ series, rows, ariaLabel, testId }: Props) {
   const [showTable, setShowTable] = useState(false);
   const tableId = useId();
+  const resolve = useCallback(
+    (el: HTMLElement) => {
+      const row = rows[Number(el.dataset['row'])];
+      const i = Number(el.dataset['series']);
+      const s = series[i];
+      const v = row?.values[i] ?? null;
+      return row && s && v !== null ? dumbbellPointTip(s.label, row.label, row.format(v)) : null;
+    },
+    [rows, series],
+  );
   return (
     <div data-testid={testId}>
+      {!showTable && series.length > 0 && (
+        <ul className="sr-db-legend" aria-label="Légende" data-testid="dumbbell-legend">
+          {series.map((s) => (
+            <li key={s.id}>
+              <Marker shape={s.shape} color={s.color} size={14} />
+              {s.dash !== undefined && (
+                <i
+                  className="sr-db-pattern"
+                  style={{ borderTopColor: s.color, borderTopStyle: dashStyle(s.dash) }}
+                  aria-hidden="true"
+                />
+              )}
+              <span>{s.label}</span>
+            </li>
+          ))}
+          <li className="sr-db-legend-note">
+            <i className="sr-db-legend-bar" aria-hidden="true" />
+            <span>étendue des valeurs de la ligne</span>
+          </li>
+        </ul>
+      )}
       {showTable ? (
         <ScrollArea.Autosize id={tableId} mah={420}>
           <Table striped fz="sm" className="sr-tabular">
@@ -95,61 +140,65 @@ export function Dumbbell({ series, rows, ariaLabel, testId }: Props) {
           </Table>
         </ScrollArea.Autosize>
       ) : (
-        <div className="sr-db" role="group" aria-label={ariaLabel}>
-          {rows.map((r) => {
-            const range = dumbbellRange(r.values);
-            const spoken = series
-              .map((s, i) => {
-                const v = r.values[i] ?? null;
-                return `${s.label} ${v === null ? 'sans mesure' : r.format(v)}`;
-              })
-              .join(', ');
-            return (
-              <div key={r.id} data-metric={r.id}>
-                <div className="sr-db-title">{r.label}</div>
-                <div className="sr-db-track" role="img" aria-label={`${r.label} : ${spoken}`}>
-                  <span className="sr-db-rail" />
-                  {range && (
-                    <span
-                      className="sr-db-bar"
-                      style={{
-                        left: `${dumbbellPosition(range.min, range.min, range.max)}%`,
-                        width: `${dumbbellPosition(range.max, range.min, range.max) - dumbbellPosition(range.min, range.min, range.max)}%`,
-                      }}
-                    />
-                  )}
-                  {range &&
-                    series.map((s, i) => {
+        <CellTooltip resolve={resolve} className="sr-db">
+          <div className="sr-db-grid" role="group" aria-label={ariaLabel}>
+            {rows.map((r, ri) => {
+              const range = dumbbellRange(r.values);
+              const spoken = series
+                .map((s, i) => {
+                  const v = r.values[i] ?? null;
+                  return `${s.label} ${v === null ? 'sans mesure' : r.format(v)}`;
+                })
+                .join(', ');
+              return (
+                <div key={r.id} data-metric={r.id}>
+                  <div className="sr-db-title">{r.label}</div>
+                  <div className="sr-db-track" role="img" aria-label={`${r.label} : ${spoken}`}>
+                    <span className="sr-db-rail" />
+                    {range && (
+                      <span
+                        className="sr-db-bar"
+                        style={{
+                          left: `${dumbbellPosition(range.min, range.min, range.max)}%`,
+                          width: `${dumbbellPosition(range.max, range.min, range.max) - dumbbellPosition(range.min, range.min, range.max)}%`,
+                        }}
+                      />
+                    )}
+                    {range &&
+                      series.map((s, i) => {
+                        const v = r.values[i] ?? null;
+                        if (v === null) return null;
+                        return (
+                          <span
+                            key={s.id}
+                            className="sr-db-dot"
+                            style={{ left: `${dumbbellPosition(v, range.min, range.max)}%` }}
+                            data-tip={`${ri}-${i}`}
+                            data-row={ri}
+                            data-series={i}
+                          >
+                            <Marker shape={s.shape} color={s.color} size={16} />
+                          </span>
+                        );
+                      })}
+                  </div>
+                  <div className="sr-db-vals">
+                    {series.map((s, i) => {
                       const v = r.values[i] ?? null;
-                      if (v === null) return null;
                       return (
-                        <span
-                          key={s.id}
-                          className="sr-db-dot"
-                          style={{ left: `${dumbbellPosition(v, range.min, range.max)}%` }}
-                          title={`${s.label} : ${r.format(v)}`}
-                        >
-                          <Marker shape={s.shape} color={s.color} size={16} />
+                        <span key={s.id} aria-hidden="true">
+                          <Marker shape={s.shape} color={s.color} size={10} />
+                          <span className="sr-db-name">{s.label}</span>
+                          <b>{v === null ? '–' : r.format(v)}</b>
                         </span>
                       );
                     })}
+                  </div>
                 </div>
-                <div className="sr-db-vals">
-                  {series.map((s, i) => {
-                    const v = r.values[i] ?? null;
-                    return (
-                      <span key={s.id} aria-hidden="true">
-                        <Marker shape={s.shape} color={s.color} size={10} />
-                        <span className="sr-db-name">{s.label}</span>
-                        <b>{v === null ? '–' : r.format(v)}</b>
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </CellTooltip>
       )}
       <Button
         variant="subtle"

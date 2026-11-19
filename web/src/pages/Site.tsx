@@ -1,6 +1,7 @@
 import { Stack, Text, Title } from '@mantine/core';
 import { useMemo } from 'react';
 import { useParams } from 'react-router';
+import { DetailNav } from '@/components/common/DetailNav';
 import { Section } from '@/components/common/Section';
 import { EmptyNote } from '@/components/dashboard/shared';
 import { FilterLink } from '@/components/FilterLink';
@@ -58,6 +59,7 @@ export function Site() {
 
   return (
     <Stack key={site.id} gap={28} data-testid="site-page" data-site-id={site.id}>
+      <DetailNav crumbs={[{ label: 'Sites', to: '/sites' }, { label: site.name }]} />
       <SiteHeader site={site} flights={siteFlights} />
       {siteFlights.length === 0 ? (
         <Section id="aucun-vol" title="Vols sur ce site">

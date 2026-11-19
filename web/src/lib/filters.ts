@@ -19,6 +19,8 @@ export interface Filters {
   wings: string[];
   /** Identifiants de sites ; vide = tous. */
   sites: number[];
+  /** Années civiles cochées (ordre croissant, sans doublon) ; vide = toutes. Se combine avec la période. */
+  years: number[];
 }
 
 export const ACTIVITY_VALUES: readonly ActivityFilter[] = ['tout', 'parapente', 'paramoteur'];
@@ -30,10 +32,11 @@ export const DEFAULT_FILTERS: Readonly<Filters> = Object.freeze({
   dateTo: null,
   wings: [],
   sites: [],
+  years: [],
 });
 
 export function defaultFilters(): Filters {
-  return { pilots: [], activity: 'tout', dateFrom: null, dateTo: null, wings: [], sites: [] };
+  return { pilots: [], activity: 'tout', dateFrom: null, dateTo: null, wings: [], sites: [], years: [] };
 }
 
 export function filtersEqual(a: Filters, b: Filters): boolean {
@@ -45,7 +48,8 @@ export function filtersEqual(a: Filters, b: Filters): boolean {
     a.dateTo === b.dateTo &&
     same(a.pilots, b.pilots) &&
     same(a.wings, b.wings) &&
-    same(a.sites, b.sites)
+    same(a.sites, b.sites) &&
+    same(a.years, b.years)
   );
 }
 
@@ -53,17 +57,19 @@ export function isDefaultFilters(filters: Filters): boolean {
   return filtersEqual(filters, DEFAULT_FILTERS);
 }
 
-/** Nombre de dimensions filtrées (la période compte pour une). */
+/** Nombre de dimensions filtrées (la période compte pour une, les années pour une autre). */
 export function countActiveFilters(filters: Filters): number {
   return (
     (filters.pilots.length > 0 ? 1 : 0) +
     (filters.activity !== 'tout' ? 1 : 0) +
     (filters.dateFrom !== null || filters.dateTo !== null ? 1 : 0) +
     (filters.wings.length > 0 ? 1 : 0) +
-    (filters.sites.length > 0 ? 1 : 0)
+    (filters.sites.length > 0 ? 1 : 0) +
+    (filters.years.length > 0 ? 1 : 0)
   );
 }
 
+/** La dimension `period` regroupe la période Du / Au et les années cochées. */
 export type FilterDimension = 'pilots' | 'activity' | 'period' | 'wings' | 'sites';
 
 /** Vrai si le vol passe tous les filtres, sauf ceux de la dimension `omit`. */
@@ -75,6 +81,7 @@ export function flightMatches(flight: Flight, filters: Filters, omit?: FilterDim
     return false;
   }
   if (omit !== 'period') {
+    if (filters.years.length > 0 && !filters.years.includes(flight.year)) return false;
     if (filters.dateFrom !== null && flight.date < filters.dateFrom) return false;
     if (filters.dateTo !== null && flight.date > filters.dateTo) return false;
   }
@@ -272,6 +279,7 @@ export const PARAM = {
   dateTo: 'au',
   wings: 'voile',
   sites: 'site',
+  years: 'annees',
 } as const;
 
 const FILTER_PARAM_NAMES: readonly string[] = Object.values(PARAM);
@@ -290,6 +298,28 @@ export function parseIsoDate(value: string | null): string | null {
 
 const unique = <T>(values: T[]): T[] => [...new Set(values)];
 
+/** Années du paramètre `annees` (« 2025,2023 » ou paramètre répété) : 4 chiffres, uniques, ordre croissant. */
+function parseYears(params: URLSearchParams): number[] {
+  const years = params
+    .getAll(PARAM.years)
+    .flatMap((v) => v.split(','))
+    .map((v) => v.trim())
+    .filter((v) => /^\d{4}$/.test(v))
+    .map(Number);
+  return sortYears(years);
+}
+
+/** Années uniques, de la plus ancienne à la plus récente. */
+export function sortYears(years: readonly number[]): number[] {
+  return [...new Set(years)].sort((a, b) => a - b);
+}
+
+/** Vrai si les années forment une suite sans trou (2023, 2024, 2025). Vide ou unique : vrai. */
+export function yearsContiguous(years: readonly number[]): boolean {
+  const sorted = sortYears(years);
+  return sorted.every((y, i) => i === 0 || y === (sorted[i - 1] ?? 0) + 1);
+}
+
 /** Lit les filtres d'une query string (avec ou sans « ? ») ; tout ce qui est invalide est ignoré. */
 export function parseFilters(search: string): Filters {
   const params = new URLSearchParams(search);
@@ -305,6 +335,7 @@ export function parseFilters(search: string): Filters {
     dateTo: parseIsoDate(params.get(PARAM.dateTo)),
     wings: unique(params.getAll(PARAM.wings).filter((s) => s !== '')),
     sites: unique(sites),
+    years: parseYears(params),
   };
 }
 
@@ -328,6 +359,7 @@ export function resolveUrlFilters(search: string, current: Filters): Filters {
     dateTo: has(PARAM.dateTo) && parsed.dateTo === null ? current.dateTo : parsed.dateTo,
     wings: has(PARAM.wings) && parsed.wings.length === 0 ? current.wings : parsed.wings,
     sites: has(PARAM.sites) && parsed.sites.length === 0 ? current.sites : parsed.sites,
+    years: has(PARAM.years) && parsed.years.length === 0 ? current.years : parsed.years,
   };
 }
 
@@ -352,8 +384,9 @@ export function writeFilters(search: string, filters: Filters): string {
   if (filters.dateTo !== null) next.append(PARAM.dateTo, filters.dateTo);
   for (const wing of filters.wings) next.append(PARAM.wings, wing);
   for (const id of filters.sites) next.append(PARAM.sites, String(id));
+  if (filters.years.length > 0) next.append(PARAM.years, sortYears(filters.years).join(','));
   for (const [k, v] of params) next.append(k, v);
-  const text = next.toString();
+  const text = next.toString().replace(/%2C/g, ',');
   return text === '' ? '' : `?${text}`;
 }
 

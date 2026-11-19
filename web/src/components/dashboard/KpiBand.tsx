@@ -30,36 +30,58 @@ const DELTA_KIND: Record<KpiId, KpiDelta['kind']> = {
 
 /**
  * Vue d'ensemble : six chiffres clés de la sélection. Une variation par rapport à la période
- * précédente équivalente (même durée juste avant) n'apparaît que si une période est filtrée.
+ * précédente équivalente (même durée juste avant) n'apparaît que si une période ou une année est filtrée
+ * (masquée pour des années non contiguës).
  */
 export function KpiBand({ flights, allFlights, filters, today }: Props) {
   const band = useMemo(
     () => kpiBand(allFlights, flights, filters, today),
     [allFlights, flights, filters, today],
   );
-  const { current, deltas, previousPeriod } = band;
+  const { current, deltas, previousPeriod, comparisonKind } = band;
   const delta = (id: KpiId): KpiDelta | undefined =>
     deltas ? { value: deltas[id], kind: DELTA_KIND[id] } : undefined;
   const empty = current.flights === 0;
+  const deltaLabel = comparisonKind === 'annee' ? 'vs année précédente' : 'vs période précédente';
   const subtitle = previousPeriod
-    ? `Variation par rapport à la période précédente équivalente, du ${fmtDate(previousPeriod.from, { withYear: true })} au ${fmtDate(previousPeriod.to, { withYear: true })}.`
+    ? `Variation par rapport ${comparisonKind === 'annee' ? 'à l’année précédente' : 'à la période précédente équivalente'}, du ${fmtDate(previousPeriod.from, { withYear: true })} au ${fmtDate(previousPeriod.to, { withYear: true })}.`
     : undefined;
   return (
     <Section id="vue-ensemble" title="Vue d’ensemble" subtitle={subtitle}>
       <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} spacing="lg" verticalSpacing="md">
-        <KpiCard label="Vols" value={fmtInt(current.flights)} delta={delta('vols')} testId="kpi-vols" />
+        <KpiCard
+          label="Vols"
+          value={fmtInt(current.flights)}
+          delta={delta('vols')}
+          deltaLabel={deltaLabel}
+          testId="kpi-vols"
+        />
         <KpiCard
           label="Heures de vol"
           value={fmtHm(current.minutes)}
           delta={delta('heures')}
+          deltaLabel={deltaLabel}
           testId="kpi-heures"
         />
-        <KpiCard label="Sites" value={fmtInt(current.sites)} delta={delta('sites')} testId="kpi-sites" />
-        <KpiCard label="Pilotes" value={fmtInt(current.pilots)} delta={delta('pilotes')} testId="kpi-pilotes" />
+        <KpiCard
+          label="Sites"
+          value={fmtInt(current.sites)}
+          delta={delta('sites')}
+          deltaLabel={deltaLabel}
+          testId="kpi-sites"
+        />
+        <KpiCard
+          label="Pilotes"
+          value={fmtInt(current.pilots)}
+          delta={delta('pilotes')}
+          deltaLabel={deltaLabel}
+          testId="kpi-pilotes"
+        />
         <KpiCard
           label="Distance cumulée"
           value={current.distanceKm === null ? EMPTY : `${fmtInt(current.distanceKm)}${NBSP}km`}
           delta={delta('distance')}
+          deltaLabel={deltaLabel}
           testId="kpi-distance"
         />
         <KpiCard
@@ -74,6 +96,7 @@ export function KpiBand({ flights, allFlights, filters, today }: Props) {
             )
           }
           delta={delta('plafond')}
+          deltaLabel={deltaLabel}
           testId="kpi-plafond"
         />
       </SimpleGrid>

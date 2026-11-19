@@ -74,6 +74,85 @@ export function yearGrid(year: number): { cells: GridCell[]; columns: number; mo
   return { cells, columns, monthColumns };
 }
 
+// ---------------------------------------------------------------------------
+// Calendrier sur 12 mois glissants (5C.8)
+// ---------------------------------------------------------------------------
+
+/** Dernier jour affiché moins 364 jours : 53 semaines au plus, comme la grille annuelle. */
+export function rollingStart(end: string): string {
+  return isoOfEpochDay(epochDay(end) - 364);
+}
+
+export interface AxisMonth {
+  col: number;
+  /** 0 = janvier. */
+  month: number;
+  year: number;
+}
+
+/** Les 365 jours jusqu'à `end` (inclus) dans la grille « semaines en colonnes » et les colonnes des débuts de mois. */
+export function rollingGrid(end: string): {
+  cells: GridCell[];
+  columns: number;
+  months: AxisMonth[];
+  start: string;
+} {
+  const first = epochDay(end) - 364;
+  const last = epochDay(end);
+  const origin = mondayOfEpochDay(first);
+  const cells: GridCell[] = [];
+  const months: AxisMonth[] = [];
+  for (let d = first; d <= last; d += 1) {
+    const iso = isoOfEpochDay(d);
+    const col = Math.floor((d - origin) / 7);
+    cells.push({ iso, col, row: d - mondayOfEpochDay(d) });
+    const dayOfMonth = Number(iso.slice(8, 10));
+    // Étiquette de mois sur la colonne du 1er du mois, sauf si elle serait collée à la précédente.
+    if (dayOfMonth === 1) {
+      const prev = months[months.length - 1];
+      if (!prev || col - prev.col >= 3)
+        months.push({ col, month: Number(iso.slice(5, 7)) - 1, year: Number(iso.slice(0, 4)) });
+    }
+  }
+  return { cells, columns: (cells[cells.length - 1]?.col ?? 0) + 1, months, start: isoOfEpochDay(first) };
+}
+
+/** Les 12 mois (année, mois 1–12) se terminant au mois de `end`, du plus ancien au plus récent. */
+export function rollingMonths(end: string): { year: number; month: number }[] {
+  const y = Number(end.slice(0, 4));
+  const m = Number(end.slice(5, 7));
+  return Array.from({ length: 12 }, (_, i) => {
+    const k = y * 12 + (m - 1) - 11 + i;
+    return { year: Math.floor(k / 12), month: (k % 12) + 1 };
+  });
+}
+
+/** Les mois touchés par les 365 jours jusqu'à `end` (le premier est souvent partiel), du plus ancien au plus récent. */
+export function rollingWindowMonths(end: string): { year: number; month: number }[] {
+  const start = rollingStart(end);
+  const first = Number(start.slice(0, 4)) * 12 + Number(start.slice(5, 7)) - 1;
+  const last = Number(end.slice(0, 4)) * 12 + Number(end.slice(5, 7)) - 1;
+  return Array.from({ length: last - first + 1 }, (_, i) => {
+    const k = first + i;
+    return { year: Math.floor(k / 12), month: (k % 12) + 1 };
+  });
+}
+
+export type CalendarView = { kind: 'rolling' } | { kind: 'year'; year: number };
+
+/**
+ * Vue par défaut du calendrier : les 12 derniers mois quand l'année la plus récente est l'année de référence
+ * et que moins de 6 mois s'en sont écoulés (date de référence = date des données, jamais l'horloge), sinon cette année.
+ */
+export function defaultCalendarView(latestYear: number | null, reference: string): CalendarView | null {
+  if (latestYear === null) return null;
+  if (latestYear === Number(reference.slice(0, 4))) {
+    const elapsed = epochDay(reference) - epochDay(`${latestYear}-01-01`) + 1;
+    if (elapsed < 183) return { kind: 'rolling' };
+  }
+  return { kind: 'year', year: latestYear };
+}
+
 /** Les jours d'un mois (1–12) dans une mini-grille : colonne 0 = semaine du 1er du mois. */
 export function monthGrid(year: number, month: number): { cells: GridCell[]; columns: number } {
   const first = epochDay(`${year}-${String(month).padStart(2, '0')}-01`);
@@ -92,7 +171,11 @@ export function dayMap(flights: readonly Flight[]): Map<string, DaySummary> {
 }
 
 /** Jour volé précédent (`-1`) ou suivant (`1`) dans une liste triée de dates ; `null` s'il n'y en a pas. */
-export function neighborFlownDay(sortedDates: readonly string[], iso: string, direction: -1 | 1): string | null {
+export function neighborFlownDay(
+  sortedDates: readonly string[],
+  iso: string,
+  direction: -1 | 1,
+): string | null {
   if (direction === 1) return sortedDates.find((d) => d > iso) ?? null;
   for (let i = sortedDates.length - 1; i >= 0; i -= 1) {
     const d = sortedDates[i] as string;
@@ -108,7 +191,11 @@ export function weekendShareOf(flights: readonly Flight[]): number {
 }
 
 /** Vols par discipline : parts parapente / paramoteur (0 à 1). */
-export function disciplineShares(flights: readonly Flight[]): { parapente: number; paramoteur: number; n: number } {
+export function disciplineShares(flights: readonly Flight[]): {
+  parapente: number;
+  paramoteur: number;
+  n: number;
+} {
   const n = flights.length;
   const m = flights.filter((f) => f.activity === 'paramoteur').length;
   return { parapente: n === 0 ? 0 : (n - m) / n, paramoteur: n === 0 ? 0 : m / n, n };
@@ -129,8 +216,8 @@ export function flightsOfDay(flights: readonly Flight[], iso: string): Flight[] 
 export const MATRIX_LEVEL_SHARES = [0.25, 0.5, 0.75] as const;
 /** Il faut au moins 3 vols dans la cellule maximale pour parler de « créneau favori ». */
 export const MATRIX_FAV_MIN = 3;
-/** Fenêtre d'heures affichée : au moins 8 colonnes. */
-export const MATRIX_MIN_COLS = 8;
+/** Fenêtre d'heures affichée par défaut : de 8 h à 20 h, la même grille sur toutes les pages (5C.8). */
+export const MATRIX_DEFAULT_HOURS: readonly [number, number] = [8, 20];
 
 /** Niveau 1 à 4 d'une cellule non vide ; `peak` = maximum de la matrice. */
 export function matrixLevel(n: number, peak: number): 1 | 2 | 3 | 4 {
@@ -138,15 +225,14 @@ export function matrixLevel(n: number, peak: number): 1 | 2 | 3 | 4 {
   return (1 + MATRIX_LEVEL_SHARES.filter((share) => n / peak > share).length) as 1 | 2 | 3 | 4;
 }
 
-/** Première et dernière heure affichées (port de `hours_window`) : heures utilisées, au moins 8 colonnes ; 8 h–18 h sans vol. */
+/** Première et dernière heure affichées : 8 h à 20 h, élargies seulement si des vols en sortent. */
 export function hoursWindow(counts: readonly (readonly number[])[]): [number, number] {
-  const used: number[] = [];
-  for (let h = 0; h < 24; h += 1) if (counts.some((row) => (row[h] ?? 0) > 0)) used.push(h);
-  let lo = used.length > 0 ? Math.min(...used) : 8;
-  let hi = used.length > 0 ? Math.max(...used) : 18;
-  while (hi - lo < MATRIX_MIN_COLS - 1) {
-    lo = Math.max(lo - 1, 0);
-    hi = Math.min(hi + 1, 23);
+  let [lo, hi] = MATRIX_DEFAULT_HOURS;
+  for (let h = 0; h < 24; h += 1) {
+    if (counts.some((row) => (row[h] ?? 0) > 0)) {
+      lo = Math.min(lo, h);
+      hi = Math.max(hi, h);
+    }
   }
   return [lo, hi];
 }
@@ -325,6 +411,12 @@ export function partialData(flights: readonly Flight[], measure: CoverageKey): P
   }
   const n = flights.length;
   const missingShare = n === 0 ? 0 : missing / n;
-  return { n, missing, missingShare, sources, missingSources, partial: missingShare > COVERAGE_NOTICE_THRESHOLD };
+  return {
+    n,
+    missing,
+    missingShare,
+    sources,
+    missingSources,
+    partial: missingShare > COVERAGE_NOTICE_THRESHOLD,
+  };
 }
-

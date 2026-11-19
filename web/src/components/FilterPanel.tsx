@@ -2,7 +2,6 @@ import {
   Button,
   Group,
   MultiSelect,
-  Select,
   SegmentedControl,
   Stack,
   Text,
@@ -19,7 +18,7 @@ import {
   parseIsoDate,
   periodShortcuts,
   todayIso,
-  yearPeriod,
+  sortYears,
   type ActivityFilter,
   type FilterOption,
 } from '@/lib/filters';
@@ -92,14 +91,15 @@ export function FilterPanel() {
 
   const options = useMemo(() => cascadeOptions(flights, filters), [flights, filters]);
   const years = useMemo(() => availableYears(flights), [flights]);
+  // Une année venue de l'URL mais absente des données reste proposée (donc décochable).
+  const yearOptions = useMemo(
+    () => sortYears([...new Set([...years, ...filters.years])]),
+    [years, filters.years],
+  );
   // Recalculés à chaque rendu (peu coûteux) : la date du jour ne reste pas figée si l'onglet reste ouvert.
   const shortcuts = periodShortcuts(todayIso());
   const current = activeShortcut(filters, shortcuts);
   const hasPeriod = filters.dateFrom !== null || filters.dateTo !== null;
-  const selectedYear = years.find((y) => {
-    const p = yearPeriod(y);
-    return p.dateFrom === filters.dateFrom && p.dateTo === filters.dateTo;
-  });
 
   return (
     <Stack gap="md">
@@ -169,26 +169,12 @@ export function FilterPanel() {
               onClick={() => {
                 // Date relue au clic : l'onglet a pu rester ouvert au-delà de minuit.
                 const fresh = periodShortcuts(todayIso()).find((x) => x.id === s.id) ?? s;
-                setFilters({ dateFrom: fresh.dateFrom, dateTo: fresh.dateTo });
+                setFilters({ dateFrom: fresh.dateFrom, dateTo: fresh.dateTo, years: [] });
               }}
             >
               {s.label}
             </Button>
           ))}
-          <Select
-            size="xs"
-            w={110}
-            aria-label="Année"
-            placeholder="Année…"
-            data={years.map(String)}
-            value={selectedYear === undefined ? null : String(selectedYear)}
-            onChange={(v) => {
-              if (v === null) return;
-              const p = yearPeriod(Number(v));
-              setFilters({ dateFrom: p.dateFrom, dateTo: p.dateTo });
-            }}
-            comboboxProps={{ withinPortal: true }}
-          />
           {hasPeriod && (
             <Button
               size="compact-xs"
@@ -199,6 +185,18 @@ export function FilterPanel() {
             </Button>
           )}
         </Group>
+        <MultiSelect
+          mt="xs"
+          size="xs"
+          aria-label="Années"
+          placeholder={filters.years.length === 0 ? 'Années… (plusieurs possibles)' : undefined}
+          data={yearOptions.map(String)}
+          value={filters.years.map(String)}
+          onChange={(v) => setFilters({ years: sortYears(v.map(Number)), dateFrom: null, dateTo: null })}
+          clearable
+          clearButtonProps={{ 'aria-label': 'Effacer les années' }}
+          comboboxProps={{ withinPortal: true }}
+        />
       </fieldset>
 
       <CountedMultiSelect

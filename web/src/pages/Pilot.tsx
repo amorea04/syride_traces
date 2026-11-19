@@ -1,6 +1,7 @@
 import { Stack, Text, Title } from '@mantine/core';
 import { useMemo } from 'react';
 import { useParams } from 'react-router';
+import { DetailNav } from '@/components/common/DetailNav';
 import { CareerSection } from '@/components/pilot/CareerSection';
 import { FavouriteSites } from '@/components/pilot/FavouriteSites';
 import { PersonalRecords } from '@/components/pilot/PersonalRecords';
@@ -49,6 +50,7 @@ export function Pilot() {
   return (
     <Stack gap="xl" data-testid="pilot-page" data-slug={slug}>
       <title>{`${pilot} · ${APP_NAME}`}</title>
+      <DetailNav crumbs={[{ label: 'Pilotes', to: '/pilotes' }, { label: pilot }]} />
       <PilotHeader pilot={pilot} slug={slug} flights={flights} reduced={reduced} />
       {flights.length > 0 && (
         <>

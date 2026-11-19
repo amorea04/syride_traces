@@ -2,7 +2,7 @@ import { IconExternalLink } from '@tabler/icons-react';
 import { FilterLink } from '@/components/FilterLink';
 import '@/components/flight/flight.css';
 import type { Flight } from '@/data/flight';
-import { fmtDate, fmtDateShort } from '@/lib/format';
+import { fmtDate } from '@/lib/format';
 import { syrideFlightUrl } from '@/lib/syride';
 import { useScheme } from '@/components/dashboard/shared';
 import { disciplineColor } from '@/theme/tokens';
@@ -30,13 +30,6 @@ export function FlightHeader({ flight }: Props) {
   return (
     <header className="fv-head">
       <div style={{ minWidth: 0 }}>
-        <div className="fv-eyebrow" style={{ marginBottom: 8 }}>
-          <FilterLink to="/vols" c="inherit">
-            Vols
-          </FilterLink>
-          {' › '}
-          {flight.pilot} · {fmtDateShort(flight.date)}
-        </div>
         <h1 className="fv-title" data-testid="flight-title">
           {flight.siteId !== null ? <FilterLink to={`/site/${flight.siteId}`}>{title}</FilterLink> : title}
         </h1>

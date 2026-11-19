@@ -4,19 +4,22 @@ import { useMemo } from 'react';
 import { useBilan } from '@/components/bilan/BilanContext';
 import { YearSwatch } from '@/components/bilan/YearSwatch';
 import { ChartFrame, type DataTable } from '@/components/common/ChartFrame';
+import { HourMatrix } from '@/components/common/HourMatrix';
 import { Section } from '@/components/common/Section';
 import { useSeriesVisuals } from '@/components/compare/visuals';
 import { useScheme } from '@/components/dashboard/shared';
 import type { Flight } from '@/data/flight';
 import type { CompareSeries } from '@/lib/compare';
-import { DAYS_LONG, DAYS_SHORT, fmtHours, fmtInt, MONTHS_SHORT, NBSP, plural } from '@/lib/format';
+import { DAYS_LONG, DAYS_SHORT, fmtHours, MONTHS_SHORT, NBSP, plural } from '@/lib/format';
 import { monthDistribution, seasonsBreakdown, SEASONS, weekHourMatrix } from '@/lib/rhythm';
-import { favoriteSlot, hoursWindow, matrixLevel } from '@/lib/rhythmBlocks';
+import { favoriteSlot } from '@/lib/rhythmBlocks';
 import { colors, yearPatterns } from '@/theme/tokens';
 import '@/components/rhythm/rhythm.css';
 import './bilanB.css';
 
 const SEASON_LABELS = { hiver: 'Hiver', printemps: 'Printemps', été: 'Été', automne: 'Automne' } as const;
+
+const WEEK_ROWS = DAYS_SHORT.map((short, i) => ({ short, long: DAYS_LONG[i] ?? short }));
 
 /** Teinte de la matrice : parapente seul, paramoteur seul, sinon les deux. */
 function matrixKind(flights: readonly Flight[]): 'p' | 'm' | 'b' {
@@ -30,16 +33,12 @@ function matrixKind(flights: readonly Flight[]): 'p' | 'm' | 'b' {
 function Matrix({ flights }: { flights: readonly Flight[] }) {
   const matrix = useMemo(() => weekHourMatrix(flights), [flights]);
   const kind = useMemo(() => matrixKind(flights), [flights]);
-  const view = useMemo(() => {
-    const [lo, hi] = hoursWindow(matrix.counts);
-    const hours = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
-    const peak = Math.max(0, ...matrix.counts.flat());
-    const dayTotals = matrix.counts.map((row) => hours.reduce((s, h) => s + (row[h] ?? 0), 0));
-    const hourTotals = hours.map((h) => matrix.counts.reduce((s, row) => s + (row[h] ?? 0), 0));
-    return { hours, peak, dayTotals, hourTotals, total: dayTotals.reduce((s, n) => s + n, 0) };
-  }, [matrix]);
+  const placed = useMemo(
+    () => matrix.counts.reduce((s, row) => s + row.reduce((a, n) => a + n, 0), 0),
+    [matrix],
+  );
   const fav = useMemo(() => favoriteSlot(matrix), [matrix]);
-  if (view.total === 0) return null;
+  if (placed === 0) return null;
   return (
     <div className="bb-block">
       <p className="bb-sub">Vols par jour de la semaine et heure de décollage</p>
@@ -50,59 +49,20 @@ function Matrix({ flights }: { flights: readonly Flight[] }) {
           {NBSP}h ({plural(fav.n, 'vol')})
         </Text>
       )}
-      <div className="sr-scroll">
-        <table className="sr-mx" data-testid="bilan-week-hour-matrix">
-          <caption style={{ position: 'absolute', left: -9999 }}>
-            Nombre de vols par jour de la semaine et heure de décollage
-          </caption>
-          <thead>
-            <tr>
-              <td style={{ background: 'transparent' }} />
-              {view.hours.map((h) => (
-                <th key={h} scope="col">
-                  {h}
-                </th>
-              ))}
-              <th scope="col">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {DAYS_SHORT.map((day, d) => (
-              <tr key={day}>
-                <th scope="row">{day}</th>
-                {view.hours.map((h) => {
-                  const n = matrix.counts[d]?.[h] ?? 0;
-                  const label = `${DAYS_LONG[d]} ${h}${NBSP}h : ${plural(n, 'vol')}`;
-                  return (
-                    <td
-                      key={h}
-                      title={label}
-                      aria-label={label}
-                      data-top={fav !== null && fav.weekday === d && fav.hour === h}
-                      style={n > 0 ? { background: `var(--sr-cal-${kind}${matrixLevel(n, view.peak)})` } : undefined}
-                    />
-                  );
-                })}
-                <td className="sr-mx-total">{fmtInt(view.dayTotals[d] ?? 0)}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <th scope="row">Total</th>
-              {view.hours.map((h, i) => (
-                <td key={h} className="sr-mx-total" style={{ textAlign: 'center', padding: 0 }}>
-                  {fmtInt(view.hourTotals[i] ?? 0)}
-                </td>
-              ))}
-              <td className="sr-mx-total">{fmtInt(view.total)}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      <HourMatrix
+        testId="bilan-week-hour-matrix"
+        caption="Nombre de vols par jour de la semaine et heure de décollage"
+        rowHeading="Jour"
+        rows={WEEK_ROWS}
+        counts={matrix.counts}
+        minutes={matrix.minutes}
+        kind={kind}
+        top={fav ? { row: fav.weekday, hour: fav.hour } : null}
+      />
       {matrix.missing > 0 && (
         <Text size="xs" c="dimmed" mt={6}>
-          {plural(matrix.missing, 'vol')} sans heure de décollage connue, non placé{matrix.missing > 1 ? 's' : ''}.
+          {plural(matrix.missing, 'vol')} sans heure de décollage connue, non placé
+          {matrix.missing > 1 ? 's' : ''}.
         </Text>
       )}
     </div>
@@ -117,7 +77,12 @@ function MonthsChart() {
   const series = useMemo<CompareSeries[]>(
     () => [
       { id: String(year), label: String(year), flights, span: null },
-      ...compareYears.map((y) => ({ id: String(y), label: String(y), flights: compareFlights.get(y) ?? [], span: null })),
+      ...compareYears.map((y) => ({
+        id: String(y),
+        label: String(y),
+        flights: compareFlights.get(y) ?? [],
+        span: null,
+      })),
     ],
     [year, flights, compareYears, compareFlights],
   );
@@ -128,7 +93,10 @@ function MonthsChart() {
     const bars = visuals.map((v, i): BarSeriesOption => {
       const color = v.color;
       // Hachures de l'année (jetons y0 à y2) ; au-delà, couleur seule.
-      const angle = v.colorKey === 'y0' || v.colorKey === 'y1' || v.colorKey === 'y2' ? yearPatterns[v.colorKey].hatchAngle : null;
+      const angle =
+        v.colorKey === 'y0' || v.colorKey === 'y1' || v.colorKey === 'y2'
+          ? yearPatterns[v.colorKey].hatchAngle
+          : null;
       const rotation = angle === null ? null : (angle * Math.PI) / 180;
       return {
         name: v.label,
@@ -156,7 +124,7 @@ function MonthsChart() {
     return {
       grid: { left: 8, right: 8, top: 16, bottom: 8, containLabel: true },
       legend: { show: false },
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      tooltip: { trigger: 'axis' },
       xAxis: { type: 'category', data: [...MONTHS_SHORT] },
       yAxis: { type: 'value', name: 'vols', nameGap: 12, minInterval: 1 },
       series: bars,
@@ -201,7 +169,10 @@ function MonthsChart() {
 function Seasons({ flights }: { flights: readonly Flight[] }) {
   const seasons = useMemo(() => seasonsBreakdown(flights), [flights]);
   const top = useMemo(() => {
-    const best = SEASONS.reduce((a, b) => (seasons[b].minutes > seasons[a].minutes ? b : a), SEASONS[0] as (typeof SEASONS)[number]);
+    const best = SEASONS.reduce(
+      (a, b) => (seasons[b].minutes > seasons[a].minutes ? b : a),
+      SEASONS[0] as (typeof SEASONS)[number],
+    );
     return seasons[best].minutes > 0 ? best : null;
   }, [seasons]);
   return (
@@ -214,7 +185,9 @@ function Seasons({ flights }: { flights: readonly Flight[] }) {
               {SEASON_LABELS[s]}
               {s === top ? ' · dominante' : ''}
             </div>
-            <div className="bb-season-value">{seasons[s].minutes > 0 ? fmtHours(seasons[s].minutes) : `0${NBSP}h`}</div>
+            <div className="bb-season-value">
+              {seasons[s].minutes > 0 ? fmtHours(seasons[s].minutes) : `0${NBSP}h`}
+            </div>
             <div className="bb-season-note">{plural(seasons[s].n, 'vol')}</div>
           </div>
         ))}

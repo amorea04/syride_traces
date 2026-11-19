@@ -16,17 +16,25 @@ import './bilanA.css';
  */
 export function BilanComparison() {
   const { year, flights, compareYears, compareFlights, ongoing, cutoff } = useBilan();
-  const rows = useMemo(() => kpiRows(flights, compareYears, compareFlights), [flights, compareYears, compareFlights]);
+  const rows = useMemo(
+    () => kpiRows(flights, compareYears, compareFlights),
+    [flights, compareYears, compareFlights],
+  );
   const series = useMemo<CompareSeries[]>(
     () => [
       { id: String(year), label: String(year), flights, span: null },
-      ...compareYears.map((y) => ({ id: String(y), label: String(y), flights: compareFlights.get(y) ?? [], span: null })),
+      ...compareYears.map((y) => ({
+        id: String(y),
+        label: String(y),
+        flights: compareFlights.get(y) ?? [],
+        span: null,
+      })),
     ],
     [year, flights, compareYears, compareFlights],
   );
   const visuals = useSeriesVisuals('annees', series);
   const dbSeries = useMemo<DumbbellSeries[]>(
-    () => visuals.map((v) => ({ id: v.id, label: v.label, color: v.css, shape: v.shape })),
+    () => visuals.map((v) => ({ id: v.id, label: v.label, color: v.css, shape: v.shape, dash: v.dash })),
     [visuals],
   );
   const dbRows = useMemo<DumbbellRow[]>(() => {
@@ -101,7 +109,8 @@ export function BilanComparison() {
           </div>
           {ongoing && (
             <p className="bl-sub-note">
-              {year} est arrêtée au {fmtDate(cutoff, { withYear: true })} ; les années comparées sont prises entières.
+              {year} est arrêtée au {fmtDate(cutoff, { withYear: true })} ; les années comparées sont prises
+              entières.
             </p>
           )}
           <div style={{ marginTop: 18 }}>

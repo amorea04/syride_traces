@@ -33,6 +33,13 @@ function periodText(from: string | null, to: string | null): string | null {
   return null;
 }
 
+/** « 2025 », « 2023 et 2025 », « 2022, 2023 et 2025 » (années en ordre croissant). */
+export function yearsText(years: readonly number[]): string {
+  const sorted = [...years].sort((a, b) => a - b).map(String);
+  if (sorted.length <= 1) return sorted.join('');
+  return `${sorted.slice(0, -1).join(', ')} et ${sorted[sorted.length - 1]}`;
+}
+
 /** « A », « A et B », puis « 3 pilotes ». */
 function listOrCount<T>(values: readonly T[], name: (v: T) => string, noun: string): string {
   if (values.length <= MAX_LISTED_NAMES) return values.map(name).join(' et ');
@@ -54,6 +61,7 @@ export function filterSummary(
   }
   if (!omit.includes('activity') && filters.activity !== 'tout') out.push(filters.activity);
   if (!omit.includes('period')) {
+    if (filters.years.length > 0) out.push(yearsText(filters.years));
     const period = periodText(filters.dateFrom, filters.dateTo);
     if (period) out.push(period);
   }

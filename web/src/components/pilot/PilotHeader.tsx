@@ -1,9 +1,12 @@
-import { Anchor } from '@mantine/core';
-import { IconExternalLink } from '@tabler/icons-react';
+import { ActionIcon, Anchor, Button, Group, Menu } from '@mantine/core';
+import { IconChevronDown, IconExternalLink } from '@tabler/icons-react';
+import { useMemo } from 'react';
 import { Link } from 'react-router';
-import { FilterLink } from '@/components/FilterLink';
+import { useFilterSearch } from '@/components/FilterLink';
 import '@/components/pilot/pilot.css';
+import { useData } from '@/data/DataProvider';
 import type { Flight } from '@/data/flight';
+import { pilotYears } from '@/lib/bilan';
 import { writeFilters } from '@/lib/filters';
 import { fmtDate, fmtHm, fmtPercent, plural } from '@/lib/format';
 import { sum } from '@/lib/numeric';
@@ -29,7 +32,12 @@ export function PilotHeader({ pilot, slug, flights, reduced }: Props) {
   const minutes = sum(flights.map(minutesOf));
   const para = sum(flights.filter((f) => f.activity === 'parapente').map(minutesOf));
   const motor = minutes - para;
-  const years = [...new Set(flights.map((f) => f.year))].sort((a, b) => b - a);
+  // Le bilan ignore les filtres : ses années viennent de tous les vols du pilote.
+  const { flights: all } = useData();
+  const bilanYears = useMemo(() => pilotYears(all, slug), [all, slug]);
+  const latest = bilanYears[0];
+  const others = bilanYears.slice(1);
+  const search = useFilterSearch();
   return (
     <header className="pl-head" data-testid="pilot-header">
       <div style={{ minWidth: 0 }}>
@@ -38,8 +46,8 @@ export function PilotHeader({ pilot, slug, flights, reduced }: Props) {
         </h1>
         {flights.length > 0 ? (
           <p className="pl-sub">
-            {plural(flights.length, 'vol')} · {fmtHm(minutes)} · depuis {dates[0]?.slice(0, 4)} · dernier vol le{' '}
-            {fmtDate(dates[dates.length - 1] as string, { withYear: true })}
+            {plural(flights.length, 'vol')} · {fmtHm(minutes)} · depuis {dates[0]?.slice(0, 4)} · dernier vol
+            le {fmtDate(dates[dates.length - 1] as string, { withYear: true })}
           </p>
         ) : (
           <p className="pl-sub">Aucun vol pour ces filtres.</p>
@@ -72,19 +80,48 @@ export function PilotHeader({ pilot, slug, flights, reduced }: Props) {
           >
             Profil Syride <IconExternalLink size={14} aria-hidden="true" />
           </Anchor>
-          <Anchor component={Link} to={{ pathname: '/vols', search: flightsSearch }} fz={13} data-testid="pilot-flights-link">
+          <Anchor
+            component={Link}
+            to={{ pathname: '/vols', search: flightsSearch }}
+            fz={13}
+            data-testid="pilot-flights-link"
+          >
             Voir ses vols
           </Anchor>
         </div>
       </div>
-      {years.length > 0 && (
-        <nav aria-label="Bilans annuels" className="pl-years-nav">
-          {years.map((y) => (
-            <FilterLink key={y} to={`/pilote/${slug}/${y}`} underline="never">
-              {y}
-            </FilterLink>
-          ))}
-        </nav>
+      {latest !== undefined && (
+        <Group gap={4} wrap="nowrap" data-testid="pilot-bilan-access">
+          <Button
+            component={Link}
+            styles={{ root: { background: 'var(--sr-accent)', color: 'var(--sr-accent-ink)' } }}
+            to={{ pathname: `/pilote/${slug}/${latest}`, search }}
+            data-testid="pilot-bilan-button"
+          >
+            Voir le bilan {latest}
+          </Button>
+          {others.length > 0 && (
+            <Menu position="bottom-end" withinPortal>
+              <Menu.Target>
+                <ActionIcon
+                  variant="default"
+                  size={36}
+                  aria-label="Bilans des autres années"
+                  data-testid="pilot-bilan-menu"
+                >
+                  <IconChevronDown size={16} aria-hidden />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                {others.map((y) => (
+                  <Menu.Item key={y} component={Link} to={{ pathname: `/pilote/${slug}/${y}`, search }}>
+                    Bilan {y}
+                  </Menu.Item>
+                ))}
+              </Menu.Dropdown>
+            </Menu>
+          )}
+        </Group>
       )}
     </header>
   );

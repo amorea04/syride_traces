@@ -35,6 +35,23 @@ describe('synchronisation filtres ↔ URL', () => {
     expect(loc()).toBe('/vols?activite=paramoteur&pilote=j2f&site=3&du=2024-01-01');
   });
 
+  it('années : URL → store (triées) et store → URL (annees=2023,2025)', () => {
+    mount('/vols?annees=2025,2023');
+    expect(useFiltersStore.getState().filters.years).toEqual([2023, 2025]);
+    expect(loc()).toBe('/vols?annees=2025,2023');
+    act(() => useFiltersStore.getState().setFilters({ years: [2021, 2025] }));
+    expect(loc()).toBe('/vols?annees=2021,2025');
+    act(() => useFiltersStore.getState().reset());
+    expect(loc()).toBe('/vols');
+  });
+
+  it('un lien sans paramètre conserve les années cochées', async () => {
+    mount('/');
+    act(() => useFiltersStore.getState().setFilters({ years: [2024, 2025] }));
+    await act(() => router.navigate('/sites'));
+    expect(loc()).toBe('/sites?annees=2024,2025');
+  });
+
   it('store → URL, défauts absents, autres paramètres conservés', () => {
     mount('/');
     expect(loc()).toBe('/');

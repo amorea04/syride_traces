@@ -15,6 +15,16 @@ export const MIN_SITE_FLIGHTS = 10;
 /** Seuil de la vue « Ce pilote » (D17) : sites d'au moins ce nombre de vols du pilote. */
 export const MIN_SITE_FLIGHTS_PILOT = 10;
 
+/** D20 : « Ses sites face à face » (page pilote) prend tous les sites du pilote, dès 1 vol. */
+export const MIN_SITE_FLIGHTS_FACE_TO_FACE = 1;
+/** Sous ce nombre de vols, la moyenne d'un site est fragile : la page pilote le signale (« peu de vols »). */
+export const FEW_SITE_FLIGHTS = 3;
+
+/** Vrai si la moyenne du site repose sur trop peu de vols. */
+export function hasFewFlights(flights: number): boolean {
+  return flights < FEW_SITE_FLIGHTS;
+}
+
 export interface SiteAggregate {
   siteId: number;
   flights: number;
