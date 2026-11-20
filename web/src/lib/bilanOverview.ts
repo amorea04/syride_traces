@@ -400,8 +400,25 @@ export function paramsForYear(
 /** Événement de document : demande d'ouverture de la fiche du jour (`detail` = date ISO), écouté par le bloc Rythme. */
 export const OPEN_DAY_EVENT = 'bilan:open-day';
 
+/** Demande restée sans écouteur (section Rythme pas encore montée, 6.3), reprise à son montage. */
+let pending: { iso: string; at: number } | null = null;
+/** Au-delà, une demande en attente est périmée (l'utilisateur est passé à autre chose). */
+const PENDING_OPEN_DAY_MS = 5000;
+
+/** Ouvre la fiche du jour ; l'écouteur appelle `preventDefault()` pour signaler qu'il a traité la demande. */
 export function requestOpenDay(iso: string): void {
-  document.dispatchEvent(new CustomEvent<string>(OPEN_DAY_EVENT, { detail: iso }));
+  const handled = !document.dispatchEvent(new CustomEvent<string>(OPEN_DAY_EVENT, { detail: iso, cancelable: true }));
+  pending = handled ? null : { iso, at: Date.now() };
+}
+
+/** Jour demandé avant que la section Rythme écoute, ou `null` (lecture seule : voir `clearPendingOpenDay`). */
+export function pendingOpenDay(): string | null {
+  return pending && Date.now() - pending.at < PENDING_OPEN_DAY_MS ? pending.iso : null;
+}
+
+/** Oublie la demande en attente, une fois reprise par la section Rythme. */
+export function clearPendingOpenDay(): void {
+  pending = null;
 }
 
 // ---------------------------------------------------------------------------

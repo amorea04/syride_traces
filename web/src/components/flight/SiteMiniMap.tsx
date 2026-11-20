@@ -1,6 +1,6 @@
 import { useComputedColorScheme } from '@mantine/core';
 import type { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
-import { whenNearViewport } from '@/lib/nearViewport';
+import { whenNearViewportIdle } from '@/lib/nearViewport';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Section } from '@/components/common/Section';
 import { FilterLink } from '@/components/FilterLink';
@@ -102,7 +102,7 @@ export function SiteMiniMap({ site, siteId, siteName }: Props) {
       map.touchZoomRotate.disableRotation();
       map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
     };
-    const stopWaiting = whenNearViewport(container, () => {
+    const stopWaiting = whenNearViewportIdle(container, () => {
       loadMap({
         scheme: () => scheme,
         onReady: create,

@@ -15,6 +15,8 @@ test.describe('infobulles des grilles', () => {
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
+    // Section montée à l'approche de l'écran (6.3).
+    await page.locator('#rythme').scrollIntoViewIfNeeded();
     const cell = page.locator('[data-testid="calendar-heatmap"] [data-flown="true"]').first();
     await cell.scrollIntoViewIfNeeded();
     await cell.hover();

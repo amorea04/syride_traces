@@ -1,9 +1,8 @@
 import { Box, Button, ScrollArea, Table } from '@mantine/core';
 import type { EChartsOption } from 'echarts';
-import ReactEChartsCoreModule from 'echarts-for-react/lib/core';
-import { useEffect, useId, useState, type ReactNode } from 'react';
-import { whenNearViewport } from '@/lib/nearViewport';
-import { echartsCore, useEchartsTheme } from '@/theme/echarts';
+import { lazy, Suspense, useEffect, useId, useState, type ReactNode } from 'react';
+import type { EventHandlers } from '@/components/common/EChart';
+import { whenNearViewportIdle } from '@/lib/nearViewport';
 
 /** Tableau alternatif d'un graphique (« voir les données ») : en-têtes et lignes déjà formatées. */
 export interface DataTable {
@@ -11,12 +10,8 @@ export interface DataTable {
   rows: (string | number)[][];
 }
 
-// `echarts-for-react/lib/core` est un module CommonJS : selon l'outil, l'import par défaut est le composant ou l'objet
-// d'exports (`{ default }`). Le build de production de Vite donne le second cas.
-const ReactEChartsCore = ((ReactEChartsCoreModule as unknown as { default?: typeof ReactEChartsCoreModule })
-  .default ?? ReactEChartsCoreModule) as typeof ReactEChartsCoreModule;
-
-type EventHandlers = Record<string, (params: unknown) => void>;
+/** ECharts n'est téléchargé et évalué qu'au premier graphique proche de l'écran (6.3). */
+const EChart = lazy(() => import('@/components/common/EChart'));
 
 interface Props {
   option: EChartsOption;
@@ -38,7 +33,8 @@ interface Props {
 }
 
 /**
- * Vrai dès que l'élément approche de l'écran (6.3) : les graphiques hors écran ne sont instanciés qu'à ce moment.
+ * Vrai dès que l'élément approche de l'écran (6.3), puis que le navigateur est inactif : les graphiques hors écran ne
+ * sont instanciés qu'à ce moment, et ECharts ne retarde pas la première peinture.
  * L'élément est suivi par un ref callback : quand le nœud est remplacé (bascule tableau / graphique), l'observateur
  * suit le nouveau. Une fois vrai, le résultat reste vrai.
  */
@@ -47,7 +43,7 @@ function useNearViewport(): [(el: HTMLDivElement | null) => void, boolean] {
   const [near, setNear] = useState(false);
   useEffect(() => {
     if (near || !node) return;
-    return whenNearViewport(node, () => setNear(true), '300px');
+    return whenNearViewportIdle(node, () => setNear(true), '300px');
   }, [node, near]);
   return [setNode, near];
 }
@@ -67,7 +63,6 @@ export function ChartFrame({
   testId,
   notMerge = true,
 }: Props) {
-  const theme = useEchartsTheme();
   const [showTable, setShowTable] = useState(false);
   const tableId = useId();
   const [holder, near] = useNearViewport();
@@ -97,16 +92,9 @@ export function ChartFrame({
       ) : (
         <div role="img" aria-label={ariaLabel} ref={holder} style={{ minHeight: height }}>
           {near && (
-            <ReactEChartsCore
-              echarts={echartsCore}
-              option={option}
-              theme={theme}
-              notMerge={notMerge}
-              lazyUpdate
-              style={{ height, width: '100%' }}
-              onEvents={onEvents}
-              opts={{ renderer: 'canvas' }}
-            />
+            <Suspense fallback={null}>
+              <EChart option={option} height={height} notMerge={notMerge} onEvents={onEvents} />
+            </Suspense>
           )}
         </div>
       )}

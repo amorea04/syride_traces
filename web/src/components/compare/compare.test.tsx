@@ -78,8 +78,9 @@ describe('composants de comparaison', () => {
     expect(screen.getByTestId('compare-rhythm')).toHaveTextContent('Part du week-end');
   });
 
-  it('CumulativeChart : une série par sélection, motif de trait et message vide', () => {
+  it('CumulativeChart : une série par sélection, motif de trait et message vide', async () => {
     renderUi(<Harness>{({ series, visuals }) => <CumulativeChart mode="pilotes" series={series} visuals={visuals} refDate="2025-12-28" />}</Harness>);
+    await screen.findByTestId('echarts');
     const option = chart.option as { series: { name: string; lineStyle: { type: unknown } }[] };
     expect(option.series.map((s) => s.name)).toEqual(['A', 'B']);
     expect(option.series[0]?.lineStyle.type).toBe('solid');

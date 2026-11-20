@@ -1,9 +1,9 @@
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { loadEnv, type Connect, type Plugin } from 'vite';
+import { loadEnv, type Connect, type HtmlTagDescriptor, type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { resolveInside } from './vite.data-path.ts';
 
@@ -40,12 +40,46 @@ function dataDirPlugin(dataDir: string | undefined): Plugin {
   };
 }
 
+/**
+ * Au build, précharge depuis `index.html` les fichiers de données nommés par `meta.json` (vols, sites) : leur
+ * téléchargement démarre en parallèle du JS au lieu d'attendre l'exécution de l'appli puis `meta.json` (6.3).
+ * `meta.json` lui-même n'est pas préchargé (lu sans cache, `no-store`). Si les données changent sans nouveau build,
+ * l'appli suit `meta.json` et le préchargement est seulement perdu. Sans `meta.json`, rien n'est injecté.
+ */
+function dataPreloadPlugin(dataDir: string | undefined): Plugin {
+  let base = '/';
+  return {
+    name: 'syride-data-preload',
+    apply: 'build',
+    configResolved(config) {
+      base = config.base;
+    },
+    transformIndexHtml() {
+      const metaPath = resolve(dataDir ?? 'public/data', 'meta.json');
+      if (!existsSync(metaPath)) return [];
+      const meta = JSON.parse(readFileSync(metaPath, 'utf8')) as { files?: Record<string, unknown> };
+      const files = [meta.files?.['flights'], meta.files?.['sites']].filter(
+        (f): f is string => typeof f === 'string' && /^[\w.-]+\.json$/.test(f),
+      );
+      return files.map(
+        (file): HtmlTagDescriptor => ({
+          tag: 'link',
+          // `crossorigin` : même mode (cors, identifiants same-origin) que le `fetch` de `load.ts`, sinon double téléchargement.
+          attrs: { rel: 'preload', href: `${base}data/${file}`, as: 'fetch', crossorigin: 'anonymous' },
+          injectTo: 'head',
+        }),
+      );
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   return {
     plugins: [
       react(),
       dataDirPlugin(env['VITE_DATA_DIR']),
+      dataPreloadPlugin(env['VITE_DATA_DIR']),
       // `ANALYZE=1 npm run build` écrit dist/stats.html (jamais produit par défaut : ne pas le publier).
       ...(process.env['ANALYZE']
         ? [visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true })]

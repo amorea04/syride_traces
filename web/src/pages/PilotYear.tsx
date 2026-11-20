@@ -15,6 +15,7 @@ import { BilanStory } from '@/components/bilan/BilanStory';
 import { BilanToc } from '@/components/bilan/BilanToc';
 import { BilanWhen } from '@/components/bilan/BilanWhen';
 import { BilanWhere } from '@/components/bilan/BilanWhere';
+import { Deferred } from '@/components/common/Deferred';
 import { DetailNav } from '@/components/common/DetailNav';
 import { FilterLink } from '@/components/FilterLink';
 import { APP_NAME } from '@/components/navigation';
@@ -184,15 +185,34 @@ export function PilotYear() {
         <BilanToc />
         <BilanActions />
         <BilanOverview />
-        <BilanStory />
-        <BilanRhythm />
-        <BilanWhen />
-        <BilanWhere />
-        <BilanGear />
-        <BilanRecords />
-        <BilanComparison />
-        <BilanFlights />
-        <BilanData />
+        {/* Sous le haut de page : montées juste après la première peinture, par tranches (6.3). */}
+        <Deferred id="histoire" minHeight={700} when="background">
+          <BilanStory />
+        </Deferred>
+        <Deferred id="rythme" minHeight={600} when="background">
+          <BilanRhythm />
+        </Deferred>
+        <Deferred id="quand" minHeight={600} when="background">
+          <BilanWhen />
+        </Deferred>
+        <Deferred id="ou" minHeight={700} when="background">
+          <BilanWhere />
+        </Deferred>
+        <Deferred id="matos" minHeight={600} when="background">
+          <BilanGear />
+        </Deferred>
+        <Deferred id="records" minHeight={600} when="background">
+          <BilanRecords />
+        </Deferred>
+        <Deferred id="comparaison" minHeight={400} when="background">
+          <BilanComparison />
+        </Deferred>
+        <Deferred id="vols" minHeight={600} when="background">
+          <BilanFlights />
+        </Deferred>
+        <Deferred id="donnees" minHeight={300} when="background">
+          <BilanData />
+        </Deferred>
       </Stack>
     </BilanContext.Provider>
   );

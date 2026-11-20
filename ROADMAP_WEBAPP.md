@@ -1038,7 +1038,7 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 ### Phase 6 : Finitions
 - [x] 6.1 Découpage du code, imports à la carte (JS initial 913 → 174 Ko gzip)
 - [x] 6.2 Budgets respectés (JS ≤ 250 Ko gzip, données ≤ 250 Ko gzip, D21)
-- [ ] 6.3 Lighthouse mobile : Perf ≥ 90, A11y ≥ 95, BP ≥ 95 (20/11/2026 : A11y et BP à 100 partout ; Perf 52 à 77 sur l'URL déployée, frein = calcul navigateur et chaîne de données, voir `web/audits/PHASE6.md`)
+- [ ] 6.3 Lighthouse mobile : Perf ≥ 90, A11y ≥ 95, BP ≥ 95 (20/11/2026 : A11y et BP à 100 partout ; Perf 52 à 77 sur l'URL déployée, frein = calcul navigateur et chaîne de données ; chantier perf du 20/11 en `vite preview` : `/` 53 -> 71-74, `/vols` 71 -> 76-77, bilan 53 -> 68-69, `/sites` 59 -> 62-63, TBT divisé par 2 à 3 ; reste le volume de données et de JS initial, voir `web/audits/PHASE6.md`)
 - [x] 6.4 PWA et mode hors ligne
 - [x] 6.5 Revue responsive (4 largeurs, captures : `npm run captures`, gardées en local)
 - [x] 6.6 Passe éditoriale des libellés (glossaire dans `web/audits/PHASE6.md`)

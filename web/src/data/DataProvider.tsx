@@ -1,6 +1,6 @@
 import { Alert, Button, Container, Group, Skeleton, Stack, Text } from '@mantine/core';
 import { IconAlertTriangle } from '@tabler/icons-react';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Flight } from '@/data/flight';
 import { loadFlights, loadInsights, loadMeta, loadSites, onDataChanged, type Site } from '@/data/load';
 import type { InsightsFile, MetaFile } from '@/data/schema.gen';
@@ -11,6 +11,31 @@ export interface AppData {
   sites: Site[];
   /** Site par identifiant. */
   siteById: ReadonlyMap<number, Site>;
+}
+
+async function fetchAppData(): Promise<AppData> {
+  const meta = await loadMeta();
+  const [flights, sites] = await Promise.all([loadFlights(meta), loadSites(meta)]);
+  return { meta, flights, sites, siteById: new Map(sites.map((s) => [s.id, s])) };
+}
+
+let preloaded: Promise<AppData> | null = null;
+
+/**
+ * Lance le chargement des données sans attendre le montage de React ni le chunk de la page (6.3 : la chaîne
+ * meta.json → flights.json démarre au plus tôt). Appelé une fois au démarrage (main.tsx) ; le premier
+ * `DataProvider` monté reprend cette promesse, les suivants (et « Réessayer ») relancent un chargement.
+ */
+export function preloadAppData(): void {
+  preloaded ??= fetchAppData();
+  // L'erreur éventuelle est traitée par le `DataProvider` qui reprend la promesse.
+  preloaded.catch(() => undefined);
+}
+
+function takePreloaded(): Promise<AppData> {
+  const promise = preloaded ?? fetchAppData();
+  preloaded = null;
+  return promise;
 }
 
 type Status = { state: 'loading' } | { state: 'error'; error: Error } | { state: 'ready'; data: AppData };
@@ -31,13 +56,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const meta = await loadMeta();
-      const [flights, sites] = await Promise.all([loadFlights(meta), loadSites(meta)]);
-      return { meta, flights, sites, siteById: new Map(sites.map((s) => [s.id, s])) } satisfies AppData;
-    })().then(
+    takePreloaded().then(
       (data) => {
-        if (!cancelled) setStatus({ state: 'ready', data });
+        // Rendu de fond, découpé en tranches par React : pas de tâche longue à l'arrivée des données (6.3).
+        if (!cancelled) startTransition(() => setStatus({ state: 'ready', data }));
       },
       (error: unknown) => {
         if (!cancelled)
