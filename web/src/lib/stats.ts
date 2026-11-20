@@ -1,5 +1,5 @@
 /**
- * Portage de `get_flight_params` et `create_grouped_df` (src/app_functions.py).
+ * Portage de `get_flight_params` et `create_grouped_df` (src/legacy/app_functions.py).
  *
  * Écarts assumés avec le Python (documentés, testés dans tests/stats.regression.test.ts) :
  *   - `nbSites` ne compte pas les vols sans site (corrigé aussi côté Python, `nunique()`).

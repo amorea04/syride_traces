@@ -2,16 +2,16 @@
 Valeurs de référence des statistiques TypeScript (non-régression, ROADMAP_WEBAPP.md lot 2.5).
 
 Relit les fixtures `flights.*.json` (et un jeu dense, généré ici) en DataFrame au format du pkl, appelle les VRAIES
-fonctions Python (src/app_functions.py et src/rapport/report_data.py, importées, jamais recopiées) sur plusieurs
+fonctions Python (src/legacy/app_functions.py et src/rapport/report_data.py, importées, jamais recopiées) sur plusieurs
 sélections, et écrit `web/tests/fixtures/expected_stats.json`, que `web/tests/stats.regression.test.ts` compare aux
 fonctions de `web/src/lib/` avec une tolérance de 1e-6.
 
 Lancement (Python 3.8, aucun paquet à installer) : `make expected-stats` ou `npm run gen:expected` dans web/.
 
 Deux accrocs de l'existant, contournés sans toucher aux fichiers de src/ :
-  * `app_functions.py` annote `list[str]` (Python 3.9+) : on le charge avec `from __future__ import annotations`
+  * `legacy/app_functions.py` annote `list[str]` (Python 3.9+) : on le charge avec `from __future__ import annotations`
     ajouté en tête du texte source ; le code exécuté est celui du fichier, sans copie. Il importe plotly (présent).
-  * `app.py` lance Dash à l'import : il n'est pas importé.
+  * `legacy/app.py` lance Dash à l'import : il n'est pas importé.
 """
 
 import datetime as dt
@@ -49,8 +49,8 @@ DENSE_CASES = (0, 1, 4, 6)   # le jeu dense ne garde que quelques sélections (t
 
 
 def load_app_functions():
-    """Charge src/app_functions.py tel quel, avec des annotations paresseuses (Python 3.8)."""
-    path = SRC / "app_functions.py"
+    """Charge src/legacy/app_functions.py tel quel, avec des annotations paresseuses (Python 3.8)."""
+    path = SRC / "legacy" / "app_functions.py"
     source = "from __future__ import annotations\n" + path.read_text(encoding="utf-8")
     module = types.ModuleType("app_functions")
     exec(compile(source, str(path), "exec"), module.__dict__)
