@@ -1,7 +1,7 @@
 /**
- * Les 19 statistiques de la page « Répartitions » (liste `list_values_graph` de src/app.py), définies une seule
+ * Les 19 statistiques de la page « Répartitions » (liste `list_values_graph` de src/legacy/app.py), définies une seule
  * fois : identifiant, libellé, unité, agrégation. Les identifiants reprennent les colonnes de `create_grouped_df`
- * (src/app_functions.py), ce qui permet la comparaison directe avec le Python.
+ * (src/legacy/app_functions.py), ce qui permet la comparaison directe avec le Python.
  *
  * Règles reprises du Python :
  *   - moyennes et max ignorent les valeurs <= 0 (déjà `null` dans l'export) ;

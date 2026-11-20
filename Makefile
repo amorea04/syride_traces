@@ -1,7 +1,7 @@
 # Raccourcis de la refonte webapp (ROADMAP_WEBAPP.md)
 PYTHON ?= python
 
-.PHONY: export fixtures expected-stats test-py
+.PHONY: export fixtures expected-stats test-py publish publish-dry
 
 # Données réelles -> web/public/data/ (ignoré par Git)
 export:
@@ -17,3 +17,11 @@ expected-stats:
 
 test-py:
 	cd src && $(PYTHON) -m pytest web_export/tests -q -p no:cacheprovider -p no:dash
+
+# Export, build, contrôles puis déploiement Cloudflare Pages (src/publish.py)
+publish:
+	$(PYTHON) src/publish.py
+
+# Idem sans déploiement
+publish-dry:
+	$(PYTHON) src/publish.py --dry-run

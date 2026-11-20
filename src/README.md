@@ -1,7 +1,8 @@
 # Analyse des traces de vol Syride
 
 Récupère les vols de pilotes sur Syride, les range dans des dossiers, construit un fichier
-`global_flights_data.pkl`, puis l'affiche dans une application Dash (et dans un rapport PDF).
+`global_flights_data.pkl`, puis le publie sous forme de webapp statique (`web/`, publiée par `publish.py`).
+Voir aussi le `README.md` à la racine du dépôt.
 
 ## Les fichiers
 
@@ -15,7 +16,9 @@ Récupère les vols de pilotes sur Syride, les range dans des dossiers, construi
 | `flights_db.py` | Index SQLite (`flights.db`) : coordonnées en cache, liste des vols à compléter |
 | `analyze_functions.py` | Pipeline pandas appliqué aux vols avant le pkl |
 | `create_global_pkl.py` | Génère `global_flights_data.pkl` |
-| `app.py`, `app_functions.py` | Application Dash |
+| `export_web.py`, `web_export/` | Export des données de la webapp vers `web/public/data/` |
+| `publish.py` | Export, build, contrôles et déploiement de la webapp sur Cloudflare Pages |
+| `legacy/` | Ancienne application Dash (archivée, voir `legacy/README.md`) |
 | `report_functions.py` | Rapport PDF annuel d'un pilote (à remettre en état, voir plus bas) |
 | `fix_truncated_names.py` | Outil ponctuel : répare les anciens noms de voiles/instruments tronqués |
 
@@ -31,6 +34,7 @@ python main.py --max-sheets 45      # s'arrête après 45 fiches (Syride limite 
 python main.py --fill-igc 1         # complète aussi l'IGC des vols qui ont déjà leur GPX (1 fiche par vol)
 python main.py --pilots AdrienM,j2f # pilotes précis (sinon : params.pilots)
 python main.py --pkl 0              # sans regénérer le pkl
+python main.py --publish 1          # scraping, pkl, puis publication de la webapp
 ```
 
 ### Les 3 phases

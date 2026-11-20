@@ -17,7 +17,7 @@ describe('déploiement Cloudflare Pages', () => {
     expect(existsSync(join(PUBLIC, '404.html'))).toBe(true);
   });
 
-  it('chaque route de l’application est réécrite vers index.html', () => {
+  it('chaque route de l’application est réécrite vers / (index.html)', () => {
     const routes = [...router.matchAll(/<Route path="([^"*]+)"/g)].map((m) => m[1] as string);
     expect(routes.length).toBeGreaterThan(5);
     const sources = new Set(redirects.map(([from]) => from));
@@ -27,7 +27,7 @@ describe('déploiement Cloudflare Pages', () => {
       expect(sources.has(rule), rule).toBe(true);
     }
     for (const [, to, status] of redirects) {
-      expect([to, status]).toEqual(['/index.html', '200']);
+      expect([to, status]).toEqual(['/', '200']);
     }
   });
 });

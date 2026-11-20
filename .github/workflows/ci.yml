@@ -1,0 +1,60 @@
+# Intégration continue : tests uniquement. Aucun secret, aucun déploiement (le déploiement se fait depuis le Mac).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Tests Python
+    runs-on: ubuntu-22.04   # Python 3.8 n'est plus fourni sur ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+          cache: pip
+          cache-dependency-path: src/requirements-export.txt
+      - run: pip install -r src/requirements-export.txt
+      - name: pytest (comme make test-py)
+        working-directory: src
+        run: python -m pytest web_export/tests -q -p no:cacheprovider -p no:dash
+
+  web:
+    name: Tests web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - name: Rapport Playwright (échec uniquement)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
