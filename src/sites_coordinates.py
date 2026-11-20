@@ -99,6 +99,10 @@ def _compute_site(site: str, points: pd.DataFrame, outliers: list = None) -> dic
     """Moyenne des points d'un échantillon de max MAX_FILES, aberrants écartés.
     Si `outliers` est une liste, les points écartés y sont ajoutés (dicts)."""
     kept, dropped = split_outliers(_sample(site, points))
+    if kept.empty:
+        # Points trop dispersés pour dégager un groupe (ex. 2 décollages à plus de 2 x OUTLIER_KM) :
+        # on garde tout plutôt que de produire des coordonnées vides (NaN).
+        kept, dropped = dropped, dropped.iloc[0:0]
     if outliers is not None and len(dropped):
         outliers.extend(dropped.to_dict("records"))
     return {

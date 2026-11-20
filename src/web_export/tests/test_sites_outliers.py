@@ -51,3 +51,13 @@ def test_no_loop_and_legacy_json(tmp_path, capsys):
     json.dump(data, open(path, "w"))
     sc.update_sites_coordinates(df, path)
     assert json.load(open(path))["Soubise"]["n_available"] == 15
+
+
+def test_all_points_far_apart_keeps_everything():
+    df = pd.DataFrame([
+        {"site": "X", "longitude": 0.0, "latitude": 46.0},
+        {"site": "X", "longitude": 1.0, "latitude": 46.0},
+    ])
+    found = []
+    res = sc._compute_site("X", sc._valid_starts(df), found)
+    assert res["longitude"] == 0.5 and res["n_files"] == 2 and found == []
