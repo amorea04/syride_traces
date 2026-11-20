@@ -58,3 +58,32 @@ et lance Playwright sur le build ; installer le navigateur une fois avec `npx pl
 
 Les filtres globaux vivent dans l'URL : `?pilote=j2f&activite=parapente&du=2024-01-01&au=2024-12-31&voile=…&site=12`
 (paramètres répétables pour pilote, voile et site ; valeurs par défaut absentes).
+
+## Poids et budgets (phase 6.2)
+
+`npm run build && npm run size` affiche le poids gzip du JS initial (le script de `index.html` et ses `modulepreload`) et des données
+initiales (`meta.json`, `flights.<hash>.json`, `sites.<hash>.json`), et **échoue** au-delà de 250 Ko (JS) ou 200 Ko (données).
+`npm run analyze` (= `ANALYZE=1 vite build`) écrit en plus `dist/stats.html` (visualiseur `rollup-plugin-visualizer`) : ne pas le publier.
+
+Découpage : chaque page est un chunk (`React.lazy`), ECharts est importé à la carte (`src/theme/echarts.ts` : `echarts/core` et les seuls
+graphiques, composants et rendu canvas utilisés ; composant `echarts-for-react/lib/core` dans `ChartFrame`) et MapLibre est chargé par
+`import()` à l'ouverture d'une carte. Un nouveau type de graphique ou de composant ECharts doit être ajouté à la liste `echarts.use([...])`.
+
+## Hors ligne (PWA, phase 6.4)
+
+`public/manifest.webmanifest` et les icônes (`scripts/gen-icons.mjs` régénère les PNG, `public/icon.svg` est la source vectorielle) rendent
+l'application installable. `public/sw.js` (service worker écrit à la main, enregistré en production seulement par `src/pwa.ts`) s'appuie sur
+`public/sw-routing.js`, des fonctions pures testées par `tests/sw.test.ts` :
+
+- coquille : `index.html` et les fichiers qu'il référence sont précachés à l'installation ; les autres fichiers de `/assets/*` (chunks de page)
+  sont servis cache-first et enregistrés à la première utilisation (la page signale aussi au service worker ceux qu'elle a déjà chargés) ;
+- `data/meta.json` : **stale-while-revalidate**. Le service worker sert la copie en cache puis la met à jour : après un nouveau déploiement
+  de données, la première ouverture affiche encore les anciennes données et la suivante les nouvelles (le meta n'est servi depuis le cache que si
+  ses fichiers de données initiaux y sont aussi, sinon on passe par le réseau) ;
+- `data/*.json` hashés et `data/insights/*` : cache-first ; ceux que ni le `meta.json` courant ni le précédent ne référencent sont purgés ;
+- tuiles OpenFreeMap : cache-first dans un cache plafonné à 300 entrées (éviction FIFO) ; styles : réseau d'abord ;
+- navigation : réseau d'abord, sinon `index.html` en cache, sinon `offline.html`. Hors ligne, une page jamais ouverte affiche un message
+  (son chunk n'est pas en cache) au lieu d'une page blanche ;
+- aucun cache pour syride.com ni pour un autre domaine. Changer `VERSION` dans `sw-routing.js` purge tous les anciens caches à l'activation.
+
+Les e2e bloquent le service worker (`serviceWorkers: 'block'` dans `playwright.config.ts`) ; seul `e2e/pwa.spec.ts` le laisse agir.

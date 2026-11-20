@@ -1,5 +1,5 @@
 import { useComputedColorScheme } from '@mantine/core';
-import { Map as MapLibreMap, NavigationControl, setWorkerUrl, type StyleSpecification } from 'maplibre-gl';
+import type { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { useEffect, useMemo, useRef } from 'react';
@@ -11,8 +11,13 @@ import { plural } from '@/lib/format';
 import { mapStyleUrl, tuneMapStyle, type StyleLike } from '@/theme/map';
 import { colors, type ColorScheme } from '@/theme/tokens';
 
-// Vite ne sait pas déduire l'URL du worker ESM de MapLibre : on la lui donne (comme la carte des sites).
-if (typeof setWorkerUrl === 'function') setWorkerUrl(workerUrl);
+/** MapLibre est chargé à la demande (6.1) : il n'entre dans aucun chunk de démarrage. */
+async function loadMapLibre(): Promise<typeof import('maplibre-gl')> {
+  const ml = await import('maplibre-gl');
+  // Vite ne sait pas déduire l'URL du worker ESM de MapLibre : on la lui donne (comme la carte des sites).
+  if (typeof ml.setWorkerUrl === 'function') ml.setWorkerUrl(workerUrl);
+  return ml;
+}
 
 /** Zoom fixe : on voit la vallée ou le massif du site, pas la France entière. */
 export const MINI_MAP_ZOOM = 10;
@@ -105,8 +110,9 @@ export function SiteMiniMap({ site, siteId, siteName }: Props) {
     if (!container || !data || lat === null || lon === null) return;
     let cancelled = false;
     let map: MapLibreMap | null = null;
-    const create = (base: BaseStyle) => {
+    const create = (ml: typeof import('maplibre-gl'), base: BaseStyle) => {
       if (cancelled) return;
+      const { Map: MapLibreMap, NavigationControl } = ml;
       map = new MapLibreMap({
         container,
         style: buildMiniStyle(base, scheme, data),
@@ -121,7 +127,12 @@ export function SiteMiniMap({ site, siteId, siteName }: Props) {
       map.touchZoomRotate.disableRotation();
       map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
     };
-    loadBaseStyle(scheme).then(create, () => create(FALLBACK_STYLE));
+    void loadMapLibre().then((ml) =>
+      loadBaseStyle(scheme).then(
+        (base) => create(ml, base),
+        () => create(ml, FALLBACK_STYLE),
+      ),
+    );
     return () => {
       cancelled = true;
       map?.remove();

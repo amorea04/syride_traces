@@ -20,7 +20,7 @@ import { RhythmBlock } from './RhythmBlock';
 import { WeekHourMatrix } from './WeekHourMatrix';
 
 // jsdom n'a pas de canvas : on remplace le graphique par un simple marqueur.
-vi.mock('echarts-for-react', async () => {
+vi.mock('echarts-for-react/lib/core', async () => {
   const { createElement } = await import('react');
   return { default: () => createElement('div', { 'data-testid': 'echarts' }) };
 });

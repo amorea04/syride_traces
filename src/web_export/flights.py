@@ -58,7 +58,8 @@ def _measure(value: Any, decimals: int) -> Optional[float]:
     rounded = round(float(value), decimals)
     if rounded <= 0:
         return None
-    return int(rounded) if decimals == 0 else rounded
+    # Entier sans « .0 » quand la valeur est ronde : même nombre pour JSON, environ 7 Ko gzip de moins (phase 6.2)
+    return int(rounded) if decimals == 0 or rounded.is_integer() else rounded
 
 
 def _time(value: Any) -> Optional[str]:

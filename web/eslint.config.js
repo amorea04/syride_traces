@@ -23,4 +23,9 @@ export default tseslint.config(
     rules: { ...reactHooks.configs.recommended.rules },
   },
   { files: ['**/*.{js,mjs,cjs}'], languageOptions: { globals: { ...globals.node } } },
+  // Service worker écrit à la main (scripts classiques, globals du worker).
+  {
+    files: ['public/sw.js', 'public/sw-routing.js'],
+    languageOptions: { sourceType: 'script', globals: { ...globals.serviceworker } },
+  },
 );

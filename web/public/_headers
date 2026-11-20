@@ -19,3 +19,13 @@
 /data/meta.json
   ! Cache-Control
   Cache-Control: no-cache
+
+# Service worker et sa logique : toujours revalidés, pour que les mises à jour arrivent.
+/sw.js
+  Cache-Control: no-cache
+
+/sw-routing.js
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Cache-Control: no-cache

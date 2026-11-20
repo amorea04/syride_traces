@@ -1,13 +1,6 @@
 import { Text, useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
-import {
-  Map as MapLibreMap,
-  NavigationControl,
-  Popup,
-  setWorkerUrl,
-  type MapGeoJSONFeature,
-  type MapLayerMouseEvent,
-} from 'maplibre-gl';
+import type { Map as MapLibreMap, MapGeoJSONFeature, MapLayerMouseEvent, Popup } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import '@/components/map/sitesMap.css';
@@ -43,8 +36,14 @@ const SINGLE_SITE_ZOOM = 10;
 /** Vue initiale : France métropolitaine. */
 const INITIAL_CENTER: [number, number] = [2.5, 46.5];
 const INITIAL_ZOOM = 4.5;
-// Vite ne sait pas déduire l'URL du worker ESM de MapLibre 6 : on la lui donne.
-if (typeof setWorkerUrl === 'function') setWorkerUrl(workerUrl);
+
+/** MapLibre est chargé à la demande (6.1) : il n'entre dans aucun chunk de démarrage. */
+async function loadMapLibre(): Promise<typeof import('maplibre-gl')> {
+  const ml = await import('maplibre-gl');
+  // Vite ne sait pas déduire l'URL du worker ESM de MapLibre 6 : on la lui donne.
+  if (typeof ml.setWorkerUrl === 'function') ml.setWorkerUrl(workerUrl);
+  return ml;
+}
 
 const MOBILE_QUERY = '(max-width: 48em)';
 
@@ -239,8 +238,9 @@ export function SitesMap({
     let map: MapLibreMap | null = null;
     let popup: Popup | null = null;
 
-    const create = (base: BaseStyle) => {
+    const create = (ml: typeof import('maplibre-gl'), base: BaseStyle) => {
       if (cancelled) return;
+      const { Map: MapLibreMap, NavigationControl, Popup } = ml;
       baseRef.current = base;
       const l = live.current;
       appliedScheme.current = l.scheme;
@@ -325,12 +325,16 @@ export function SitesMap({
       });
     };
 
-    loadBaseStyle(live.current.scheme).then(
-      (base) => create(base),
-      () => {
-        setBaseFailed(true);
-        create(FALLBACK_STYLE);
-      },
+    loadMapLibre().then(
+      (ml) =>
+        loadBaseStyle(live.current.scheme).then(
+          (base) => create(ml, base),
+          () => {
+            setBaseFailed(true);
+            create(ml, FALLBACK_STYLE);
+          },
+        ),
+      () => setBaseFailed(true),
     );
 
     return () => {

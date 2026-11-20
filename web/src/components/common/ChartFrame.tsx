@@ -1,14 +1,19 @@
 import { Box, Button, ScrollArea, Table } from '@mantine/core';
 import type { EChartsOption } from 'echarts';
-import ReactECharts from 'echarts-for-react';
+import ReactEChartsCoreModule from 'echarts-for-react/lib/core';
 import { useId, useState, type ReactNode } from 'react';
-import { useEchartsTheme } from '@/theme/echarts';
+import { echartsCore, useEchartsTheme } from '@/theme/echarts';
 
 /** Tableau alternatif d'un graphique (« voir les données ») : en-têtes et lignes déjà formatées. */
 export interface DataTable {
   columns: string[];
   rows: (string | number)[][];
 }
+
+// `echarts-for-react/lib/core` est un module CommonJS : selon l'outil, l'import par défaut est le composant ou l'objet
+// d'exports (`{ default }`). Le build de production de Vite donne le second cas.
+const ReactEChartsCore = ((ReactEChartsCoreModule as unknown as { default?: typeof ReactEChartsCoreModule })
+  .default ?? ReactEChartsCoreModule) as typeof ReactEChartsCoreModule;
 
 type EventHandlers = Record<string, (params: unknown) => void>;
 
@@ -36,7 +41,16 @@ interface Props {
  * bascule « Voir les données / Voir le graphique ». `notMerge` (par défaut) évite les séries
  * fantômes quand la sélection change de forme.
  */
-export function ChartFrame({ option, ariaLabel, height, table, onEvents, footer, testId, notMerge = true }: Props) {
+export function ChartFrame({
+  option,
+  ariaLabel,
+  height,
+  table,
+  onEvents,
+  footer,
+  testId,
+  notMerge = true,
+}: Props) {
   const theme = useEchartsTheme();
   const [showTable, setShowTable] = useState(false);
   const tableId = useId();
@@ -65,7 +79,8 @@ export function ChartFrame({ option, ariaLabel, height, table, onEvents, footer,
         </ScrollArea.Autosize>
       ) : (
         <div role="img" aria-label={ariaLabel}>
-          <ReactECharts
+          <ReactEChartsCore
+            echarts={echartsCore}
             option={option}
             theme={theme}
             notMerge={notMerge}

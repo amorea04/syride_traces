@@ -6,7 +6,7 @@ import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const chart = vi.hoisted(() => ({ option: null as unknown }));
-vi.mock('echarts-for-react', () => ({
+vi.mock('echarts-for-react/lib/core', () => ({
   default: (props: { option: unknown }) => {
     chart.option = props.option;
     return <div data-testid="echarts" />;

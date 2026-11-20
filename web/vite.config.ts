@@ -2,6 +2,7 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { loadEnv, type Connect, type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { resolveInside } from './vite.data-path.ts';
@@ -42,7 +43,14 @@ function dataDirPlugin(dataDir: string | undefined): Plugin {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   return {
-    plugins: [react(), dataDirPlugin(env['VITE_DATA_DIR'])],
+    plugins: [
+      react(),
+      dataDirPlugin(env['VITE_DATA_DIR']),
+      // `ANALYZE=1 npm run build` écrit dist/stats.html (jamais produit par défaut : ne pas le publier).
+      ...(process.env['ANALYZE']
+        ? [visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true })]
+        : []),
+    ],
     resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
     test: {
       environment: 'jsdom',

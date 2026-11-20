@@ -61,7 +61,9 @@ test.describe('retour et fermeture (5C.2)', () => {
     await page.getByRole('link', { name: mine[0]!.pilot, exact: true }).first().click();
     await expect(page).toHaveURL(new RegExp(`/pilote/${SLUG}`));
     for (const y of years.slice(0, 2)) {
-      await page.getByRole('textbox', { name: 'Années' }).click({ force: true });
+      // Focus + flèche bas plutôt qu'un clic au centre du champ (réduit à un pixel de haut une fois une année choisie).
+      await page.getByRole('textbox', { name: 'Années' }).focus();
+      await page.keyboard.press('ArrowDown');
       await page.getByRole('option', { name: String(y), exact: true }).click();
       await page.keyboard.press('Escape');
     }

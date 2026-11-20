@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MemoryRouter } from 'react-router';
@@ -17,8 +17,10 @@ import { FIXTURES_DIR, fixtureFlights } from '../tests/fixtures';
 // (WebGL), absents de jsdom : on les remplace par des éléments inertes.
 // Rendu de l'application entière : 1 à 3 s seul, davantage quand les 46 fichiers tournent en parallèle.
 vi.setConfig({ testTimeout: 20_000 });
+// Les pages sont des chunks chargés à la demande (React.lazy) : le premier import prend plus d'une seconde en jsdom.
+configure({ asyncUtilTimeout: 10_000 });
 
-vi.mock('echarts-for-react', () => ({ default: () => <div data-testid="echarts" /> }));
+vi.mock('echarts-for-react/lib/core', () => ({ default: () => <div data-testid="echarts" /> }));
 vi.mock('@/components/map/SitesMap', () => ({ SitesMap: () => <div data-testid="sites-map" /> }));
 
 const flights = fixtureFlights();
