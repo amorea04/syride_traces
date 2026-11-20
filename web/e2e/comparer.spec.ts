@@ -26,10 +26,15 @@ test.describe('comparer', () => {
     expect(errors).toEqual([]);
   });
 
-  test('sans choix, propose les deux plus actifs en le disant', async ({ page }) => {
+  test('sans choix, rien n’est sélectionné et un message invite à choisir', async ({ page }) => {
     await page.goto('/comparer');
-    await expect(page.getByTestId('compare-default-note')).toContainText('Sélection proposée');
-    await expect(page.locator('[data-testid="compare-kpis"] > [data-series]')).toHaveCount(2);
+    await expect(page.getByTestId('compare-problem')).toHaveText('Choisissez au moins 2 pilotes à comparer.');
+    await expect(page.getByTestId('compare-default-note')).toHaveCount(0);
+    await expect(page.getByTestId('compare-kpis')).toHaveCount(0);
+    await modeGroup(page).getByText('Années', { exact: true }).click();
+    await expect(page.getByTestId('compare-problem')).toHaveText('Choisissez un pilote, puis au moins 2 de ses années.');
+    await modeGroup(page).getByText('Sites', { exact: true }).click();
+    await expect(page.getByTestId('compare-problem')).toHaveText('Choisissez au moins 2 sites à comparer.');
   });
 
   test('changer de mode met l’URL à jour et conserve les filtres globaux', async ({ page }) => {
@@ -38,18 +43,18 @@ test.describe('comparer', () => {
     await expect(page).toHaveURL(/mode=sites/);
     await expect(page).toHaveURL(/activite=parapente/);
     await expect(page.getByTestId('compare-page')).toHaveAttribute('data-mode', 'sites');
-    await expect(page.getByTestId('compare-kpis')).toBeVisible();
-    await expect(page.getByTestId('compare-dumbbells')).toBeVisible();
+    await expect(page).not.toHaveURL(/ids=/);
+    await expect(page.getByTestId('compare-problem')).toBeVisible();
     await page.reload();
     await expect(page.getByTestId('compare-page')).toHaveAttribute('data-mode', 'sites');
 
     await modeGroup(page).getByText('Années', { exact: true }).click();
     await expect(page).toHaveURL(/mode=annees/);
-    await expect(page.getByTestId('compare-cumul')).toBeVisible();
+    await expect(page.getByTestId('compare-problem')).toBeVisible();
   });
 
   test('un choix insuffisant est signalé sans planter', async ({ page }) => {
     await page.goto(`/comparer?mode=pilotes&ids=${first}`);
-    await expect(page.getByTestId('compare-problem')).toContainText('au moins 2');
+    await expect(page.getByTestId('compare-problem')).toHaveText('Choisissez au moins 2 pilotes à comparer.');
   });
 });

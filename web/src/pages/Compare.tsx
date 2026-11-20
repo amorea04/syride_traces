@@ -34,13 +34,6 @@ const REPLACED: Record<CompareMode, FilterDimension[]> = {
   sites: ['sites'],
 };
 
-const DEFAULT_NOTE: Record<CompareMode, string> = {
-  pilotes: `Sélection proposée\u00a0: les ${MIN_SERIES} pilotes les plus actifs de la vue filtrée.`,
-  annees:
-    'Sélection proposée\u00a0: le pilote le plus actif ayant au moins deux années de vols, avec ses deux années les plus récentes.',
-  sites: `Sélection proposée\u00a0: les ${MIN_SERIES} sites les plus fréquentés de la vue filtrée.`,
-};
-
 /** Comparer (§5.6) : pilotes, années d'un pilote ou sites, synchronisés dans l'URL (`?mode=…&ids=…`). */
 export function Compare() {
   const { meta, flights: all } = useData();
@@ -94,7 +87,6 @@ export function Compare() {
         candidates={candidates}
         years={years}
         visuals={visuals}
-        defaultNote={DEFAULT_NOTE[mode]}
         onModeChange={(m) => write({ mode: m, ids: null })}
         onIdsChange={(next) => write({ mode, ids: next })}
         onPilotChange={onPilotChange}
@@ -109,7 +101,11 @@ export function Compare() {
           <CompareDumbbells series={series} visuals={visuals} />
           <CompareRhythm series={series} visuals={visuals} />
         </>
-      ) : null}
+      ) : (
+        <Text size="sm" role="status" data-testid="compare-problem">
+          {selection.problem}
+        </Text>
+      )}
     </Stack>
   );
 }

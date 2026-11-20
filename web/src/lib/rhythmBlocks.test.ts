@@ -174,6 +174,9 @@ describe('nuage et données partielles', () => {
     expect(s.points).toHaveLength(1);
     expect(s.missing).toBe(3);
     expect(scatterPoints(fl, 'distance').points).toHaveLength(1);
+    const speeds = [makeFlight('2025-05-01', { durationMin: 60, speedAvg: 32 })];
+    expect(scatterPoints(speeds, 'vitesseMoyenne').points[0]).toMatchObject({ x: 60, y: 32 });
+    expect(scatterPoints(speeds, 'vario').points).toHaveLength(0);
   });
   it('couverture : seuil de 20 %, répartition des sources', () => {
     const p = partialData(fl, 'plafond');

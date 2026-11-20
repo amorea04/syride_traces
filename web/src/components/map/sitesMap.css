@@ -60,3 +60,26 @@
 :root[data-mantine-color-scheme='dark'] .maplibregl-ctrl-group .maplibregl-ctrl-icon {
   filter: invert(1);
 }
+
+/* Infobulle de survol : légère, sans interaction, même surface que le popup du clic. */
+.sr-map-hover-popup {
+  pointer-events: none;
+}
+.sr-map-hover-popup .maplibregl-popup-content {
+  padding: 5px 8px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+}
+.sr-map-hover {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--sr-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sr-map-hover strong {
+  display: block;
+  font-size: 13px;
+}
+.sr-map-hover-popup .maplibregl-popup-tip {
+  display: none;
+}

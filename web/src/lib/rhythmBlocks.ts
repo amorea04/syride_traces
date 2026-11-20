@@ -1,12 +1,12 @@
 /**
- * Calculs des blocs « Rythme », « Quand vole-t-on ? », « Matériel » et « Durée et plafond » du tableau de bord.
+ * Calculs des blocs « Rythme », « Quand vole-t-on ? », « Matériel » et « Durée des vols » du tableau de bord.
  * Seuils et conventions repris de src/rapport/report_charts.py (CALENDAR_LEVELS) et report_html.py
  * (MATRIX_LEVEL_SHARES, MATRIX_FAV_MIN, MATRIX_MIN_COLS, hours_window).
  */
 
 import type { Flight } from '@/data/flight';
 import { daysInMonth, epochDay, isoOfEpochDay, mondayOfEpochDay } from '@/lib/isoDay';
-import { MEASURES } from '@/lib/measures';
+import { MEASURES, type MeasureId } from '@/lib/measures';
 import { sum } from '@/lib/numeric';
 import { dailySummaries, minutesOf, type DaySummary, type WeekHourMatrix } from '@/lib/rhythm';
 import type { CoverageKey } from '@/lib/records';
@@ -17,7 +17,12 @@ import type { CoverageKey } from '@/lib/records';
 
 /** Bornes hautes (incluses) des niveaux 1 à 3, en minutes volées dans la journée ; au-delà : niveau 4 (paliers fixes du rapport). */
 export const CALENDAR_LEVELS = [30, 75, 150] as const;
-export const CALENDAR_LEVEL_LABELS = ['≤ 30\u00a0min', '≤ 1\u00a0h\u00a015', '≤ 2\u00a0h\u00a030', '> 2\u00a0h\u00a030'] as const;
+export const CALENDAR_LEVEL_LABELS = [
+  '≤ 30\u00a0min',
+  '≤ 1\u00a0h\u00a015',
+  '≤ 2\u00a0h\u00a030',
+  '> 2\u00a0h\u00a030',
+] as const;
 
 /** Niveau d'intensité 1 à 4 d'une journée de vol. */
 export function calendarLevel(minutes: number): 1 | 2 | 3 | 4 {
@@ -337,10 +342,11 @@ export function monthRange(year: number, month: number): [string, string] {
 }
 
 // ---------------------------------------------------------------------------
-// Nuage durée × plafond / distance
+// Nuage durée × mesure
 // ---------------------------------------------------------------------------
 
-export type ScatterY = 'plafond' | 'distance';
+/** Mesure croisée avec la durée : toute mesure par vol de `MEASURES` sauf la durée elle-même. */
+export type ScatterY = Exclude<MeasureId, 'duree'>;
 
 /** Au-delà de ce nombre de points, ECharts passe en mode `large` (rendu groupé, pas d'animation). */
 export const SCATTER_LARGE_THRESHOLD = 3000;
@@ -359,7 +365,7 @@ export function scatterPoints(
 ): { points: ScatterPoint[]; missing: number } {
   const points: ScatterPoint[] = [];
   for (const flight of flights) {
-    const y = yKey === 'plafond' ? flight.ceilingM : flight.distKm;
+    const y = MEASURES[yKey].of(flight);
     if (flight.durationMin === null || flight.durationMin <= 0 || y === null || y <= 0) continue;
     points.push({ flight, x: flight.durationMin, y });
   }
@@ -373,7 +379,11 @@ export function scatterPoints(
 /** Au-delà de 20 % de vols sans la mesure, on le signale. */
 export const COVERAGE_NOTICE_THRESHOLD = 0.2;
 
-export const MEASURE_LABELS: Readonly<Record<CoverageKey, string>> = {
+/** Mesures dont on peut signaler la couverture : celles du bandeau de couverture, plus la vitesse moyenne (bloc « Durée des vols »). */
+export type NoticeKey = CoverageKey | 'vitesseMoyenne';
+
+export const MEASURE_LABELS: Readonly<Record<NoticeKey, string>> = {
+  vitesseMoyenne: 'vitesse moyenne',
   plafond: 'plafond',
   distance: 'distance',
   gain: 'gain d’altitude',
@@ -396,7 +406,7 @@ export interface PartialData {
 }
 
 /** Couverture d'une mesure (> 0) dans la sélection. */
-export function partialData(flights: readonly Flight[], measure: CoverageKey): PartialData {
+export function partialData(flights: readonly Flight[], measure: NoticeKey): PartialData {
   const value = MEASURES[measure].of;
   const sources = { gpx: 0, fiche: 0, aucune: 0 };
   const missingSources = { gpx: 0, fiche: 0, aucune: 0 };

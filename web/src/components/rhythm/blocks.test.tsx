@@ -228,6 +228,19 @@ describe('autres blocs du lot B', () => {
     wrap(<FlightScatter flights={[]} />);
     expect(screen.getByText('Aucun vol pour ces filtres.')).toBeInTheDocument();
   });
+  it('FlightScatter : sélecteur « selon », tableau des catégories', () => {
+    wrap(<FlightScatter flights={flights} />);
+    expect(screen.getByRole('heading', { name: 'Durée des vols' })).toBeInTheDocument();
+    const select = screen.getByRole('textbox', { name: 'Durée selon' });
+    expect(select).toHaveValue('Plafond');
+    fireEvent.click(select);
+    fireEvent.click(screen.getByRole('option', { name: 'Voile' }));
+    expect(select).toHaveValue('Voile');
+    expect(screen.getByTestId('flight-scatter')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Voir les données/ }));
+    expect(screen.getByRole('columnheader', { name: 'Durée médiane' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Voile B' })).toBeInTheDocument();
+  });
   it('GearBlock : un clic sur une voile la filtre, le survol la surligne', () => {
     wrap(<GearBlock flights={flights} />);
     const table = screen.getByTestId('wings-table');

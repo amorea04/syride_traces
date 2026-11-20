@@ -37,8 +37,9 @@ function Harness({ mode = 'pilotes', children }: { mode?: CompareMode; children:
   const visuals = useSeriesVisuals(mode, p.series);
   return children({ ...p, visuals });
 }
+const IDS: Record<CompareMode, string[]> = { pilotes: ['a', 'b'], annees: ['a', '2024', '2025'], sites: [] };
 function setup(mode: CompareMode) {
-  const selection = resolveSelection(mode, null, flights);
+  const selection = resolveSelection(mode, IDS[mode], flights);
   const series = buildSeries(mode, selection.ids, flights, '2025-12-28');
   return { selection, series, visuals: [] as ReturnType<typeof useSeriesVisuals> };
 }
@@ -88,7 +89,7 @@ describe('composants de comparaison', () => {
     expect(screen.getByText('Aucun vol pour ces filtres.')).toBeInTheDocument();
   });
 
-  it('CompareSelector : bascule de mode et note de sélection par défaut', () => {
+  it('CompareSelector : bascule de mode, sans note de sélection par défaut', () => {
     const onModeChange = vi.fn();
     renderUi(
       <Harness>
@@ -102,7 +103,6 @@ describe('composants de comparaison', () => {
             ]}
             years={[]}
             visuals={visuals}
-            defaultNote="Sélection proposée : test."
             onModeChange={onModeChange}
             onIdsChange={() => {}}
             onPilotChange={() => {}}
@@ -110,7 +110,7 @@ describe('composants de comparaison', () => {
         )}
       </Harness>,
     );
-    expect(screen.getByTestId('compare-default-note')).toHaveTextContent('Sélection proposée');
+    expect(screen.queryByTestId('compare-default-note')).toBeNull();
     fireEvent.click(screen.getByText('Sites'));
     expect(onModeChange).toHaveBeenCalledWith('sites');
   });

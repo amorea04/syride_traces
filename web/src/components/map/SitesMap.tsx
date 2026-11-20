@@ -18,6 +18,12 @@ import {
   SRC_RAW,
   type MapStyle,
 } from '@/components/map/sitesLayers';
+import {
+  buildHoverContent,
+  clusterHoverText,
+  siteHoverText,
+  type HoverTooltipText,
+} from '@/components/map/hoverTooltip';
 import { fmtHm, fmtInt, fmtPercent, plural } from '@/lib/format';
 import { type Bounds, type SitePointProps, type SitesMapData } from '@/lib/mapSites';
 import { useFiltersStore } from '@/store/filters';
@@ -108,6 +114,11 @@ function buildPopupContent(
   row.append(link, button);
   root.appendChild(row);
   return root;
+}
+
+/** Vrai si le pointeur sait survoler (pas d'infobulle sur écran tactile : le clic suffit). */
+function canHover(): boolean {
+  return typeof window.matchMedia !== 'function' || !window.matchMedia('(hover: none)').matches;
 }
 
 function siteProps(f: MapGeoJSONFeature): SitePointProps {
@@ -209,10 +220,15 @@ export function SitesMap({
     let cancelled = false;
     let map: MapLibreMap | null = null;
     let popup: Popup | null = null;
+    let hoverPopup: Popup | null = null;
 
     const create = (ml: typeof import('maplibre-gl'), base: BaseStyle) => {
       if (cancelled) return;
       const { Map: MapLibreMap, NavigationControl, Popup } = ml;
+      const hideHover = () => {
+        hoverPopup?.remove();
+        hoverPopup = null;
+      };
       baseRef.current = base;
       const l = live.current;
       appliedScheme.current = l.scheme;
@@ -254,6 +270,7 @@ export function SitesMap({
         const { coordinates } = f.geometry as unknown as { coordinates: [number, number] };
         live.current.onSiteClick?.(p.siteId);
         if (!live.current.showPopup) return;
+        hideHover();
         popup?.remove();
         popup = new Popup({ closeButton: true, maxWidth: '280px', offset: 10 })
           .setLngLat(coordinates)
@@ -275,10 +292,36 @@ export function SitesMap({
           .addTo(m);
       });
 
-      for (const layer of [LAYER_CLUSTER, LAYER_POINT]) {
+      /** Infobulle légère au survol (souris uniquement, jamais en heatmap), sans interaction. */
+      const showHover = (text: HoverTooltipText | null, coordinates: [number, number]) => {
+        if (!text || live.current.heatmap || !canHover()) return hideHover();
+        if (!hoverPopup)
+          hoverPopup = new Popup({
+            closeButton: false,
+            closeOnClick: false,
+            closeOnMove: true,
+            className: 'sr-map-hover-popup',
+            maxWidth: '240px',
+            offset: 14,
+          }).addTo(m);
+        hoverPopup.setLngLat(coordinates).setDOMContent(buildHoverContent(text));
+      };
+      const hoverOn = (layer: string, textOf: (f: MapGeoJSONFeature) => HoverTooltipText | null) => {
         m.on('mouseenter', layer, () => (m.getCanvas().style.cursor = 'pointer'));
-        m.on('mouseleave', layer, () => (m.getCanvas().style.cursor = ''));
-      }
+        m.on('mousemove', layer, (e: MapLayerMouseEvent) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const { coordinates } = f.geometry as unknown as { coordinates: [number, number] };
+          showHover(textOf(f), coordinates);
+        });
+        m.on('mouseleave', layer, () => {
+          m.getCanvas().style.cursor = '';
+          hideHover();
+        });
+      };
+      hoverOn(LAYER_CLUSTER, (f) => clusterHoverText(f.properties ?? {}));
+      hoverOn(LAYER_POINT, (f) => siteHoverText(siteProps(f)));
+      m.on('movestart', hideHover);
       m.on('mousemove', LAYER_POINT, (e: MapLayerMouseEvent) => {
         const f = e.features?.[0];
         if (!f) return;
@@ -312,6 +355,7 @@ export function SitesMap({
       stopWaiting();
       cancelled = true;
       popup?.remove();
+      hoverPopup?.remove();
       map?.remove();
       mapRef.current = null;
       setReady(false);
@@ -386,7 +430,7 @@ export function SitesMap({
 
   // Cadrage sur la sélection.
   const boundsKey = data.bounds ? data.bounds.join(',') : '';
-  const hasFocus = Boolean(focus);   // `focus` prime sur la sélection tant qu'il est posé
+  const hasFocus = Boolean(focus); // `focus` prime sur la sélection tant qu'il est posé
   useEffect(() => {
     const map = mapRef.current;
     const bounds: Bounds | null = data.bounds;

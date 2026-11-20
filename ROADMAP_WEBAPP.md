@@ -1043,7 +1043,10 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 - [x] 6.5 Revue responsive (4 largeurs, captures : `npm run captures`, gardées en local)
 - [x] 6.6 Passe éditoriale des libellés (glossaire dans `web/audits/PHASE6.md`)
 - [x] 6.7 `/code-review` et corrections (9 constats corrigés)
-- [ ] PR relue et fusionnée · **`/clear`**
+- [x] 6.8 Recette du 20/11/2026 : infobulle au survol des sites (carte des sites et tableau de bord)
+- [x] 6.9 Recette du 20/11/2026 : Comparer vide à l'ouverture
+- [x] 6.10 Recette du 20/11/2026 : « Durée des vols » croisée selon 7 mesures ou 4 catégories (mois, heure, voile, site)
+- [x] PR relue et fusionnée · **`/clear`**
 
 ### Phase 7 : Déploiement et bascule
 - [ ] 7.1 Projet Cloudflare Pages créé, `wrangler login` fait (par Adrien)
