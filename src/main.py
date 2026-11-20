@@ -22,6 +22,10 @@ Modes :
   python main.py --fill-igc 1       complète aussi l'IGC des vols qui ont déjà leur GPX
                                     (attention : une fiche consultée par vol)
   python main.py --regen-sites 1    recrée entièrement le dictionnaire des coordonnées des sites
+  python main.py --publish 1        après le pkl, publie la webapp (src/publish.py : export, build,
+                                    contrôles, déploiement Cloudflare Pages) ; fonctionne aussi
+                                    avec --pkl 0 (le pkl existant est alors publié) ; ignoré en
+                                    --dry-run
   python main.py --dry-run 1        SIMULATION : lit les dossiers et liste ce qui serait fait,
                                     sans ouvrir Chrome, sans fiche, sans téléchargement, sans pkl
 """
@@ -80,6 +84,13 @@ def main():
         type=int,
         default=1,
         help="Construction du fichier pkl : 1=oui (defaut), 0=non",
+    )
+    parser.add_argument(
+        "--publish",
+        type=int,
+        default=0,
+        help="1 = après la génération du pkl (ou avec --pkl 0, à partir du pkl existant), "
+        "publier la webapp avec src/publish.py. 0 par défaut. Ignoré avec --dry-run 1.",
     )
     parser.add_argument(
         "--regen-sites",
@@ -151,6 +162,11 @@ def main():
         except PklBuildError as e:
             print(f"\nERREUR pkl : {e}")
             sys.exit(1)
+
+    if args.publish == 1:
+        import publish
+
+        sys.exit(publish.main([]))
 
 
 if __name__ == "__main__":

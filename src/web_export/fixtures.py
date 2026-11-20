@@ -24,7 +24,7 @@ SITES = {  # nom -> (lat, lon) moyens fictifs ; None = site sans coordonnées
 WINGS = ["voile un", "Voile Deux", "voile trois", "daytona test"]
 INSTRUMENTS = ["Instrument A", "Instrument B"]
 MODES = {"parapente": ["Vol site", "Vol treuil", "Vol rando", "Vol bord de mer", "Vol site "], "paramoteur": ["Vol moteur"]}
-# Sans accent, comme le pkl réel (`CATEGORY_ORDERS["mois"]` de app_functions.py).
+# Sans accent, comme le pkl réel (`CATEGORY_ORDERS["mois"]` de src/legacy/app_functions.py).
 MONTHS = ["janvier", "fevrier", "mars", "avril", "mai", "juin", "juillet", "aout", "septembre", "octobre", "novembre", "decembre"]
 DAYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
 SEASONS = ["hiver", "hiver", "printemps", "printemps", "printemps", "été", "été", "été", "automne", "automne", "automne", "hiver"]
