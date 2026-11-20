@@ -66,7 +66,7 @@ export function LatestFlights({ flights, count = LATEST_FLIGHTS_COUNT }: Props) 
                       variant="subtle"
                       color="gray"
                       size="sm"
-                      aria-label={`Voir la trace sur Syride : vol de ${f.pilot} du ${fmtDate(f.date, { withYear: true })}`}
+                      aria-label={`Voir la trace sur Syride\u00a0: vol de ${f.pilot} du ${fmtDate(f.date, { withYear: true })}`}
                     >
                       <IconExternalLink size={15} stroke={1.6} />
                     </ActionIcon>

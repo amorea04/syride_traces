@@ -216,7 +216,7 @@ export function BilanHeader() {
                 className="bl-chip"
                 aria-pressed={on}
                 disabled={full}
-                title={full ? 'Deux années au maximum : retire-en une d’abord.' : undefined}
+                title={full ? 'Deux années au maximum\u00a0: retire-en une d’abord.' : undefined}
                 data-testid="bilan-compare-chip"
                 data-year={y}
                 onClick={() => toggle(y)}

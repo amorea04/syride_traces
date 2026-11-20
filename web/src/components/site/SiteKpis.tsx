@@ -21,7 +21,7 @@ export function SiteKpis({ flights }: Props) {
   const k = useMemo(() => computeKpis(flights), [flights]);
   return (
     <Section id="chiffres" title="Chiffres du site">
-      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="lg" verticalSpacing="md" data-testid="site-kpis">
+      <SimpleGrid cols={{ base: 2, md: 4 }} spacing="lg" verticalSpacing="md" data-testid="site-kpis">
         <KpiCard label="Vols" value={fmtInt(k.nFlights)} />
         <KpiCard label="Heures de vol" value={fmtHm(k.minutes)} />
         <KpiCard label="Jours volés" value={fmtInt(k.daysFlown)} />

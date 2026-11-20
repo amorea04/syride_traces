@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installDomMocks } from '../../tests/dom-mocks';
 import { fixtureFlights } from '../../tests/fixtures';
 
-vi.mock('echarts-for-react', () => ({ default: () => <div data-testid="echarts" /> }));
+vi.mock('echarts-for-react/lib/core', () => ({ default: () => <div data-testid="echarts" /> }));
 
 const insightsState = vi.hoisted(() => ({ current: { state: 'ready', insights: null } as unknown }));
 vi.mock('@/data/DataProvider', async () => {

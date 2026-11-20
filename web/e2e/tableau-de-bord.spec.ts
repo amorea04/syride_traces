@@ -24,6 +24,8 @@ test.describe('tableau de bord', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1, name: 'Tableau de bord' })).toBeVisible();
     for (const id of SECTIONS) await expect(page.locator(`#${id}`)).toBeAttached();
+    // Les graphiques ne sont instanciés qu'à l'approche de l'écran (6.3) : on amène la section à l'écran.
+    await page.locator('#repartitions').scrollIntoViewIfNeeded();
     await expect(page.locator('#repartitions canvas').first()).toBeVisible();
     expect(errors).toEqual([]);
   });
@@ -86,6 +88,28 @@ test.describe('tableau de bord', () => {
     await expect.poll(() => countText(page)).toBe('0 vol');
     await expect(page.getByText('Aucun vol pour ces filtres.').first()).toBeVisible();
     await page.locator('#carte-sites').scrollIntoViewIfNeeded();
+    expect(errors).toEqual([]);
+  });
+
+  test('le bloc Durée des vols se croise selon une mesure ou une catégorie', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto('/');
+    const section = page.locator('#nuage');
+    await section.scrollIntoViewIfNeeded();
+    await expect(section.getByRole('heading', { name: 'Durée des vols' })).toBeVisible();
+    await expect(section.locator('canvas').first()).toBeVisible();
+    const select = section.getByRole('textbox', { name: 'Durée selon' });
+    await expect(select).toHaveValue('Plafond');
+    await select.click();
+    await page.getByRole('option', { name: 'Vitesse moyenne' }).click();
+    await expect(section.getByRole('img', { name: /vitesse moyenne en abscisse/ })).toBeVisible();
+    await select.click();
+    await page.getByRole('option', { name: 'Mois' }).click();
+    await expect(section.getByRole('img', { name: /une colonne par mois/ })).toBeVisible();
+    await section.getByRole('button', { name: /Voir les données/ }).click();
+    await expect(section.getByRole('columnheader', { name: 'Durée médiane' })).toBeVisible();
+    await expect(section.getByRole('cell', { name: 'janv.' })).toBeVisible();
     expect(errors).toEqual([]);
   });
 

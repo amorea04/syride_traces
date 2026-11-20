@@ -15,7 +15,7 @@ const NOTIONS: readonly Notion[] = [
   {
     term: 'Source des statistiques',
     definition:
-      'Chaque vol porte l’origine de ses mesures : « GPX » (calculées sur la trace), « fiche » (lues sur la fiche Syride, sans fichier GPX, donc pouvant différer) ou « aucune » (pas de statistiques).',
+      'Chaque vol porte l’origine de ses mesures\u00a0: «\u00a0GPX\u00a0» (calculées sur la trace), «\u00a0fiche\u00a0» (lues sur la fiche Syride, sans fichier GPX, donc pouvant différer) ou «\u00a0aucune\u00a0» (pas de statistiques).',
   },
   {
     term: 'Vol incomplet',
@@ -25,7 +25,7 @@ const NOTIONS: readonly Notion[] = [
   {
     term: 'Discipline',
     definition:
-      'Parapente ou paramoteur, d’après le type d’activité du vol. Couleurs : vermillon pour le parapente, azur pour le paramoteur, gris pour les deux.',
+      'Parapente ou paramoteur, d’après le type d’activité du vol. Couleurs\u00a0: vermillon pour le parapente, azur pour le paramoteur, gris pour les deux.',
   },
   {
     term: 'Distance et distance cumulée',
@@ -35,11 +35,11 @@ const NOTIONS: readonly Notion[] = [
   {
     term: 'Régularité',
     definition:
-      'Part des semaines (du lundi au dimanche) comptant au moins un vol, parmi les semaines écoulées de l’année ; la semaine du 1er janvier compte.',
+      'Part des semaines (du lundi au dimanche) comptant au moins un vol, parmi les semaines écoulées de l’année\u00a0; la semaine du 1er janvier compte.',
   },
   {
     term: 'Série',
-    definition: `Jours de vol consécutifs ; une série compte au moins ${RHYTHM_MIN_STREAK} jours.`,
+    definition: `Jours de vol consécutifs\u00a0; une série compte au moins ${RHYTHM_MIN_STREAK} jours.`,
   },
   {
     term: 'Pause',
@@ -48,11 +48,11 @@ const NOTIONS: readonly Notion[] = [
   },
   {
     term: 'Données partielles',
-    definition: `Mention affichée quand plus de ${fmtPercent(COVERAGE_NOTICE_THRESHOLD * 100)} des vols de la sélection n’ont pas la mesure : la valeur affichée ne repose alors que sur une partie des vols.`,
+    definition: `Mention affichée quand plus de ${fmtPercent(COVERAGE_NOTICE_THRESHOLD * 100)} des vols de la sélection n’ont pas la mesure\u00a0: la valeur affichée ne repose alors que sur une partie des vols.`,
   },
   {
     term: 'Mesure absente',
-    definition: 'Une mesure inconnue ou nulle s’affiche « – » : elle n’est jamais comptée comme zéro.',
+    definition: 'Une mesure inconnue ou nulle s’affiche «\u00a0–\u00a0»\u00a0: elle n’est jamais comptée comme zéro.',
   },
 ];
 
@@ -62,7 +62,7 @@ export function Glossary() {
     <Section
       id="glossaire"
       title="Glossaire"
-      subtitle="Chaque statistique est définie une seule fois dans l’application ; les mêmes règles s’appliquent partout."
+      subtitle="Chaque statistique est définie une seule fois dans l’application&nbsp;; les mêmes règles s’appliquent partout."
     >
       <Text fw={650} size="sm" mb={4}>
         Statistiques

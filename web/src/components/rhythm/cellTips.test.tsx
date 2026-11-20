@@ -15,7 +15,7 @@ import { mantineTheme } from '@/theme';
 import { installDomMocks } from '../../../tests/dom-mocks';
 import { makeFlight } from '../../../tests/flightFactory';
 
-vi.mock('echarts-for-react', async () => {
+vi.mock('echarts-for-react/lib/core', async () => {
   const { createElement } = await import('react');
   return { default: () => createElement('div', { 'data-testid': 'echarts' }) };
 });

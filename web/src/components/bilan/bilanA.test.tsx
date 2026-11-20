@@ -5,7 +5,7 @@ import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('echarts-for-react', () => ({ default: () => <div data-testid="echarts" /> }));
+vi.mock('echarts-for-react/lib/core', () => ({ default: () => <div data-testid="echarts" /> }));
 
 import { BilanComparison } from '@/components/bilan/BilanComparison';
 import { BilanContext, type BilanContextValue } from '@/components/bilan/BilanContext';

@@ -14,9 +14,9 @@ export function SyrideTraceLink({ flight }: { flight: Flight }) {
       rel="noopener noreferrer"
       variant="subtle"
       color="gray"
-      size="sm"
+      size="md"
       data-testid="syride-link"
-      aria-label={`Voir la trace sur Syride : vol de ${flight.pilot} du ${fmtDate(flight.date, { withYear: true })}`}
+      aria-label={`Voir la trace sur Syride\u00a0: vol de ${flight.pilot} du ${fmtDate(flight.date, { withYear: true })}`}
       title="Voir la trace sur Syride"
     >
       <IconExternalLink size={15} stroke={1.6} />

@@ -55,7 +55,7 @@ export const RECORD_CARDS: readonly RecordCardDef[] = [
   { key: 'duree', beatenMetric: 'duree', title: 'Vol le plus long', unit: '', kind: 'dur', measureName: null },
   { key: 'distance', beatenMetric: 'distance', title: 'Plus longue distance', unit: 'km', kind: 'int', measureName: 'Distance' },
   { key: 'plafond', beatenMetric: 'plafond', title: 'Plus haut', unit: 'm', kind: 'int', measureName: 'Plafond' },
-  { key: 'vitesseMax', beatenMetric: 'vitesse_max', title: 'Vitesse maximale', unit: 'km/h', kind: 'int', measureName: 'Vitesse max' },
+  { key: 'vitesseMax', beatenMetric: 'vitesse_max', title: 'Vitesse max', unit: 'km/h', kind: 'int', measureName: 'Vitesse max' },
   { key: 'vario', beatenMetric: 'vario', title: 'Meilleur vario', unit: 'm/s', kind: 'num', measureName: 'Vario max' },
   { key: 'g', beatenMetric: 'g', title: 'Facteur g maximal', unit: 'g', kind: 'num', measureName: 'Facteur g' },
 ];

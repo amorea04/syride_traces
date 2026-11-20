@@ -74,7 +74,7 @@ export function SiteSeasonality({ flights }: Props) {
     <Section
       id="saisonnalite"
       title="Saisonnalité"
-      subtitle="Nombre de vols par mois et heure de décollage, toutes années confondues ; plus la case est foncée, plus elle est chargée."
+      subtitle="Nombre de vols par mois et heure de décollage, toutes années confondues&nbsp;; plus la case est foncée, plus elle est chargée."
     >
       {placed === 0 ? (
         <Text size="sm" c="dimmed">

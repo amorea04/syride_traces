@@ -55,7 +55,7 @@ export function BilanComparison() {
     >
       {compareYears.length === 0 ? (
         <p className="bl-empty" data-testid="bilan-compare-empty">
-          Aucune année comparée : choisis-en une avec les puces « Comparer avec » en haut de page.
+          Aucune année comparée&nbsp;: choisis-en une avec les puces «&nbsp;Comparer avec&nbsp;» en haut de page.
         </p>
       ) : (
         <>

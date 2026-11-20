@@ -74,7 +74,7 @@ export function WingRibbon({ flights }: Props) {
       <Text size="xs" c="dimmed" mb={6} data-testid="ribbon-legend">
         Intensité : {measure === 'vols' ? 'nombre de vols' : 'heures de vol'} (relative au maximum du ruban).
         {windowed.truncated
-          ? ` Les ${RIBBON_MONTHS} derniers mois de la sélection sont montrés (jusqu'au dernier vol) ; les totaux ne portent que sur ces mois.`
+          ? ` Les ${RIBBON_MONTHS} derniers mois de la sélection sont montrés (jusqu’au dernier vol)\u00a0; les totaux ne portent que sur ces mois.`
           : ''}
       </Text>
       <CellTooltip resolve={resolve} className="sr-gear-wrap">
@@ -133,6 +133,7 @@ export function WingRibbon({ flights }: Props) {
                         className="sr-gear-cell"
                         data-empty={value === 0}
                         disabled={value === 0}
+                        aria-hidden={value === 0 ? true : undefined}
                         aria-label={value === 0 ? undefined : `${label}. Filtrer sur cette voile et ce mois.`}
                         data-tip={value === 0 ? undefined : `${r}-${i}`}
                         data-row={r}

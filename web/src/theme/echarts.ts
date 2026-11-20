@@ -1,6 +1,33 @@
 import { useComputedColorScheme } from '@mantine/core';
-import * as echarts from 'echarts';
+import { BarChart, LineChart, ScatterChart } from 'echarts/charts';
+import {
+  AriaComponent,
+  DataZoomComponent,
+  GridComponent,
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent,
+} from 'echarts/components';
+import * as echarts from 'echarts/core';
+import { CanvasRenderer } from 'echarts/renderers';
 import { categoricalColors, colors, font, fontSize, type ColorScheme } from '@/theme/tokens';
+
+// ECharts à la carte (6.1) : seuls les graphiques, composants et le rendu canvas réellement utilisés.
+echarts.use([
+  BarChart,
+  LineChart,
+  ScatterChart,
+  AriaComponent,
+  DataZoomComponent,
+  GridComponent,
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent,
+  CanvasRenderer,
+]);
+
+/** Noyau ECharts partagé : à passer à `<ReactEChartsCore echarts={echartsCore}>`. */
+export const echartsCore = echarts;
 
 export const ECHARTS_THEME_NAMES: Record<ColorScheme, string> = {
   light: 'syride-clair',

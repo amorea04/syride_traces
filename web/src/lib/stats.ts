@@ -195,7 +195,7 @@ export const AXES: Readonly<Record<AxisId, AxisDef>> = {
       const hour = hourOf(f);
       return hour === null ? null : String(hour);
     },
-    labelOf: (key) => `${key.padStart(2, '0')} h`,
+    labelOf: (key) => `${key.padStart(2, '0')}\u00a0h`,
     order: 'ascending',
   },
 };

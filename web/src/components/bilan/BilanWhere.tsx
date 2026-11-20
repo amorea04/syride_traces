@@ -52,7 +52,7 @@ export function BilanWhere() {
   const placed = data.collection.features.length > 0;
 
   return (
-    <Section id="ou" title="Où as-tu volé ?">
+    <Section id="ou" title="Où as-tu volé&nbsp;?">
       {story.texts.ou && (
         <p className="bb-lead" data-testid="bilan-texte-ou">
           {story.texts.ou}
@@ -98,7 +98,7 @@ export function BilanWhere() {
             onSiteClick={openSite}
           />
           <div className="bb-legend">
-            <span>Un cercle par site ; la taille suit le nombre de vols.</span>
+            <span>Un cercle par site&nbsp;; la taille suit le nombre de vols.</span>
             {goldIds.length > 0 && (
               <span>
                 <i className="bb-ring" aria-hidden="true" /> Site découvert cette année
@@ -146,7 +146,7 @@ export function BilanWhere() {
               <Table.Tr>
                 <Table.Th>Site</Table.Th>
                 <Table.Th ta="right">Vols</Table.Th>
-                <Table.Th ta="right">Temps de vol</Table.Th>
+                <Table.Th ta="right">Heures de vol</Table.Th>
                 <Table.Th ta="right">Durée moyenne</Table.Th>
                 <Table.Th ta="right">Vitesse moy.</Table.Th>
               </Table.Tr>

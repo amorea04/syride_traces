@@ -1,41 +1,20 @@
 import { useComputedColorScheme } from '@mantine/core';
-import { Map as MapLibreMap, NavigationControl, setWorkerUrl, type StyleSpecification } from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
-import { useEffect, useMemo, useRef } from 'react';
+import type { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
+import { whenNearViewport } from '@/lib/nearViewport';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Section } from '@/components/common/Section';
 import { FilterLink } from '@/components/FilterLink';
 import '@/components/flight/flight.css';
 import type { Site } from '@/data/load';
 import { plural } from '@/lib/format';
-import { mapStyleUrl, tuneMapStyle, type StyleLike } from '@/theme/map';
+import { tuneMapStyle } from '@/theme/map';
+import { loadMap, type BaseStyle } from '@/theme/map/loader';
 import { colors, type ColorScheme } from '@/theme/tokens';
-
-// Vite ne sait pas déduire l'URL du worker ESM de MapLibre : on la lui donne (comme la carte des sites).
-if (typeof setWorkerUrl === 'function') setWorkerUrl(workerUrl);
 
 /** Zoom fixe : on voit la vallée ou le massif du site, pas la France entière. */
 export const MINI_MAP_ZOOM = 10;
 const SOURCE_ID = 'site';
 const LAYER_ID = 'site-point';
-
-type BaseStyle = StyleLike & { glyphs?: string };
-const FALLBACK_STYLE: BaseStyle = { version: 8, sources: {}, layers: [{ id: 'fond', type: 'background' }] };
-
-const baseStyleCache = new Map<string, Promise<BaseStyle>>();
-function loadBaseStyle(scheme: ColorScheme): Promise<BaseStyle> {
-  const url = mapStyleUrl(scheme);
-  let p = baseStyleCache.get(url);
-  if (!p) {
-    p = fetch(url).then((r) => {
-      if (!r.ok) throw new Error(`Style de carte : HTTP ${r.status}`);
-      return r.json() as Promise<BaseStyle>;
-    });
-    baseStyleCache.set(url, p);
-    p.catch(() => baseStyleCache.delete(url));
-  }
-  return p;
-}
 
 export interface SitePointCollection {
   type: 'FeatureCollection';
@@ -97,6 +76,7 @@ export function SiteMiniMap({ site, siteId, siteName }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const lat = site?.lat ?? null;
   const lon = site?.lon ?? null;
+  const [failed, setFailed] = useState(false);
   const hasCoords = lat !== null && lon !== null;
   const data = useMemo(() => (hasCoords ? sitePointCollection(lon, lat) : null), [hasCoords, lat, lon]);
 
@@ -105,8 +85,9 @@ export function SiteMiniMap({ site, siteId, siteName }: Props) {
     if (!container || !data || lat === null || lon === null) return;
     let cancelled = false;
     let map: MapLibreMap | null = null;
-    const create = (base: BaseStyle) => {
+    const create = (ml: typeof import('maplibre-gl'), base: BaseStyle) => {
       if (cancelled) return;
+      const { Map: MapLibreMap, NavigationControl } = ml;
       map = new MapLibreMap({
         container,
         style: buildMiniStyle(base, scheme, data),
@@ -121,8 +102,17 @@ export function SiteMiniMap({ site, siteId, siteName }: Props) {
       map.touchZoomRotate.disableRotation();
       map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
     };
-    loadBaseStyle(scheme).then(create, () => create(FALLBACK_STYLE));
+    const stopWaiting = whenNearViewport(container, () => {
+      loadMap({
+        scheme: () => scheme,
+        onReady: create,
+        onMapLibreFailed: () => {
+          if (!cancelled) setFailed(true);
+        },
+      });
+    });
     return () => {
+      stopWaiting();
       cancelled = true;
       map?.remove();
     };
@@ -133,8 +123,8 @@ export function SiteMiniMap({ site, siteId, siteName }: Props) {
       {!hasCoords || siteId === null ? (
         <p className="fv-note" style={{ margin: 0 }} role="status" data-testid="minimap-empty">
           {siteName
-            ? `La position de ${siteName} n’est pas connue : pas de carte.`
-            : 'Ce vol n’a pas de site connu : pas de carte.'}
+            ? `La position de ${siteName} n’est pas connue\u00a0: pas de carte.`
+            : 'Ce vol n’a pas de site connu\u00a0: pas de carte.'}
         </p>
       ) : (
         <>
@@ -142,11 +132,17 @@ export function SiteMiniMap({ site, siteId, siteName }: Props) {
             ref={containerRef}
             className="fv-map"
             role="region"
-            aria-label={`Carte : position du site ${siteName ?? ''}`}
+            aria-label={`Carte\u00a0: position du site ${siteName ?? ''}`}
             data-testid="flight-minimap"
             data-geometry-types="Point"
             data-feature-count={data?.features.length}
-          />
+          >
+            {failed && (
+              <p className="fv-note" style={{ margin: 0, padding: 12 }} role="status" data-testid="minimap-failed">
+                Carte indisponible (hors ligne&nbsp;?).
+              </p>
+            )}
+          </div>
           <p style={{ margin: '10px 0 0', fontSize: 13 }}>
             <b>{siteName}</b>
             {site && ` · ${plural(site.flights, 'vol')}, ${plural(site.pilots, 'pilote')}`}.{' '}

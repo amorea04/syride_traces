@@ -43,7 +43,7 @@ async function fetchJson<T>(relPath: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     throw new DataLoadError(
       response.status === 404
-        ? `Fichier introuvable : ${relPath}`
+        ? `Fichier introuvable\u00a0: ${relPath}`
         : `Chargement de ${relPath} : HTTP ${response.status}`,
       url,
       response.status,
@@ -52,12 +52,12 @@ async function fetchJson<T>(relPath: string, init?: RequestInit): Promise<T> {
   }
   // Un repli SPA mal configuré répond 200 avec index.html pour un fichier absent.
   if ((response.headers.get('content-type') ?? '').toLowerCase().includes('text/html')) {
-    throw new DataLoadError(`Fichier introuvable : ${relPath} (page HTML reçue)`, url, response.status, true);
+    throw new DataLoadError(`Fichier introuvable\u00a0: ${relPath} (page HTML reçue)`, url, response.status, true);
   }
   try {
     return (await response.json()) as T;
   } catch {
-    throw new DataLoadError(`${relPath} n'est pas un JSON valide`, url, response.status);
+    throw new DataLoadError(`${relPath} n’est pas un JSON valide`, url, response.status);
   }
 }
 
@@ -78,7 +78,7 @@ export async function loadMeta(): Promise<MetaFile> {
   const meta = await fetchJson<MetaFile>('meta.json', { cache: 'no-store' });
   if (meta.schema_version !== SUPPORTED_SCHEMA_VERSION) {
     throw new DataLoadError(
-      `Version de données ${String(meta.schema_version)} non prise en charge (attendue : ${SUPPORTED_SCHEMA_VERSION})`,
+      `Version de données ${String(meta.schema_version)} non prise en charge (attendue\u00a0: ${SUPPORTED_SCHEMA_VERSION})`,
       `${dataBase()}meta.json`,
     );
   }

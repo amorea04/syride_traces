@@ -27,9 +27,9 @@ export function flightFigures(f: Flight): Fig[] {
 }
 
 const SOURCE_TEXT: Record<FlightSource, string> = {
-  gpx: 'Source des mesures : GPX importé sur Syride (fichier non republié ici).',
-  fiche: 'Source des mesures : fiche Syride (saisie par le pilote).',
-  aucune: 'Source des mesures : aucune, ce vol n’a pas de mesure.',
+  gpx: 'Source des mesures\u00a0: GPX importé sur Syride (fichier non republié ici).',
+  fiche: 'Source des mesures\u00a0: fiche Syride (saisie par le pilote).',
+  aucune: 'Source des mesures\u00a0: aucune, ce vol n’a pas de mesure.',
 };
 
 export function FlightFigures({ flight }: { flight: Flight }) {
@@ -56,7 +56,7 @@ export function FlightFigures({ flight }: { flight: Flight }) {
       <p className="fv-note" data-testid="flight-source">
         {SOURCE_TEXT[flight.source]}
         {flight.incomplete &&
-          ' Vol incomplet sur Syride : ses statistiques de fiche ne sont pas comparées aux autres vols.'}
+          ' Vol incomplet sur Syride\u00a0: ses statistiques de fiche ne sont pas comparées aux autres vols.'}
       </p>
     </Section>
   );

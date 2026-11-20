@@ -129,6 +129,14 @@ def test_types_and_rounding(files):
         assert isinstance(rec["incomplete"], bool)
 
 
+def test_round_measures_have_no_decimal_point(files):
+    """Phase 6.2 : une mesure ronde est écrite « 3 », pas « 3.0 » (même nombre en JSON, fichier plus léger)."""
+    for rec in decode(files["flights"]):
+        for col in ("dist_km", "dist_cum_km", "speed_avg", "speed_max", "vario_max", "g_max"):
+            v = rec[col]
+            assert v is None or not (isinstance(v, float) and v.is_integer())
+
+
 def test_dictionaries_sorted_and_mode_order(files):
     d = files["flights"]["dict"]
     for name in ("site", "wing", "instrument"):

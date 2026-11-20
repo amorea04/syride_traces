@@ -20,7 +20,7 @@ import { makeFlight } from '../../../tests/flightFactory';
 const chart = vi.hoisted(() => ({
   props: null as null | { onEvents?: Record<string, (p: unknown) => void>; option: unknown },
 }));
-vi.mock('echarts-for-react', () => ({
+vi.mock('echarts-for-react/lib/core', () => ({
   default: (props: { onEvents?: Record<string, (p: unknown) => void>; option: unknown }) => {
     chart.props = props;
     return <div data-testid="echarts" />;

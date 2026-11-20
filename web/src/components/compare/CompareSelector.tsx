@@ -1,4 +1,4 @@
-import { MultiSelect, Select, SegmentedControl, Text } from '@mantine/core';
+import { MultiSelect, Select, SegmentedControl } from '@mantine/core';
 import { Section } from '@/components/common/Section';
 import { Marker } from '@/components/common/Dumbbell';
 import type { SeriesVisual } from '@/components/compare/visuals';
@@ -19,8 +19,6 @@ interface Props {
   /** Mode Années : années du pilote choisi. */
   years: readonly number[];
   visuals: readonly SeriesVisual[];
-  /** Phrase sous le sélecteur quand la sélection est proposée par défaut. */
-  defaultNote: string;
   onModeChange: (mode: CompareMode) => void;
   onIdsChange: (ids: string[]) => void;
   /** Mode Années : changement de pilote (le parent propose ses années récentes). */
@@ -46,7 +44,6 @@ export function CompareSelector({
   candidates,
   years,
   visuals,
-  defaultNote,
   onModeChange,
   onIdsChange,
   onPilotChange,
@@ -99,16 +96,6 @@ export function CompareSelector({
           onChange={onIdsChange}
           nothingFoundMessage={`Aucun ${mode === 'pilotes' ? 'pilote' : 'site'}`}
         />
-      )}
-      {selection.isDefault && selection.valid && (
-        <Text size="sm" c="dimmed" mt={8} data-testid="compare-default-note">
-          {defaultNote}
-        </Text>
-      )}
-      {selection.problem && (
-        <Text size="sm" mt={8} role="status" data-testid="compare-problem">
-          {selection.problem}
-        </Text>
       )}
       {visuals.length > 0 && (
         <ul

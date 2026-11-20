@@ -20,7 +20,7 @@ vi.mock('maplibre-gl', () => {
   class Popup {}
   return { Map, NavigationControl, Popup, setWorkerUrl: vi.fn() };
 });
-vi.mock('echarts-for-react', () => ({ default: () => <div data-testid="echarts" /> }));
+vi.mock('echarts-for-react/lib/core', () => ({ default: () => <div data-testid="echarts" /> }));
 vi.mock('@/data/DataProvider', () => ({
   useData: () => ({
     siteById: new Map([

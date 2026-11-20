@@ -246,7 +246,7 @@ const COLUMN_BY_ID = new Map<ColumnId, ColumnSpec>(COLUMNS.map((c) => [c.id, c])
 
 export function columnSpec(id: ColumnId): ColumnSpec {
   const spec = COLUMN_BY_ID.get(id);
-  if (!spec) throw new Error(`Colonne inconnue : ${id}`);
+  if (!spec) throw new Error(`Colonne inconnue\u00a0: ${id}`);
   return spec;
 }
 

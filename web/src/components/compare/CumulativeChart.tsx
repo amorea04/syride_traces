@@ -127,7 +127,7 @@ export function CumulativeChart({ mode, series, visuals, refDate }: Props) {
       title="Heures cumulées"
       subtitle={
         mode === 'annees'
-          ? 'Heures de vol cumulées depuis le 1er janvier de chaque année ; l’année en cours s’arrête à la date des données.'
+          ? 'Heures de vol cumulées depuis le 1er janvier de chaque année\u00a0; l’année en cours s’arrête à la date des données.'
           : 'Heures de vol cumulées sur la période. Le réticule donne la valeur de chaque série à la même date.'
       }
     >

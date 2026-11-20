@@ -75,7 +75,7 @@ export function SitesFaceToFace({ pilot, flights }: Props) {
     <Section
       id="sites-face"
       title="Ses sites face à face"
-      subtitle={`Tous ses sites, comparés les uns aux autres sur ses propres vols ; le nombre de vols est indiqué à côté de chaque nom. Les vols sans mesure (valeur ≤ 0) sont ignorés dans les moyennes.`}
+      subtitle={`Tous ses sites, comparés les uns aux autres sur ses propres vols\u00a0; le nombre de vols est indiqué à côté de chaque nom. Les vols sans mesure (valeur ≤ 0) sont ignorés dans les moyennes.`}
     >
       {eligible.length < 2 || position === null || siteId === null ? (
         <p style={{ margin: 0 }} role="status" data-testid="sites-face-empty">
@@ -168,7 +168,7 @@ export function SitesFaceToFace({ pilot, flights }: Props) {
           <p className="fv-note">
             {plural(eligible.length, 'site')}, quel que soit leur nombre de vols ; ceux de moins de{' '}
             {FEW_SITE_FLIGHTS} vols sont signalés « peu de vols », car leur moyenne est fragile. Chaque site
-            compte pour une voix : la moyenne des autres est la moyenne de leurs moyennes, sans pondération
+            compte pour une voix&nbsp;: la moyenne des autres est la moyenne de leurs moyennes, sans pondération
             par le nombre de vols. Le rang 1ᵉʳ désigne la valeur la plus haute.
           </p>
         </>

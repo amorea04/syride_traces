@@ -14,7 +14,7 @@ function Card({ card }: { card: RecordCard }) {
   const top = rows[0]?.value ?? 0;
   const foot: string[] = [];
   if (!beaten && previousBest) {
-    foot.push(`Ton record : ${formatRecordValue(def.kind, def.unit, previousBest.value)} en ${previousBest.year}`);
+    foot.push(`Ton record\u00a0: ${formatRecordValue(def.kind, def.unit, previousBest.value)} en ${previousBest.year}`);
   }
   if (measured.ok > 0 && measured.ok < measured.total) {
     foot.push(`mesuré sur ${fmtInt(measured.ok)} de tes ${fmtInt(measured.total)} vols`);
@@ -35,7 +35,7 @@ function Card({ card }: { card: RecordCard }) {
         </span>
         {beaten && (
           <span className="bb-record-new" data-testid="bilan-record-new">
-            Nouveau record !
+            Nouveau record&nbsp;!
           </span>
         )}
       </h3>

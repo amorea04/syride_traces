@@ -87,7 +87,7 @@ export const KPI_DEFS: readonly KpiDef[] = [
   },
   {
     id: 'temps',
-    label: 'Temps de vol',
+    label: 'Heures de vol',
     kind: 'volume',
     unit: '',
     measure: null,

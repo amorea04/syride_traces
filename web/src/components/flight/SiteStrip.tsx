@@ -53,7 +53,7 @@ export function StripLegend({ siteName, othersLabel }: { siteName?: string; othe
       </span>
       <span>
         <i className="fv-sw" style={{ background: 'var(--sr-b)', opacity: 0.4, borderRadius: '50%' }} />
-        Petit point : un autre site
+        Petit point&nbsp;: un autre site
       </span>
       <span>
         <i
@@ -67,7 +67,7 @@ export function StripLegend({ siteName, othersLabel }: { siteName?: string; othe
           className="fv-sw"
           style={{ width: 22, height: 0, borderTop: '1px solid var(--sr-line)', borderRadius: 0 }}
         />
-        Barre : étendue du plus bas au plus haut des sites
+        Barre&nbsp;: étendue du plus bas au plus haut des sites
       </span>
     </div>
   );

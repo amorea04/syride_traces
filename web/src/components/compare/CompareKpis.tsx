@@ -26,7 +26,7 @@ export function CompareKpis({ mode, series, visuals }: Props) {
     <Section
       id="kpi"
       title="Côte à côte"
-      subtitle={`Écarts en pourcentage par rapport à la première colonne (${reference}). Vols, heures et jours volés en vert ou rouge ; le reste est neutre, sans jugement.`}
+      subtitle={`Écarts en pourcentage par rapport à la première colonne (${reference}). Vols, heures et jours volés en vert ou rouge\u00a0; le reste est neutre, sans jugement.`}
     >
       <SimpleGrid cols={{ base: 1, xs: 2, md: Math.min(series.length, 4) }} spacing="lg" data-testid="compare-kpis">
         {series.map((s, i) => {

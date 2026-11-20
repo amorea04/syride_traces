@@ -147,7 +147,7 @@ export function EvolutionChart({ flights }: Props) {
     <Section
       id="evolution"
       title="Évolution dans le temps"
-      subtitle="Par mois ; les mois sans vol comptent zéro. Glisser le curseur du bas pour zoomer."
+      subtitle="Par mois&nbsp;; les mois sans vol comptent zéro. Glisser le curseur du bas pour zoomer."
       actions={
         <>
           <SegmentedControl

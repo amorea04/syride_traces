@@ -66,7 +66,7 @@ export function BilanFlights() {
         </div>
         {recordKeys.size > 0 && (
           <Text size="xs" c="dimmed" mb={6} data-testid="bilan-flights-gold-legend">
-            Lignes en or : vols où un record personnel a été battu cette année
+            Lignes en or&nbsp;: vols où un record personnel a été battu cette année
             {shownRecords > 0 ? ` (${plural(shownRecords, 'vol')} affiché${shownRecords > 1 ? 's' : ''})` : ''}.
           </Text>
         )}

@@ -67,7 +67,7 @@ export const MEASURES: Readonly<Record<MeasureId, Measure>> = {
   },
   vitesse_max: {
     id: 'vitesse_max',
-    label: 'Vitesse maximale',
+    label: 'Vitesse max',
     unit: 'km/h',
     digits: 1,
     fiche: true,
@@ -75,7 +75,7 @@ export const MEASURES: Readonly<Record<MeasureId, Measure>> = {
   },
   distance_cumulee: {
     id: 'distance_cumulee',
-    label: 'Distance parcourue',
+    label: 'Distance',
     unit: 'km',
     digits: 1,
     fiche: true,
@@ -91,7 +91,7 @@ export const MEASURES: Readonly<Record<MeasureId, Measure>> = {
   },
   vario_max: {
     id: 'vario_max',
-    label: 'Vario maximal',
+    label: 'Vario max',
     unit: 'm/s',
     digits: 1,
     fiche: true,
@@ -224,6 +224,6 @@ export function isMetricId(value: string): value is MetricId {
 /** Métrique par identifiant ; lève une erreur si l'identifiant est inconnu. */
 export function metricById(id: MetricId): Metric {
   const metric = BY_ID.get(id);
-  if (!metric) throw new Error(`Métrique inconnue : ${id}`);
+  if (!metric) throw new Error(`Métrique inconnue\u00a0: ${id}`);
   return metric;
 }

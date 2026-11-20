@@ -99,6 +99,11 @@
   gap: 0 8px;
   min-width: 0;
 }
+.st-records a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px; /* cible tactile ≥ 24 px (WCAG 2.5.8) */
+}
 .st-rank {
   color: var(--sr-muted);
 }

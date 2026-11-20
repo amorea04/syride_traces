@@ -46,7 +46,7 @@ export function GearBlock({ flights }: Props) {
     <Section
       id="materiel"
       title="Matériel"
-      subtitle="Un clic sur une voile filtre tout le tableau de bord ; la barre est proportionnelle au temps de vol."
+      subtitle="Un clic sur une voile filtre tout le tableau de bord&nbsp;; la barre est proportionnelle aux heures de vol."
     >
       {wings.length === 0 ? (
         <Text size="sm" c="dimmed">
@@ -60,7 +60,7 @@ export function GearBlock({ flights }: Props) {
               <tr>
                 <th scope="col">Voile</th>
                 <th scope="col">Vols</th>
-                <th scope="col">Temps de vol</th>
+                <th scope="col">Heures de vol</th>
                 <th scope="col">Durée moy.</th>
                 <th scope="col">Vitesse moy.</th>
                 <th scope="col">Gain max</th>
@@ -134,7 +134,7 @@ export function GearBlock({ flights }: Props) {
                 <tr>
                   <th scope="col">Instrument</th>
                   <th scope="col">Vols</th>
-                  <th scope="col">Temps de vol</th>
+                  <th scope="col">Heures de vol</th>
                 </tr>
               </thead>
               <tbody>

@@ -18,7 +18,7 @@ export function CompareRhythm({ series, visuals }: Props) {
     <Section
       id="rythme"
       title="Rythme comparé"
-      subtitle="Régularité : semaines (lundi à dimanche) avec au moins un vol sur les semaines de la période. Série : jours volés consécutifs."
+      subtitle="Régularité&nbsp;: semaines (lundi à dimanche) avec au moins un vol sur les semaines de la période. Série&nbsp;: jours volés consécutifs."
     >
       <ScrollArea type="auto">
         <Table fz="sm" className="sr-tabular" data-testid="compare-rhythm" miw={360}>

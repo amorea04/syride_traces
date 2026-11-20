@@ -30,7 +30,7 @@ export function CompareDumbbells({ series, visuals }: Props) {
     <Section
       id="halteres"
       title="Métrique par métrique"
-      subtitle="Chaque ligne a sa propre échelle : le point le plus à gauche est la plus petite valeur, le plus à droite la plus grande. Les vols sans mesure (valeur ≤ 0) sont ignorés dans les moyennes."
+      subtitle="Chaque ligne a sa propre échelle&nbsp;: le point le plus à gauche est la plus petite valeur, le plus à droite la plus grande. Les vols sans mesure (valeur ≤ 0) sont ignorés dans les moyennes."
     >
       <Dumbbell
         testId="compare-dumbbells"

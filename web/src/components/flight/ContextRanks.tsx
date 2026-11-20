@@ -8,7 +8,7 @@ export function ContextRanks({ ranks }: { ranks: readonly RankStatement[] }) {
     <Section id="contexte" title="Ce vol dans son contexte">
       {ranks.length === 0 ? (
         <p className="fv-note" style={{ margin: 0 }} role="status">
-          Aucun classement remarquable : le vol n’est ni dans les 3 premiers ni dans les 10 % de tête, ou la
+          Aucun classement remarquable&nbsp;: le vol n’est ni dans les 3 premiers ni dans les 10&nbsp;% de tête, ou la
           population compte moins de {MIN_RANK_POPULATION} vols mesurés.
         </p>
       ) : (

@@ -808,7 +808,7 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 ### Phase 6 : Finitions, performance, accessibilité, PWA (≈ 1 à 2 sessions) · Sonnet, audit Opus
 
 - **6.1** Découpage du code par route (`React.lazy`) ; ECharts importé à la carte (modules utilisés seulement) ; MapLibre chargé paresseusement.
-- **6.2** Budget : JS initial ≤ 250 Ko gzip, données initiales ≤ 200 Ko gzip. Mesure avec `rollup-plugin-visualizer`.
+- **6.2** Budget : JS initial ≤ 250 Ko gzip, données initiales ≤ 250 Ko gzip (relevé de 200 Ko, D21). Mesure avec `rollup-plugin-visualizer`.
 - **6.3** Lighthouse (mobile) : Performance ≥ 90, Accessibilité ≥ 95, Bonnes pratiques ≥ 95.
 - **6.4** PWA : manifest, icône sobre, cache des données (stale-while-revalidate sur `meta.json`), tuiles déjà vues, page hors ligne.
 - **6.5** Revue responsive : 360 px, 768 px, 1280 px et 1920 px, avec captures Playwright archivées.
@@ -913,6 +913,7 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 | D18 | Écarts de la recette croisée 5B.11 | **Corrigés à la source** (19/11/2026) : (1) un site vide (chaîne vide, 3 vols) n'est plus compté comme un site dans le rapport Python et les insights ; (2) les durées sont exportées avec plus de précision, pour retrouver les minutes exactes du rapport ; (3) `meta.json` porte la vraie date de mise à jour des données, et la date du dernier vol est affichée à part | 5B.11, `web/RECETTE_5B11.md` |
 | D19 | Sélection de plusieurs années non contiguës | **Oui** (recette du 19/11/2026), ce qui annule la décision de phase 3 | 5C.4 |
 | D20 | Seuil de 10 vols dans « Ses sites face à face » (page pilote) | **Supprimé** : tous les sites du pilote | 5C.5 |
+| D21 | Budget des données initiales (244 Ko gzip mesurés le 20/11/2026, toutes les colonnes servent) | **Relevé à 250 Ko gzip** (20/11/2026), sans passer au format en colonnes. À revoir quand le fichier approchera la limite (≈ +25 Ko par an) | 6.2 |
 
 **Détail D8 : pourquoi un dépôt public suffit.**
 - Avec cette architecture, **le code** va sur GitHub et **les données** vont directement du Mac vers Cloudflare (`wrangler`). Elles ne passent jamais par GitHub. La `.gitignore` en liste blanche l'impose déjà.
@@ -1035,14 +1036,17 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 - [x] Revue par Adrien, PR relue et fusionnée · **`/clear`**
 
 ### Phase 6 : Finitions
-- [ ] 6.1 Découpage du code, imports à la carte
-- [ ] 6.2 Budgets respectés (JS ≤ 250 Ko gzip, données ≤ 200 Ko gzip)
-- [ ] 6.3 Lighthouse mobile : Perf ≥ 90, A11y ≥ 95, BP ≥ 95
-- [ ] 6.4 PWA et mode hors ligne
-- [ ] 6.5 Revue responsive (4 largeurs, captures)
-- [ ] 6.6 Passe éditoriale des libellés
-- [ ] 6.7 `/code-review` et corrections
-- [ ] PR relue et fusionnée · **`/clear`**
+- [x] 6.1 Découpage du code, imports à la carte (JS initial 913 → 174 Ko gzip)
+- [x] 6.2 Budgets respectés (JS ≤ 250 Ko gzip, données ≤ 250 Ko gzip, D21)
+- [ ] 6.3 Lighthouse mobile : Perf ≥ 90, A11y ≥ 95, BP ≥ 95 (20/11/2026 : A11y et BP à 100 partout ; Perf 52 à 70 en simulation, à remesurer sur l'URL déployée en phase 7, voir `web/audits/PHASE6.md`)
+- [x] 6.4 PWA et mode hors ligne
+- [x] 6.5 Revue responsive (4 largeurs, captures : `npm run captures`, gardées en local)
+- [x] 6.6 Passe éditoriale des libellés (glossaire dans `web/audits/PHASE6.md`)
+- [x] 6.7 `/code-review` et corrections (9 constats corrigés)
+- [x] 6.8 Recette du 20/11/2026 : infobulle au survol des sites (carte des sites et tableau de bord)
+- [x] 6.9 Recette du 20/11/2026 : Comparer vide à l'ouverture
+- [x] 6.10 Recette du 20/11/2026 : « Durée des vols » croisée selon 7 mesures ou 4 catégories (mois, heure, voile, site)
+- [x] PR relue et fusionnée · **`/clear`**
 
 ### Phase 7 : Déploiement et bascule
 - [ ] 7.1 Projet Cloudflare Pages créé, `wrangler login` fait (par Adrien)

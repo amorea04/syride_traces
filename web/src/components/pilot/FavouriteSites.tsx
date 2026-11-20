@@ -71,7 +71,7 @@ export function FavouriteSites({ flights }: { flights: readonly Flight[] }) {
             {hasMap ? (
               <SitesMap data={data} height={isMobile ? MAP_HEIGHT_MOBILE : MAP_HEIGHT} />
             ) : (
-              <EmptyNote>Aucun de ses sites n’a de coordonnées : pas de carte.</EmptyNote>
+              <EmptyNote>Aucun de ses sites n’a de coordonnées&nbsp;: pas de carte.</EmptyNote>
             )}
             {data.sitesWithoutCoords > 0 && hasMap && (
               <Text size="xs" c="dimmed" mt={4}>

@@ -1,5 +1,5 @@
 /**
- * Comparaison (phase 5, lot A) : paramètres d'URL, population, sélection par défaut, séries comparées, KPI,
+ * Comparaison (phase 5, lot A) : paramètres d'URL, population, séries comparées, KPI,
  * haltères, rythme et courbes d'heures cumulées. Fonctions pures.
  *
  * Populations (voir `comparePool`) : la page travaille sur les filtres globaux, sauf la dimension que le
@@ -38,7 +38,7 @@ export interface CompareParams {
   mode: CompareMode;
   /**
    * Pilotes : slugs. Sites : identifiants. Années : slug du pilote, puis les années.
-   * `null` : paramètre `ids` absent (sélection par défaut) ; `[]` : présent mais vide (sélection vide respectée).
+   * `null` : paramètre `ids` absent (sélection vide) ; `[]` : présent mais vide.
    */
   ids: string[] | null;
 }
@@ -132,76 +132,47 @@ export function pilotYears(pool: readonly Flight[], slug: string): number[] {
 
 export interface Selection {
   ids: string[];
-  /** Choix proposé par défaut (paramètre `ids` absent de l'URL). */
-  isDefault: boolean;
   /** Au moins le minimum requis : la comparaison peut être calculée. */
   valid: boolean;
-  /** Pourquoi la comparaison n'est pas possible (« Choisir au moins 2 pilotes. »), sinon `null`. */
+  /** Pourquoi la comparaison n'est pas possible (« Choisissez au moins 2 pilotes à comparer. »), sinon `null`. */
   problem: string | null;
 }
 
-const NOUN: Record<CompareMode, string> = { pilotes: 'pilotes', annees: 'années', sites: 'sites' };
+const PROBLEM: Record<CompareMode, string> = {
+  pilotes: `Choisissez au moins ${MIN_SERIES} pilotes à comparer.`,
+  annees: `Choisissez un pilote, puis au moins ${MIN_SERIES} de ses années.`,
+  sites: `Choisissez au moins ${MIN_SERIES} sites à comparer.`,
+};
 
-/** Garde les identifiants connus, uniques, au plus `MAX_SERIES` ; propose les plus actifs si rien n'est choisi. */
+/** Garde les identifiants connus, uniques, au plus `MAX_SERIES`. Sans `ids` dans l'URL, la sélection est vide. */
 export function resolveSelection(
   mode: CompareMode,
   rawIds: readonly string[] | null,
   pool: readonly Flight[],
 ): Selection {
   const ids = rawIds ?? [];
-  const known = candidates(mode, pool);
-  const knownValues = new Set(known.map((c) => c.value));
-  let chosen: string[];
-  let isDefault = false;
+  const knownValues = new Set(candidates(mode, pool).map((c) => c.value));
 
   if (mode === 'annees') {
-    let pilot = ids[0] !== undefined && knownValues.has(ids[0]) ? ids[0] : null;
+    const pilot = ids[0] !== undefined && knownValues.has(ids[0]) ? ids[0] : null;
     let years: number[] = [];
     if (pilot !== null) {
       const available = new Set(pilotYears(pool, pilot));
       years = [...new Set(ids.slice(1).map(Number))].filter((y) => available.has(y)).slice(0, MAX_SERIES);
     }
-    if (rawIds === null) {
-      // Le pilote le plus actif parmi ceux qui ont au moins deux années de vols (jamais un pilote sans choix possible).
-      isDefault = true;
-      pilot = known.find((c) => pilotYears(pool, c.value).length >= MIN_SERIES)?.value ?? null;
-      years = pilot === null ? [] : pilotYears(pool, pilot).slice(0, MIN_SERIES).reverse();
-    }
     // Années du plus ancien au plus récent : la plus ancienne sert de référence aux écarts.
     years.sort((a, b) => a - b);
-    chosen = pilot === null ? [] : [pilot, ...years.map(String)];
     const valid = pilot !== null && years.length >= MIN_SERIES;
     return {
-      ids: chosen,
-      isDefault,
+      ids: pilot === null ? [] : [pilot, ...years.map(String)],
       valid,
-      problem: valid
-        ? null
-        : pilot === null
-          ? rawIds === null
-            ? 'Aucun pilote n’a au moins deux années de vols.'
-            : 'Choisir un pilote.'
-          : `Choisir au moins ${MIN_SERIES} années.`,
+      problem: valid ? null : PROBLEM.annees,
     };
   }
 
-  if (rawIds === null) {
-    isDefault = true;
-    chosen = known.slice(0, MIN_SERIES).map((c) => c.value);
-  } else {
-    chosen = ids.filter((id) => knownValues.has(id)).slice(0, MAX_SERIES);
-  }
+  const chosen = ids.filter((id) => knownValues.has(id)).slice(0, MAX_SERIES);
   const valid = chosen.length >= MIN_SERIES;
-  return {
-    ids: chosen,
-    isDefault,
-    valid,
-    problem: valid
-      ? null
-      : chosen.length === 0
-        ? `Choisir ${MIN_SERIES} à ${MAX_SERIES} ${NOUN[mode]}.`
-        : `Choisir au moins ${MIN_SERIES} ${NOUN[mode]}.`,
-  };
+  return { ids: chosen, valid, problem: valid ? null : PROBLEM[mode] };
 }
 
 // ---------------------------------------------------------------------------

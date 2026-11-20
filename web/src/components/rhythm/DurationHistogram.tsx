@@ -94,7 +94,7 @@ export function DurationHistogram({ flights }: Props) {
       id="durees"
       title="Durées"
       subtitle={
-        medianLabel ? `Le vol médian se situe dans la tranche « ${medianLabel} » (en accent).` : undefined
+        medianLabel ? `Le vol médian se situe dans la tranche «\u00a0${medianLabel}\u00a0» (en accent).` : undefined
       }
       actions={<CoverageNotice flights={flights} measure="plafond" />}
     >
@@ -102,7 +102,7 @@ export function DurationHistogram({ flights }: Props) {
         option={option}
         height={220}
         testId="duration-histogram"
-        ariaLabel={`Histogramme du nombre de vols par tranche de durée : ${DURATION_BIN_LABELS.map((l, i) => `${l} ${fmtInt(stats.bins[i] ?? 0)}`).join(', ')}.`}
+        ariaLabel={`Histogramme du nombre de vols par tranche de durée\u00a0: ${DURATION_BIN_LABELS.map((l, i) => `${l} ${fmtInt(stats.bins[i] ?? 0)}`).join(', ')}.`}
         table={{
           columns: ['Durée', 'Vols', 'Part'],
           rows: DURATION_BIN_LABELS.map((l, i) => [

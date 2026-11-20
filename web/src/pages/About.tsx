@@ -39,7 +39,7 @@ export function About() {
           <b>{longDate(meta.generated_at)}</b>. Dernier vol le <b>{longDate(meta.data_updated_at)}</b>.
         </Text>
         <Text size="sm" mt="xs" data-testid="about-d12">
-          Aucune trace de vol n’est publiée ici : seule la position des sites apparaît sur les cartes. Pour
+          Aucune trace de vol n’est publiée ici&nbsp;: seule la position des sites apparaît sur les cartes. Pour
           voir une trace, chaque vol renvoie vers sa page sur Syride.
         </Text>
       </Section>
@@ -49,7 +49,7 @@ export function About() {
 
       <Section id="credit" title="Crédit">
         <Text size="sm" data-testid="about-credit">
-          Créée par : Adrien Moreau
+          Créée par&nbsp;: Adrien Moreau
         </Text>
       </Section>
     </Stack>

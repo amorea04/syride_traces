@@ -1,15 +1,7 @@
 import { Text, useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
-import {
-  Map as MapLibreMap,
-  NavigationControl,
-  Popup,
-  setWorkerUrl,
-  type MapGeoJSONFeature,
-  type MapLayerMouseEvent,
-} from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
+import type { Map as MapLibreMap, MapGeoJSONFeature, MapLayerMouseEvent, Popup } from 'maplibre-gl';
+import { whenNearViewport } from '@/lib/nearViewport';
 import '@/components/map/sitesMap.css';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -26,12 +18,17 @@ import {
   SRC_RAW,
   type MapStyle,
 } from '@/components/map/sitesLayers';
+import {
+  buildHoverContent,
+  clusterHoverText,
+  siteHoverText,
+  type HoverTooltipText,
+} from '@/components/map/hoverTooltip';
 import { fmtHm, fmtInt, fmtPercent, plural } from '@/lib/format';
 import { type Bounds, type SitePointProps, type SitesMapData } from '@/lib/mapSites';
 import { useFiltersStore } from '@/store/filters';
 import { useHighlightStore } from '@/store/highlight';
-import { mapStyleUrl } from '@/theme/map';
-import type { StyleLike } from '@/theme/map';
+import { FALLBACK_STYLE, loadBaseStyle, loadMap, type BaseStyle } from '@/theme/map/loader';
 import { colors, type ColorScheme } from '@/theme/tokens';
 
 /** Marge autour de la sélection au cadrage (px), zoom maximal et durée d'animation (ms). */
@@ -43,29 +40,8 @@ const SINGLE_SITE_ZOOM = 10;
 /** Vue initiale : France métropolitaine. */
 const INITIAL_CENTER: [number, number] = [2.5, 46.5];
 const INITIAL_ZOOM = 4.5;
-// Vite ne sait pas déduire l'URL du worker ESM de MapLibre 6 : on la lui donne.
-if (typeof setWorkerUrl === 'function') setWorkerUrl(workerUrl);
 
 const MOBILE_QUERY = '(max-width: 48em)';
-
-type BaseStyle = StyleLike & { glyphs?: string };
-/** Fond de secours si le style OpenFreeMap est injoignable : les points restent visibles. */
-const FALLBACK_STYLE: BaseStyle = { version: 8, sources: {}, layers: [{ id: 'fond', type: 'background' }] };
-
-const baseStyleCache = new Map<string, Promise<BaseStyle>>();
-function loadBaseStyle(scheme: ColorScheme): Promise<BaseStyle> {
-  const url = mapStyleUrl(scheme);
-  let p = baseStyleCache.get(url);
-  if (!p) {
-    p = fetch(url).then((r) => {
-      if (!r.ok) throw new Error(`Style de carte : HTTP ${r.status}`);
-      return r.json() as Promise<BaseStyle>;
-    });
-    baseStyleCache.set(url, p);
-    p.catch(() => baseStyleCache.delete(url));
-  }
-  return p;
-}
 
 /** Recadre la carte sur une emprise (un seul site : centrage à un zoom fixe). */
 function fitBoundsOn(map: MapLibreMap, bounds: Bounds): void {
@@ -140,6 +116,11 @@ function buildPopupContent(
   return root;
 }
 
+/** Vrai si le pointeur sait survoler (pas d'infobulle sur écran tactile : le clic suffit). */
+function canHover(): boolean {
+  return typeof window.matchMedia !== 'function' || !window.matchMedia('(hover: none)').matches;
+}
+
 function siteProps(f: MapGeoJSONFeature): SitePointProps {
   return f.properties as unknown as SitePointProps;
 }
@@ -200,6 +181,7 @@ export function SitesMap({
   const mapRef = useRef<MapLibreMap | null>(null);
   const [ready, setReady] = useState(false);
   const [baseFailed, setBaseFailed] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
   const baseRef = useRef<BaseStyle>(FALLBACK_STYLE);
   const appliedScheme = useRef<ColorScheme | null>(null);
 
@@ -238,9 +220,15 @@ export function SitesMap({
     let cancelled = false;
     let map: MapLibreMap | null = null;
     let popup: Popup | null = null;
+    let hoverPopup: Popup | null = null;
 
-    const create = (base: BaseStyle) => {
+    const create = (ml: typeof import('maplibre-gl'), base: BaseStyle) => {
       if (cancelled) return;
+      const { Map: MapLibreMap, NavigationControl, Popup } = ml;
+      const hideHover = () => {
+        hoverPopup?.remove();
+        hoverPopup = null;
+      };
       baseRef.current = base;
       const l = live.current;
       appliedScheme.current = l.scheme;
@@ -282,6 +270,7 @@ export function SitesMap({
         const { coordinates } = f.geometry as unknown as { coordinates: [number, number] };
         live.current.onSiteClick?.(p.siteId);
         if (!live.current.showPopup) return;
+        hideHover();
         popup?.remove();
         popup = new Popup({ closeButton: true, maxWidth: '280px', offset: 10 })
           .setLngLat(coordinates)
@@ -303,10 +292,36 @@ export function SitesMap({
           .addTo(m);
       });
 
-      for (const layer of [LAYER_CLUSTER, LAYER_POINT]) {
+      /** Infobulle légère au survol (souris uniquement, jamais en heatmap), sans interaction. */
+      const showHover = (text: HoverTooltipText | null, coordinates: [number, number]) => {
+        if (!text || live.current.heatmap || !canHover()) return hideHover();
+        if (!hoverPopup)
+          hoverPopup = new Popup({
+            closeButton: false,
+            closeOnClick: false,
+            closeOnMove: true,
+            className: 'sr-map-hover-popup',
+            maxWidth: '240px',
+            offset: 14,
+          }).addTo(m);
+        hoverPopup.setLngLat(coordinates).setDOMContent(buildHoverContent(text));
+      };
+      const hoverOn = (layer: string, textOf: (f: MapGeoJSONFeature) => HoverTooltipText | null) => {
         m.on('mouseenter', layer, () => (m.getCanvas().style.cursor = 'pointer'));
-        m.on('mouseleave', layer, () => (m.getCanvas().style.cursor = ''));
-      }
+        m.on('mousemove', layer, (e: MapLayerMouseEvent) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const { coordinates } = f.geometry as unknown as { coordinates: [number, number] };
+          showHover(textOf(f), coordinates);
+        });
+        m.on('mouseleave', layer, () => {
+          m.getCanvas().style.cursor = '';
+          hideHover();
+        });
+      };
+      hoverOn(LAYER_CLUSTER, (f) => clusterHoverText(f.properties ?? {}));
+      hoverOn(LAYER_POINT, (f) => siteHoverText(siteProps(f)));
+      m.on('movestart', hideHover);
       m.on('mousemove', LAYER_POINT, (e: MapLayerMouseEvent) => {
         const f = e.features?.[0];
         if (!f) return;
@@ -325,17 +340,22 @@ export function SitesMap({
       });
     };
 
-    loadBaseStyle(live.current.scheme).then(
-      (base) => create(base),
-      () => {
-        setBaseFailed(true);
-        create(FALLBACK_STYLE);
-      },
-    );
+    const stopWaiting = whenNearViewport(container, () => {
+      loadMap({
+        scheme: () => live.current.scheme,
+        onReady: create,
+        onBaseFailed: () => setBaseFailed(true),
+        onMapLibreFailed: () => {
+          if (!cancelled) setMapFailed(true);
+        },
+      });
+    });
 
     return () => {
+      stopWaiting();
       cancelled = true;
       popup?.remove();
+      hoverPopup?.remove();
       map?.remove();
       mapRef.current = null;
       setReady(false);
@@ -410,7 +430,7 @@ export function SitesMap({
 
   // Cadrage sur la sélection.
   const boundsKey = data.bounds ? data.bounds.join(',') : '';
-  const hasFocus = Boolean(focus);   // `focus` prime sur la sélection tant qu'il est posé
+  const hasFocus = Boolean(focus); // `focus` prime sur la sélection tant qu'il est posé
   useEffect(() => {
     const map = mapRef.current;
     const bounds: Bounds | null = data.bounds;
@@ -430,14 +450,20 @@ export function SitesMap({
       <div
         ref={containerRef}
         role="region"
-        aria-label={`Carte des sites : ${plural(data.collection.features.length, 'site')} avec coordonnées`}
+        aria-label={`Carte des sites\u00a0: ${plural(data.collection.features.length, 'site')} avec coordonnées`}
         style={{ height, width: '100%', borderRadius: 3, overflow: 'hidden' }}
         data-testid="sites-map"
       />
-      {baseFailed && (
-        <Text size="xs" c="dimmed" mt={4}>
-          Fond de carte indisponible : seuls les sites sont affichés.
+      {mapFailed ? (
+        <Text size="xs" c="dimmed" mt={4} role="status" data-testid="sites-map-failed">
+          Carte indisponible (hors ligne&nbsp;?). La liste des sites reste consultable.
         </Text>
+      ) : (
+        baseFailed && (
+          <Text size="xs" c="dimmed" mt={4}>
+            Fond de carte indisponible&nbsp;: seuls les sites sont affichés.
+          </Text>
+        )
       )}
     </div>
   );

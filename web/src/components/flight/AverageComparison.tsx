@@ -42,7 +42,7 @@ export function AverageComparison({ comparisons, hasSite, siteName }: Props) {
     <Section
       id="moyennes"
       title="Ce vol face aux moyennes"
-      subtitle="Les vols sans mesure (valeur ≤ 0 ou absente) sont ignorés dans les moyennes ; la moyenne inclut ce vol."
+      subtitle="Les vols sans mesure (valeur ≤ 0 ou absente) sont ignorés dans les moyennes&nbsp;; la moyenne inclut ce vol."
     >
       <div className="fv-cmps" data-testid="flight-averages">
         {comparisons.map((c) => {
@@ -77,7 +77,7 @@ export function AverageComparison({ comparisons, hasSite, siteName }: Props) {
           );
         })}
       </div>
-      {!hasSite && <p className="fv-note">Ce vol n’a pas de site connu : pas de moyenne de site.</p>}
+      {!hasSite && <p className="fv-note">Ce vol n’a pas de site connu&nbsp;: pas de moyenne de site.</p>}
       <div className="fv-legend">
         <span>
           <i className="fv-sw" style={{ background: 'var(--sr-p)' }} />
