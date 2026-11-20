@@ -125,6 +125,8 @@ test.describe('tableau de bord', () => {
   test('à 1440 px la matrice jour × heure ne déborde pas de sa carte', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
+    // Section montée à l'approche de l'écran (6.3).
+    await page.locator('#quand').scrollIntoViewIfNeeded();
     await expect(page.getByTestId('week-hour-matrix')).toBeVisible();
     const fits = await page.evaluate(() => {
       const m = document.querySelector('[data-testid="week-hour-matrix"]');

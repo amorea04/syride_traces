@@ -1,6 +1,6 @@
 import { Table, TextInput, Text } from '@mantine/core';
 import { IconArrowDown, IconArrowUp, IconSearch } from '@tabler/icons-react';
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { Section } from '@/components/common/Section';
 import { EmptyNote } from '@/components/dashboard/shared';
 import { FilterLink } from '@/components/FilterLink';
@@ -54,6 +54,9 @@ function Share({ row }: { row: SiteTableRow }) {
   );
 }
 
+/** Lignes rendues au premier passage (le reste suit en arrière-plan). */
+const FIRST_ROWS = 30;
+
 interface Props {
   /** Vols de la sélection courante. */
   flights: readonly Flight[];
@@ -73,6 +76,9 @@ export function SitesTable({ flights }: Props) {
     () => sortSiteRows(filterSiteRows(rows, query), sort.key, sort.direction),
     [rows, query, sort],
   );
+  // Premier rendu : les premières lignes seulement ; les ~400 autres suivent dans un rendu de fond découpé en
+  // tranches (6.3), sans tâche longue. Un tri ou une recherche garde l'ancienne liste le temps du rendu.
+  const rendered = useDeferredValue(shown, shown.slice(0, FIRST_ROWS));
 
   const toggle = (column: Column) =>
     setSort((s) =>
@@ -129,7 +135,7 @@ export function SitesTable({ flights }: Props) {
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {shown.map((r) => (
+                {rendered.map((r) => (
                   <Table.Tr
                     key={r.siteId}
                     className="st-row"

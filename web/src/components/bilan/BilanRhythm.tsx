@@ -4,7 +4,7 @@ import { useBilan } from '@/components/bilan/BilanContext';
 import { Section } from '@/components/common/Section';
 import { CalendarHeatmap } from '@/components/rhythm/CalendarHeatmap';
 import { DaySheet } from '@/components/rhythm/DaySheet';
-import { OPEN_DAY_EVENT } from '@/lib/bilanOverview';
+import { clearPendingOpenDay, OPEN_DAY_EVENT, pendingOpenDay } from '@/lib/bilanOverview';
 import { EMPTY, fmtDuration, fmtInt, fmtPercent, fmtRange, plural } from '@/lib/format';
 import type { DateSpan } from '@/lib/rhythm';
 import { computeRhythm } from '@/lib/rhythm';
@@ -68,9 +68,16 @@ export function BilanRhythm() {
   useEffect(() => {
     const listener = (event: Event) => {
       const iso = (event as CustomEvent<string>).detail;
-      if (typeof iso === 'string') setOpenDay(iso);
+      if (typeof iso === 'string') {
+        event.preventDefault();
+        setOpenDay(iso);
+      }
     };
     document.addEventListener(OPEN_DAY_EVENT, listener);
+    // Demande faite avant l'abonnement (section montée en différé, 6.3) : reprise juste après.
+    const pending = pendingOpenDay();
+    clearPendingOpenDay();
+    if (pending) queueMicrotask(() => setOpenDay(pending));
     return () => document.removeEventListener(OPEN_DAY_EVENT, listener);
   }, [setOpenDay]);
 

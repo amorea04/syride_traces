@@ -21,3 +21,32 @@ export function whenNearViewport(el: Element, run: () => void, margin = '400px')
   io.observe(el);
   return () => io.disconnect();
 }
+
+/**
+ * Appelle `run` quand le navigateur est inactif (au plus tard après `timeout` ms), donc après la première peinture :
+ * le travail non urgent (ECharts) ne retarde pas l'affichage du contenu principal (6.3). Renvoie l'annulation.
+ */
+export function whenIdle(run: () => void, timeout = 1500): () => void {
+  if (typeof requestIdleCallback === 'function') {
+    const id = requestIdleCallback(run, { timeout });
+    return () => cancelIdleCallback(id);
+  }
+  const id = setTimeout(run, 200);
+  return () => clearTimeout(id);
+}
+
+/** `whenNearViewport` puis `whenIdle` : chargement lourd (ECharts, MapLibre) après la première peinture. */
+export function whenNearViewportIdle(el: Element, run: () => void, margin = '400px'): () => void {
+  let stopIdle: (() => void) | null = null;
+  const stopWaiting = whenNearViewport(
+    el,
+    () => {
+      stopIdle = whenIdle(run);
+    },
+    margin,
+  );
+  return () => {
+    stopWaiting();
+    stopIdle?.();
+  };
+}

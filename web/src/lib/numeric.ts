@@ -69,7 +69,8 @@ export function max(values: readonly number[]): number | null {
 /** Médiane (moyenne des deux valeurs centrales si l'effectif est pair), `null` si vide. */
 export function median(values: readonly number[]): number | null {
   if (values.length === 0) return null;
-  const sorted = [...values].sort((a, b) => a - b);
+  // Tri numérique natif d'un tableau typé : bien plus rapide qu'un comparateur JS sur ~10 000 vols.
+  const sorted = Float64Array.from(values).sort();
   const mid = sorted.length >> 1;
   const hi = sorted[mid] as number;
   return sorted.length % 2 === 1 ? hi : ((sorted[mid - 1] as number) + hi) / 2;

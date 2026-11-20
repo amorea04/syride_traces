@@ -160,25 +160,28 @@ describe('FlightCharacteristics', () => {
 });
 
 describe('StatChart', () => {
-  it('un clic sur une barre pilote pose le filtre', () => {
+  it('un clic sur une barre pilote pose le filtre', async () => {
     renderUi(<StatChart flights={flights} defaultAxis="pilote" />);
-    expect(screen.getByTestId('echarts')).toBeInTheDocument();
+    expect(await screen.findByTestId('echarts')).toBeInTheDocument();
     chart.props?.onEvents?.click?.({ dataIndex: 0 });
     expect(useFiltersStore.getState().filters.pilots).toEqual(['alice']);
   });
-  it('axe année : le clic filtre l’année ; axe mois : aucune action', () => {
+  it('axe année : le clic filtre l’année ; axe mois : aucune action', async () => {
     renderUi(<StatChart flights={flights} defaultAxis="annee" />);
+    await screen.findByTestId('echarts');
     chart.props?.onEvents?.click?.({ dataIndex: 1 });
     expect(useFiltersStore.getState().filters).toMatchObject({ years: [2026], dateFrom: null, dateTo: null });
     cleanup();
     useFiltersStore.setState({ filters: defaultFilters() });
     renderUi(<StatChart flights={flights} defaultAxis="mois" />);
+    await screen.findByTestId('echarts');
     chart.props?.onEvents?.click?.({ dataIndex: 0 });
     expect(useFiltersStore.getState().filters).toEqual(defaultFilters());
   });
-  it('l’infobulle échappe le nom de la catégorie (pas de HTML injecté)', () => {
+  it('l’infobulle échappe le nom de la catégorie (pas de HTML injecté)', async () => {
     const evil = [makeFlight('2026-06-01', { pilot: '<img src=x onerror=alert(1)>', pilotSlug: 'evil' })];
     renderUi(<StatChart flights={evil} defaultAxis="pilote" />);
+    await screen.findByTestId('echarts');
     const option = chart.props?.option as {
       tooltip: { formatter: (p: unknown) => string };
     };
@@ -186,8 +189,9 @@ describe('StatChart', () => {
     expect(html).not.toContain('<img');
     expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
   });
-  it('le survol surligne le site puis se retire', () => {
+  it('le survol surligne le site puis se retire', async () => {
     renderUi(<StatChart flights={flights} defaultAxis="site" />);
+    await screen.findByTestId('echarts');
     chart.props?.onEvents?.mouseover?.({ dataIndex: 0 });
     expect(useHighlightStore.getState().highlight?.kind).toBe('site');
     chart.props?.onEvents?.mouseout?.({});
@@ -218,8 +222,9 @@ describe('EvolutionChart', () => {
     // 2025-05 → 2026-06 : 14 mois.
     expect(screen.getAllByRole('row')).toHaveLength(15);
   });
-  it('un surlignage de mois fusionne l’option sans réinitialiser le zoom', () => {
+  it('un surlignage de mois fusionne l’option sans réinitialiser le zoom', async () => {
     renderUi(<EvolutionChart flights={flights} />);
+    await screen.findByTestId('echarts');
     const props = chart.props as unknown as {
       notMerge?: boolean;
       option: { dataZoom: Record<string, unknown>[] };

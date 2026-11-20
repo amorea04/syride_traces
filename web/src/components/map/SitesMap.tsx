@@ -1,7 +1,7 @@
 import { Text, useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type { Map as MapLibreMap, MapGeoJSONFeature, MapLayerMouseEvent, Popup } from 'maplibre-gl';
-import { whenNearViewport } from '@/lib/nearViewport';
+import { whenNearViewportIdle } from '@/lib/nearViewport';
 import '@/components/map/sitesMap.css';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -340,7 +340,7 @@ export function SitesMap({
       });
     };
 
-    const stopWaiting = whenNearViewport(container, () => {
+    const stopWaiting = whenNearViewportIdle(container, () => {
       loadMap({
         scheme: () => live.current.scheme,
         onReady: create,

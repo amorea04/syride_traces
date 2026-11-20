@@ -1,5 +1,6 @@
 import { SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { useMemo } from 'react';
+import { Deferred } from '@/components/common/Deferred';
 import { APP_NAME } from '@/components/navigation';
 import { CollectiveActivity } from '@/components/dashboard/CollectiveActivity';
 import { EvolutionChart } from '@/components/dashboard/EvolutionChart';
@@ -46,18 +47,37 @@ export function Dashboard() {
 
       <KpiBand flights={flights} allFlights={allFlights} filters={filters} today={today} />
       <CollectiveActivity allFlights={allFlights} filters={filters} today={today} />
-      <FlightCharacteristics flights={flights} />
-      <EvolutionChart flights={flights} />
-      <StatChart flights={flights} />
-      <RhythmBlock flights={flights} referenceDate={today} />
-      <WeekHourMatrix flights={flights} />
-      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl">
-        <DurationHistogram flights={flights} />
-        <FlightModes flights={flights} />
-      </SimpleGrid>
-      <GearBlock flights={flights} />
-      <FlightScatter flights={flights} />
-      <SitesMapSection flights={flights} />
+      {/* Sous la ligne de flottaison : calculées et montées à l'approche de l'écran (6.3). */}
+      <Deferred id="caracteristiques" minHeight={420}>
+        <FlightCharacteristics flights={flights} />
+      </Deferred>
+      <Deferred id="evolution" minHeight={440}>
+        <EvolutionChart flights={flights} />
+      </Deferred>
+      <Deferred id="repartitions" minHeight={520}>
+        <StatChart flights={flights} />
+      </Deferred>
+      <Deferred id="rythme" minHeight={600}>
+        <RhythmBlock flights={flights} referenceDate={today} />
+      </Deferred>
+      <Deferred id="quand" minHeight={440}>
+        <WeekHourMatrix flights={flights} />
+      </Deferred>
+      <Deferred id="durees" minHeight={800}>
+        <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl">
+          <DurationHistogram flights={flights} />
+          <FlightModes flights={flights} />
+        </SimpleGrid>
+      </Deferred>
+      <Deferred id="materiel" minHeight={600}>
+        <GearBlock flights={flights} />
+      </Deferred>
+      <Deferred id="nuage" minHeight={520}>
+        <FlightScatter flights={flights} />
+      </Deferred>
+      <Deferred id="carte-sites" minHeight={560}>
+        <SitesMapSection flights={flights} />
+      </Deferred>
     </Stack>
   );
 }

@@ -8,10 +8,12 @@ import { cssVariablesResolver, mantineTheme } from '@/theme';
 import '@/theme/global.css';
 import { registerServiceWorker } from '@/pwa';
 import { preloadRoute } from '@/router';
+import { preloadAppData } from '@/data/DataProvider';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Élément #root introuvable');
 
+preloadAppData();
 preloadRoute(window.location.pathname);
 
 createRoot(root).render(

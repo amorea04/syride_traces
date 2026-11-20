@@ -39,6 +39,37 @@ Reste à décider (hors périmètre du lot)
 
 Le déploiement ne change presque rien à la performance simulée : le frein est le calcul côté navigateur (TBT, CPU x4), surtout sur `/`, et la chaîne `meta.json` puis `flights.json`. Accessibilité et bonnes pratiques restent à 100. 6.3 reste ouvert : chantier d'optimisation à part.
 
+### Chantier de performance (20/11/2026)
+
+Mesure : `lighthouse@13.6.0`, profil mobile par défaut, `vite preview` (gzip) du build réel sur le port 5193, vraies données (9 584 vols). Deux passes « après » (écart entre passes : 1 à 3 points). Rapports dans `web/audits/lighthouse/63-avant/`, `63-apres/` et `63-apres-2/` (ignorés par git).
+
+| Page | Perf avant | Perf après | LCP avant / après | TBT avant / après | FCP | CLS après | A11y / BP |
+|---|---|---|---|---|---|---|---|
+| `/` | 53 | 71 et 74 | 5,9 s / 5,0 s | 1 220 ms / 320 à 410 ms | 1,7 s / 1,6 s | 0 | 100 / 100 |
+| `/vols` | 71 | 76 et 77 | 4,6 s / 4,5 s | 490 ms / 300 à 330 ms | 1,7 s / 1,6 s | 0 | 100 / 100 |
+| `/pilote/j2f/2025` | 53 | 68 et 69 | 6,3 s / 5,4 s | 1 140 ms / 420 à 450 ms | 1,7 s / 1,6 s | 0 | 100 / 100 |
+| `/sites` | 59 | 62 et 63 | 4,7 s / 4,7 s | 1 050 ms / 790 à 880 ms | 1,6 s / 1,6 s | 0,016 | 100 / 100 |
+
+Corrections faites
+- ECharts (187 Ko gzip, ~430 ms d'évaluation en CPU x4) n'est plus une dépendance statique des pages : `ChartFrame` le charge à la demande (`EChart.tsx`, `React.lazy`), seulement quand un graphique approche de l'écran **et** que le navigateur est inactif (`whenNearViewportIdle`), donc après la première peinture. Même règle pour MapLibre (`SitesMap`, `SiteMiniMap`).
+- Tableau de bord : les sections sous l'activité collective ne sont calculées et montées qu'à l'approche de l'écran (`components/common/Deferred.tsx`, l'ancre `id` reste en place pour les liens et les tests).
+- Bilan pilote × année : les sections après l'aperçu sont montées juste après la première peinture, dans un rendu de fond que React découpe en tranches (`Deferred when="background"`) ; le contenu reste présent sans défilement (sommaire, e2e). La fiche du jour demandée depuis l'aperçu avant le montage de la section Rythme est reprise à son montage.
+- Rendu qui suit l'arrivée des données en transition (`startTransition` dans `DataProvider`) : React le découpe au lieu d'une seule tâche longue.
+- Tableau des sites : 30 premières lignes, puis les ~400 autres en rendu de fond (`useDeferredValue` avec valeur initiale).
+- Calculs : « Derniers vols » (tri complet de 9 600 vols avec concaténation de chaînes dans le comparateur, ~400 ms en CPU x4) remplacé par une sélection des N premiers (`topN`, horodatage calculé une fois par vol), idem pour les derniers vols d'un site ; `median` trie un `Float64Array` (tri natif) ; le décodage de `flights.json` met en commun les dérivés de date (année, mois, jour de semaine, saison).
+- Chaîne de données : le chargement démarre dès l'évaluation de `main.tsx` (`preloadAppData`), et le build injecte dans `index.html` un `<link rel="preload" as="fetch" crossorigin>` vers `flights.<hash>.json` et `sites.<hash>.json` lus dans `meta.json` (plugin `syride-data-preload` de `vite.config.ts`, qui suit `VITE_DATA_DIR`) : le téléchargement des vols part en parallèle du JS au lieu d'attendre l'appli puis `meta.json`. Vérifié : un seul téléchargement, aucune erreur console. `meta.json` reste lu sans cache ; si les données changent sans nouveau build, l'appli suit `meta.json` et le préchargement est seulement perdu.
+
+Essayé sans effet, retiré : panneau de filtres en chunk séparé (Combobox et floating-ui restent tirés par d'autres composants, gain < 2 Ko).
+
+Pourquoi 90 n'est pas atteint
+- Le LCP simulé (4,5 à 5,4 s) est désormais limité par le volume transféré avant le premier contenu utile : ~240 Ko gzip de `flights.json` plus ~240 Ko de JS et 30 Ko de CSS, partagés sur la 4G lente simulée (1,6 Mbit/s). Avec les données de test (5 Ko), `/` monte à 82 (LCP 3,7 s) : même avec des données minuscules, 90 demanderait aussi d'alléger le JS initial (React DOM et Mantine ≈ 100 Ko gzip dans `index`).
+- `/sites` : la carte est visible au chargement, MapLibre (300 Ko gzip, ~1,3 s d'évaluation simulée) y est indispensable ; c'est l'essentiel du TBT restant.
+
+Pistes restantes (décision d'Adrien)
+- Format colonnaire de `flights.json` (une liste par colonne au lieu d'une liste par vol) : 239 Ko gzip -> 188 Ko mesuré sur les données actuelles (brotli : 196 Ko aujourd'hui, moins encore en colonnaire). Change le contrat de données (`schema_version`, export Python, `decodeFlights`, fixtures) : à décider avec le budget données 200 Ko (D21).
+- Pré-rendu au build du haut des pages (HTML statique du tableau de bord) : LCP sans attendre ni JS ni données, mais chantier lourd (rendu serveur de Mantine et du routeur, filtres dans l'URL).
+- `/sites` : afficher d'abord une image statique de la carte, MapLibre au premier geste.
+
 ## 6.5 Responsive
 
 `npm run build && npm run captures` photographie 12 routes x 4 largeurs (360, 768, 1280, 1920) x clair/sombre = 96 captures JPEG (qualité 50, 15 Mo) dans `web/audits/captures/`, sur les **fixtures** uniquement, et liste les débordements horizontaux. Un test e2e (`e2e/responsive.spec.ts`) vérifie l'absence de défilement horizontal à 360 px sur chaque route.

@@ -8,7 +8,7 @@
  */
 
 import type { Flight } from '@/data/flight';
-import { groupBy } from '@/lib/collections';
+import { groupBy, topN } from '@/lib/collections';
 import { normalizeText } from '@/lib/flightsTable';
 import { MEASURES, type MeasureDef } from '@/lib/measures';
 import { dominantActivity, type SiteCollection, type SiteFeature, type SitesMapData } from '@/lib/mapSites';
@@ -262,14 +262,11 @@ export function sitePilotRows(flights: readonly Flight[]): SitePilotRow[] {
 
 /** Les `count` vols les plus récents (date, heure, numéro Syride décroissants). */
 export function latestFlightsOf(flights: readonly Flight[], count: number): Flight[] {
-  return [...flights]
-    .sort((a, b) => {
-      const ma = momentOf(a);
-      const mb = momentOf(b);
-      if (ma !== mb) return ma < mb ? 1 : -1;
-      return b.syrideNum - a.syrideNum;
-    })
-    .slice(0, count);
+  const keyed = flights.map((f) => ({ f, m: momentOf(f) }));
+  return topN(keyed, count, (a, b) => {
+    if (a.m !== b.m) return a.m < b.m ? 1 : -1;
+    return b.f.syrideNum - a.f.syrideNum;
+  }).map((k) => k.f);
 }
 
 // ---------------------------------------------------------------------------

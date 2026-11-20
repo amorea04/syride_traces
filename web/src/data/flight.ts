@@ -128,10 +128,18 @@ function need(table: readonly string[], index: number, what: string): string {
 export function decodeFlights(file: FlightsFile): Flight[] {
   const { dict, pilot_slugs: slugs } = file;
   const rows = file.rows as unknown as readonly FlightRow[];
+  // Dérivés de date mis en commun : beaucoup de vols partagent le même jour (6.3, décodage au démarrage).
+  const byDate = new Map<string, { y: number; mo: number; weekday: number; season: Season }>();
   return rows.map((r): Flight => {
     const [pilotIdx, activityIdx, date, time, siteIdx, wingIdx, instrumentIdx, modeIdx] = r;
     const slug = need(slugs, pilotIdx, 'pilot_slugs');
-    const [y = 0, mo = 1] = date.split('-').map(Number);
+    let day = byDate.get(date);
+    if (!day) {
+      const [y = 0, mo = 1] = date.split('-').map(Number);
+      day = { y, mo, weekday: weekdayOf(date), season: seasonOfMonth(mo) };
+      byDate.set(date, day);
+    }
+    const { y, mo } = day;
     return {
       key: `${slug}-${r[19]}`,
       pilot: need(dict.pilot, pilotIdx, 'pilot'),
@@ -158,8 +166,8 @@ export function decodeFlights(file: FlightsFile): Flight[] {
       syrideNum: r[19],
       year: y,
       month: mo,
-      weekday: weekdayOf(date),
-      season: seasonOfMonth(mo),
+      weekday: day.weekday,
+      season: day.season,
       hour: decimalHour(time),
       dayKey: date,
     };

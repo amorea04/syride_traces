@@ -8,7 +8,7 @@
  */
 
 import type { Flight } from '@/data/flight';
-import { groupBy } from '@/lib/collections';
+import { groupBy, topN } from '@/lib/collections';
 import { flightMatches, sortYears, todayIso, yearsContiguous, type Filters } from '@/lib/filters';
 import { fmtDuration, fmtHours, fmtInt, fmtNum, MONTHS_LONG, MONTHS_SHORT, NBSP } from '@/lib/format';
 import { daysInMonth, epochDay, isoOfEpochDay, mondayOfEpochDay } from '@/lib/isoDay';
@@ -377,13 +377,11 @@ export function periodActivity(flights: readonly Flight[], today: string, kind: 
 /** Les `count` vols les plus récents (date puis heure décroissantes ; sans heure = minuit ; puis numéro Syride). */
 export function latestFlights(flights: readonly Flight[], count = 15): Flight[] {
   const stamp = (f: Flight): string => `${f.date} ${f.time ?? '00:00'}`;
-  return [...flights]
-    .sort((a, b) => {
-      const sa = stamp(a);
-      const sb = stamp(b);
-      return sa < sb ? 1 : sa > sb ? -1 : b.syrideNum - a.syrideNum;
-    })
-    .slice(0, count);
+  // Horodatage calculé une fois par vol, pas à chaque comparaison.
+  const keyed = flights.map((f) => ({ f, s: stamp(f) }));
+  return topN(keyed, count, (a, b) => (a.s < b.s ? 1 : a.s > b.s ? -1 : b.f.syrideNum - a.f.syrideNum)).map(
+    (k) => k.f,
+  );
 }
 
 // ---------------------------------------------------------------------------
