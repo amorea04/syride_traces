@@ -53,7 +53,7 @@ export function FlightModes({ flights }: Props) {
           <div
             className="sr-bar-track"
             role="img"
-            aria-label={`Modes de vol : ${modes.map((m) => `${m.mode} ${fmtPercent((m.n / withMode) * 100)}`).join(', ')}.`}
+            aria-label={`Modes de vol\u00a0: ${modes.map((m) => `${m.mode} ${fmtPercent((m.n / withMode) * 100)}`).join(', ')}.`}
             data-testid="flight-modes-bar"
           >
             {modes.map((m) => (

@@ -15,7 +15,7 @@ const GLOSSARY: readonly { term: string; definition: string }[] = [
   {
     term: 'Persona',
     definition:
-      'Le portrait de ton année : une étiquette tirée de règles sur tes vols (régularité, sites, durées, horaires…), avec sa justification. D’autres traits peuvent s’y ajouter.',
+      'Le portrait de ton année\u00a0: une étiquette tirée de règles sur tes vols (régularité, sites, durées, horaires…), avec sa justification. D’autres traits peuvent s’y ajouter.',
   },
   {
     term: 'Jalon',
@@ -25,7 +25,7 @@ const GLOSSARY: readonly { term: string; definition: string }[] = [
   {
     term: 'Écart à date',
     definition:
-      'Quand l’année est en cours, elle est comparée à l’année précédente entière : on dit seulement si tu as déjà dépassé son total ou combien il reste.',
+      'Quand l’année est en cours, elle est comparée à l’année précédente entière\u00a0: on dit seulement si tu as déjà dépassé son total ou combien il reste.',
   },
   {
     term: 'Équivalence',
@@ -35,14 +35,14 @@ const GLOSSARY: readonly { term: string; definition: string }[] = [
     term: 'Régularité',
     definition: 'Part des semaines (du lundi au dimanche) comptant au moins un vol, parmi les semaines écoulées de l’année.',
   },
-  { term: 'Série', definition: 'Jours de vol consécutifs ; une série compte au moins deux jours.' },
+  { term: 'Série', definition: 'Jours de vol consécutifs\u00a0; une série compte au moins deux jours.' },
   {
     term: 'Portée',
     definition: 'Distance à vol d’oiseau entre ton site principal et le site le plus éloigné où tu as volé cette année.',
   },
   {
     term: 'Zone',
-    definition: 'Groupe de sites proches les uns des autres ; les boutons au-dessus de la carte la cadrent sur une zone.',
+    definition: 'Groupe de sites proches les uns des autres\u00a0; les boutons au-dessus de la carte la cadrent sur une zone.',
   },
 ];
 
@@ -146,14 +146,14 @@ export function BilanData() {
     <Section id="donnees" title="Comprendre les chiffres">
       <Text size="sm" mb="xs" data-testid="bilan-cutoff">
         {ongoing
-          ? `Année ${year} en cours : chiffres arrêtés au ${fmtDate(cutoff, { withYear: true })}, comparés aux années précédentes entières. `
+          ? `Année ${year} en cours\u00a0: chiffres arrêtés au ${fmtDate(cutoff, { withYear: true })}, comparés aux années précédentes entières. `
           : `Année ${year} entière. `}
         Données mises à jour le {fmtDate(meta.data_refreshed_at, { withYear: true })}.
       </Text>
       <Text size="sm" c="dimmed">
         Ce que Syride a pu mesurer sur tes vols.
         {anyPartial
-          ? ` Quand une mesure manque à plus de ${fmtPercent(COVERAGE_NOTICE_THRESHOLD * 100)} des vols, la mention « Données partielles » le signale.`
+          ? ` Quand une mesure manque à plus de ${fmtPercent(COVERAGE_NOTICE_THRESHOLD * 100)} des vols, la mention «\u00a0Données partielles\u00a0» le signale.`
           : ''}
       </Text>
       <div data-testid="bilan-coverage">
@@ -173,7 +173,7 @@ export function BilanData() {
         </dl>
         <Text size="sm" mt="xs">
           Les règles complètes sont dans{' '}
-          <Anchor component={Link} to={{ pathname: '/a-propos', search }} data-testid="bilan-about-link">
+          <Anchor component={Link} to={{ pathname: '/a-propos', search }} underline="always" data-testid="bilan-about-link">
             À propos
           </Anchor>
           .

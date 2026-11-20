@@ -115,7 +115,7 @@ export function deltaPct(current: number | null, reference: number | null): numb
 
 /** Bornes hautes des tranches de durée, en minutes ; une tranche = [borne précédente, borne), la dernière est ouverte. */
 export const DURATION_BINS = [15, 30, 60, 120] as const;
-export const DURATION_BIN_LABELS = ['< 15 min', '15–30 min', '30 min–1 h', '1–2 h', '> 2 h'] as const;
+export const DURATION_BIN_LABELS = ['< 15\u00a0min', '15–30\u00a0min', '30\u00a0min–1\u00a0h', '1–2\u00a0h', '> 2\u00a0h'] as const;
 
 export interface MedianValue {
   /** Médiane, `null` sans mesure. */

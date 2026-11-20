@@ -136,7 +136,7 @@ export function DataQuality() {
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14 }} data-testid="quality-wings">
             {q.similarWings.map((g) => (
               <li key={g.key}>
-                {g.variants.map((v) => `« ${v.name} » (${plural(v.flights, 'vol')})`).join(' · ')}
+                {g.variants.map((v) => `«\u00a0${v.name}\u00a0» (${plural(v.flights, 'vol')})`).join(' · ')}
               </li>
             ))}
           </ul>

@@ -110,7 +110,7 @@ export function BilanOverview() {
     <Section
       id="apercu"
       title="L’année en un coup d’œil"
-      subtitle="Les pastilles comparent avec les années choisies en haut de page. Vert et rouge pour les volumes, violet et ambre pour le reste : aucune ne juge une vitesse ou un plafond."
+      subtitle="Les pastilles comparent avec les années choisies en haut de page. Vert et rouge pour les volumes, violet et ambre pour le reste&nbsp;: aucune ne juge une vitesse ou un plafond."
     >
       {synthese && (
         <p className="bl-lead" data-testid="bilan-synthese">
@@ -150,8 +150,8 @@ export function BilanOverview() {
                 fmtDate(ofYear.entry.date, { withYear: true }),
                 ofYear.entry.site,
                 ofYear.entry.wing,
-                yearFlight?.ceilingM ? `plafond ${fmtInt(yearFlight.ceilingM)} m` : null,
-                yearFlight?.distKm ? `distance ${fmtInt(yearFlight.distKm)} km` : null,
+                yearFlight?.ceilingM ? `plafond ${fmtInt(yearFlight.ceilingM)}\u00a0m` : null,
+                yearFlight?.distKm ? `distance ${fmtInt(yearFlight.distKm)}\u00a0km` : null,
               ]
                 .filter((part): part is string => !!part)
                 .join(' · ')}

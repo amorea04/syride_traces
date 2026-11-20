@@ -25,7 +25,7 @@ const SEASON_BY_MONTH: readonly Season[] = [
 /** Saison d'un mois 1–12. */
 export function seasonOfMonth(month: number): Season {
   const season = SEASON_BY_MONTH[month - 1];
-  if (!season) throw new Error(`Mois invalide : ${month}`);
+  if (!season) throw new Error(`Mois invalide\u00a0: ${month}`);
   return season;
 }
 
@@ -114,7 +114,7 @@ export function weekdayOf(isoDate: string): number {
 function pick(table: readonly string[], index: number | null, what: string): string | null {
   if (index === null) return null;
   const value = table[index];
-  if (value === undefined) throw new Error(`Index ${what} hors dictionnaire : ${index}`);
+  if (value === undefined) throw new Error(`Index ${what} hors dictionnaire\u00a0: ${index}`);
   return value;
 }
 

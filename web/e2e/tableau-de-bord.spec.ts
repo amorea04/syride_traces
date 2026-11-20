@@ -24,6 +24,8 @@ test.describe('tableau de bord', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1, name: 'Tableau de bord' })).toBeVisible();
     for (const id of SECTIONS) await expect(page.locator(`#${id}`)).toBeAttached();
+    // Les graphiques ne sont instanciés qu'à l'approche de l'écran (6.3) : on amène la section à l'écran.
+    await page.locator('#repartitions').scrollIntoViewIfNeeded();
     await expect(page.locator('#repartitions canvas').first()).toBeVisible();
     expect(errors).toEqual([]);
   });

@@ -40,10 +40,10 @@ const OVERSCAN = 12;
 const NO_ROWS: Flight[] = [];
 
 const INCOMPLETE_HINT =
-  'Vol incomplet : la trace ou ses statistiques sont tronquées, les mesures de ce vol sont à prendre avec réserve.';
+  'Vol incomplet\u00a0: la trace ou ses statistiques sont tronquées, les mesures de ce vol sont à prendre avec réserve.';
 const NO_GPX_HINT: Record<'fiche' | 'aucune', string> = {
   fiche:
-    'Statistiques issues de la fiche Syride, sans fichier GPX : elles peuvent différer de celles calculées sur la trace.',
+    'Statistiques issues de la fiche Syride, sans fichier GPX\u00a0: elles peuvent différer de celles calculées sur la trace.',
   aucune: 'Aucune statistique disponible pour ce vol (ni fiche Syride ni GPX).',
 };
 
@@ -260,7 +260,7 @@ export function FlightsTable({ flights, visible, sort, onSortChange, emptyMessag
                     className="sr-vt-sort"
                     data-testid={`sort-${spec.id}`}
                     onClick={h.column.getToggleSortingHandler()}
-                    title="Trier (Maj + clic : ajouter un tri secondaire)"
+                    title="Trier (Maj + clic&nbsp;: ajouter un tri secondaire)"
                   >
                     {spec.label}
                     {dir === 'asc' && <IconArrowUp size={13} stroke={2} aria-hidden />}
@@ -322,7 +322,7 @@ export function FlightsTable({ flights, visible, sort, onSortChange, emptyMessag
                     data-testid="syride-link"
                     onClick={stop}
                     onKeyDown={stop}
-                    aria-label={`Voir la trace sur Syride : vol de ${f.pilot} du ${fmtDate(f.date, { withYear: true })}`}
+                    aria-label={`Voir la trace sur Syride\u00a0: vol de ${f.pilot} du ${fmtDate(f.date, { withYear: true })}`}
                   >
                     <IconExternalLink size={15} stroke={1.6} />
                   </ActionIcon>

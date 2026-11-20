@@ -1,6 +1,7 @@
 import { useComputedColorScheme } from '@mantine/core';
 import type { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { whenNearViewport } from '@/lib/nearViewport';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { useEffect, useMemo, useRef } from 'react';
 import { Section } from '@/components/common/Section';
@@ -33,7 +34,7 @@ function loadBaseStyle(scheme: ColorScheme): Promise<BaseStyle> {
   let p = baseStyleCache.get(url);
   if (!p) {
     p = fetch(url).then((r) => {
-      if (!r.ok) throw new Error(`Style de carte : HTTP ${r.status}`);
+      if (!r.ok) throw new Error(`Style de carte\u00a0: HTTP ${r.status}`);
       return r.json() as Promise<BaseStyle>;
     });
     baseStyleCache.set(url, p);
@@ -127,13 +128,16 @@ export function SiteMiniMap({ site, siteId, siteName }: Props) {
       map.touchZoomRotate.disableRotation();
       map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
     };
-    void loadMapLibre().then((ml) =>
-      loadBaseStyle(scheme).then(
-        (base) => create(ml, base),
-        () => create(ml, FALLBACK_STYLE),
-      ),
-    );
+    const stopWaiting = whenNearViewport(container, () => {
+      void loadMapLibre().then((ml) =>
+        loadBaseStyle(scheme).then(
+          (base) => create(ml, base),
+          () => create(ml, FALLBACK_STYLE),
+        ),
+      );
+    });
     return () => {
+      stopWaiting();
       cancelled = true;
       map?.remove();
     };
@@ -144,8 +148,8 @@ export function SiteMiniMap({ site, siteId, siteName }: Props) {
       {!hasCoords || siteId === null ? (
         <p className="fv-note" style={{ margin: 0 }} role="status" data-testid="minimap-empty">
           {siteName
-            ? `La position de ${siteName} n’est pas connue : pas de carte.`
-            : 'Ce vol n’a pas de site connu : pas de carte.'}
+            ? `La position de ${siteName} n’est pas connue\u00a0: pas de carte.`
+            : 'Ce vol n’a pas de site connu\u00a0: pas de carte.'}
         </p>
       ) : (
         <>
@@ -153,7 +157,7 @@ export function SiteMiniMap({ site, siteId, siteName }: Props) {
             ref={containerRef}
             className="fv-map"
             role="region"
-            aria-label={`Carte : position du site ${siteName ?? ''}`}
+            aria-label={`Carte\u00a0: position du site ${siteName ?? ''}`}
             data-testid="flight-minimap"
             data-geometry-types="Point"
             data-feature-count={data?.features.length}

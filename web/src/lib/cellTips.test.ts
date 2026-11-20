@@ -39,7 +39,7 @@ describe('infobulles', () => {
     expect(t.lines.join('|')).toContain('2 vols');
     expect(t.lines.join('|')).toContain('Paramoteur et Parapente');
     expect(t.lines.join('|')).toContain('Montbron, Roche');
-    expect(t.hint).toBe('Clic : fiche du jour');
+    expect(t.hint).toBe('Clic\u00a0: fiche du jour');
     const empty = calendarDayTip('2025-06-13', undefined);
     expect(empty.lines).toEqual(['Aucun vol']);
     expect(empty.hint).toBeUndefined();

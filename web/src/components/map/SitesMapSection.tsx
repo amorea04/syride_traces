@@ -33,14 +33,14 @@ export function SitesMapSection({ flights }: Props) {
     <Section
       id="carte-sites"
       title="Carte des sites"
-      subtitle="Un point par site de décollage ; la taille suit le nombre de vols. Les cercles groupés indiquent un nombre de sites. La carte est cadrée sur les zones où ont lieu 90 % des vols ; dézoomez pour voir les plus lointains."
+      subtitle="Un point par site de décollage&nbsp;; la taille suit le nombre de vols. Les cercles groupés indiquent un nombre de sites. La carte est cadrée sur les zones où ont lieu 90&nbsp;% des vols&nbsp;; dézoomez pour voir les plus lointains."
       actions={
         !empty && (
           <SegmentedControl
             size="xs"
             value={mode}
             onChange={(v) => setMode(v as Mode)}
-            aria-label="Mode d'affichage de la carte"
+            aria-label="Mode d’affichage de la carte"
             data={[
               { value: 'cercles', label: 'Cercles' },
               { value: 'heatmap', label: 'Heatmap' },

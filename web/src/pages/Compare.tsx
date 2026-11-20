@@ -35,10 +35,10 @@ const REPLACED: Record<CompareMode, FilterDimension[]> = {
 };
 
 const DEFAULT_NOTE: Record<CompareMode, string> = {
-  pilotes: `Sélection proposée : les ${MIN_SERIES} pilotes les plus actifs de la vue filtrée.`,
+  pilotes: `Sélection proposée\u00a0: les ${MIN_SERIES} pilotes les plus actifs de la vue filtrée.`,
   annees:
-    'Sélection proposée : le pilote le plus actif ayant au moins deux années de vols, avec ses deux années les plus récentes.',
-  sites: `Sélection proposée : les ${MIN_SERIES} sites les plus fréquentés de la vue filtrée.`,
+    'Sélection proposée\u00a0: le pilote le plus actif ayant au moins deux années de vols, avec ses deux années les plus récentes.',
+  sites: `Sélection proposée\u00a0: les ${MIN_SERIES} sites les plus fréquentés de la vue filtrée.`,
 };
 
 /** Comparer (§5.6) : pilotes, années d'un pilote ou sites, synchronisés dans l'URL (`?mode=…&ids=…`). */

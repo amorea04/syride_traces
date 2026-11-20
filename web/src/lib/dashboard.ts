@@ -312,9 +312,9 @@ export function seasonPhrase(gap: SeasonGap): string {
     return `Aucun vol en ${gap.previousYear} ni en ${gap.year} à date.`;
   }
   if (gap.previousMinutes === 0)
-    return `Aucun vol en ${gap.previousYear} à la même date : pas de comparaison.`;
+    return `Aucun vol en ${gap.previousYear} à la même date\u00a0: pas de comparaison.`;
   const abs = Math.abs(gap.gapMinutes);
-  if (abs < GAP_EVEN_MINUTES) return `Le groupe a volé autant qu'en ${gap.previousYear} à date.`;
+  if (abs < GAP_EVEN_MINUTES) return `Le groupe a volé autant qu’en ${gap.previousYear} à date.`;
   const tenths = Math.round(abs / 6);
   const amount = fmtHours(abs, abs >= 600 || tenths % 10 === 0 ? 0 : 1);
   const word = gap.gapMinutes > 0 ? 'd’avance' : 'de retard';

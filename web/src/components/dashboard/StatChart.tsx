@@ -185,7 +185,7 @@ export function StatChart({ flights, defaultMetric = 'nb_vols', defaultAxis = 'a
             table={table}
             onEvents={onEvents}
             testId="stat-chart"
-            ariaLabel={`Diagramme en barres : ${metric.label} par ${AXES[axis].label.toLowerCase()}, ${fmtInt(total)} catégories${hidden > 0 ? `, ${fmtInt(bars.length)} affichées` : ''}.`}
+            ariaLabel={`Diagramme en barres\u00a0: ${metric.label} par ${AXES[axis].label.toLowerCase()}, ${fmtInt(total)} catégories${hidden > 0 ? `, ${fmtInt(bars.length)} affichées` : ''}.`}
             footer={
               horizontal && total > STAT_TOP_N ? (
                 <Group mt={4}>

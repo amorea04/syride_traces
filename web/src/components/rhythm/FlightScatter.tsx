@@ -138,7 +138,7 @@ export function FlightScatter({ flights }: Props) {
     <Section
       id="nuage"
       title={title}
-      subtitle="Un point par vol : un clic ouvre la fiche du vol."
+      subtitle="Un point par vol&nbsp;: un clic ouvre la fiche du vol."
       actions={
         <>
           <CoverageNotice flights={flights} measure={yKey} />
@@ -164,7 +164,7 @@ export function FlightScatter({ flights }: Props) {
           option={option}
           height={340}
           testId="flight-scatter"
-          ariaLabel={`Nuage de points : durée du vol en abscisse, ${meta.label.toLowerCase()} en ordonnée, ${plural(points.length, 'vol')} représentés${missing > 0 ? `, ${plural(missing, 'vol')} sans la mesure` : ''}.`}
+          ariaLabel={`Nuage de points\u00a0: durée du vol en abscisse, ${meta.label.toLowerCase()} en ordonnée, ${plural(points.length, 'vol')} représentés${missing > 0 ? `, ${plural(missing, 'vol')} sans la mesure` : ''}.`}
           onEvents={onEvents}
           table={{
             columns: ['Date', 'Pilote', 'Site', 'Durée', meta.label],

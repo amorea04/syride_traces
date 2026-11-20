@@ -128,11 +128,11 @@ export function metricRule(metric: Metric): string {
     return 'Tous les vols comptent, y compris les vols incomplets.';
   }
   if (metric.aggregation === 'sum') {
-    return 'Les durées inconnues sont ignorées ; les vols incomplets comptent.';
+    return 'Les durées inconnues sont ignorées\u00a0; les vols incomplets comptent.';
   }
   const measure = metric.measure ? MEASURES[metric.measure] : null;
   if (measure?.id === 'duree_vol') {
-    return 'Seules les durées inconnues sont ignorées (une durée nulle est conservée) ; les vols incomplets comptent.';
+    return 'Seules les durées inconnues sont ignorées (une durée nulle est conservée)\u00a0; les vols incomplets comptent.';
   }
   const incomplete = measure?.fiche
     ? ' Un vol incomplet est compté ailleurs, mais sa mesure est ignorée ici.'

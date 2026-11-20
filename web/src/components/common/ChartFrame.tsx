@@ -1,7 +1,8 @@
 import { Box, Button, ScrollArea, Table } from '@mantine/core';
 import type { EChartsOption } from 'echarts';
 import ReactEChartsCoreModule from 'echarts-for-react/lib/core';
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { whenNearViewport } from '@/lib/nearViewport';
 import { echartsCore, useEchartsTheme } from '@/theme/echarts';
 
 /** Tableau alternatif d'un graphique (« voir les données ») : en-têtes et lignes déjà formatées. */
@@ -36,6 +37,18 @@ interface Props {
   notMerge?: boolean;
 }
 
+/** Vrai dès que l'élément approche de l'écran (6.3) : les graphiques hors écran ne sont instanciés qu'à ce moment. */
+function useNearViewport(): [React.RefObject<HTMLDivElement | null>, boolean] {
+  const ref = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    return whenNearViewport(el, () => setNear(true), '300px');
+  }, []);
+  return [ref, near];
+}
+
 /**
  * Enveloppe commune des graphiques ECharts : thème clair/sombre, `aria-label`, hauteur fixe,
  * bascule « Voir les données / Voir le graphique ». `notMerge` (par défaut) évite les séries
@@ -54,6 +67,7 @@ export function ChartFrame({
   const theme = useEchartsTheme();
   const [showTable, setShowTable] = useState(false);
   const tableId = useId();
+  const [holder, near] = useNearViewport();
   return (
     <Box data-testid={testId}>
       {showTable && table ? (
@@ -78,17 +92,19 @@ export function ChartFrame({
           </Table>
         </ScrollArea.Autosize>
       ) : (
-        <div role="img" aria-label={ariaLabel}>
-          <ReactEChartsCore
-            echarts={echartsCore}
-            option={option}
-            theme={theme}
-            notMerge={notMerge}
-            lazyUpdate
-            style={{ height, width: '100%' }}
-            onEvents={onEvents}
-            opts={{ renderer: 'canvas' }}
-          />
+        <div role="img" aria-label={ariaLabel} ref={holder} style={{ minHeight: height }}>
+          {near && (
+            <ReactEChartsCore
+              echarts={echartsCore}
+              option={option}
+              theme={theme}
+              notMerge={notMerge}
+              lazyUpdate
+              style={{ height, width: '100%' }}
+              onEvents={onEvents}
+              opts={{ renderer: 'canvas' }}
+            />
+          )}
         </div>
       )}
       {footer}

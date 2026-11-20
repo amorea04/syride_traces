@@ -85,7 +85,7 @@ export function WingTimeline({ flights }: { flights: readonly Flight[] }) {
                         role="img"
                         aria-label={
                           q
-                            ? `${row.wing}, ${q.quarter === 1 ? '1ᵉʳ' : `${q.quarter}ᵉ`} trimestre ${q.year} : ${plural(n, 'vol')}`
+                            ? `${row.wing}, ${q.quarter === 1 ? '1ᵉʳ' : `${q.quarter}ᵉ`} trimestre ${q.year}\u00a0: ${plural(n, 'vol')}`
                             : undefined
                         }
                         data-tip={`${r}-${i}`}

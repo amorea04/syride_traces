@@ -28,6 +28,10 @@ web/.wrangler/
 web/playwright-report/
 web/test-results/
 web/design/captures/
+# Rapports Lighthouse : mesurés sur les vraies données (noms, vols), jamais commités. Synthèse chiffrée : web/audits/PHASE6.md.
+web/audits/lighthouse/
+# Captures responsive (npm run captures, ~15 Mo) : régénérables, gardées en local.
+web/audits/captures/
 *.gpx
 *.igc
 *.kml

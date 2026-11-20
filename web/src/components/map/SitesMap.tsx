@@ -2,6 +2,7 @@ import { Text, useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type { Map as MapLibreMap, MapGeoJSONFeature, MapLayerMouseEvent, Popup } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { whenNearViewport } from '@/lib/nearViewport';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import '@/components/map/sitesMap.css';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -57,7 +58,7 @@ function loadBaseStyle(scheme: ColorScheme): Promise<BaseStyle> {
   let p = baseStyleCache.get(url);
   if (!p) {
     p = fetch(url).then((r) => {
-      if (!r.ok) throw new Error(`Style de carte : HTTP ${r.status}`);
+      if (!r.ok) throw new Error(`Style de carte\u00a0: HTTP ${r.status}`);
       return r.json() as Promise<BaseStyle>;
     });
     baseStyleCache.set(url, p);
@@ -325,19 +326,22 @@ export function SitesMap({
       });
     };
 
-    loadMapLibre().then(
-      (ml) =>
-        loadBaseStyle(live.current.scheme).then(
-          (base) => create(ml, base),
-          () => {
-            setBaseFailed(true);
-            create(ml, FALLBACK_STYLE);
-          },
-        ),
-      () => setBaseFailed(true),
-    );
+    const stopWaiting = whenNearViewport(container, () => {
+      void loadMapLibre().then(
+        (ml) =>
+          loadBaseStyle(live.current.scheme).then(
+            (base) => create(ml, base),
+            () => {
+              setBaseFailed(true);
+              create(ml, FALLBACK_STYLE);
+            },
+          ),
+        () => setBaseFailed(true),
+      );
+    });
 
     return () => {
+      stopWaiting();
       cancelled = true;
       popup?.remove();
       map?.remove();
@@ -434,13 +438,13 @@ export function SitesMap({
       <div
         ref={containerRef}
         role="region"
-        aria-label={`Carte des sites : ${plural(data.collection.features.length, 'site')} avec coordonnées`}
+        aria-label={`Carte des sites\u00a0: ${plural(data.collection.features.length, 'site')} avec coordonnées`}
         style={{ height, width: '100%', borderRadius: 3, overflow: 'hidden' }}
         data-testid="sites-map"
       />
       {baseFailed && (
         <Text size="xs" c="dimmed" mt={4}>
-          Fond de carte indisponible : seuls les sites sont affichés.
+          Fond de carte indisponible&nbsp;: seuls les sites sont affichés.
         </Text>
       )}
     </div>

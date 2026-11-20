@@ -60,7 +60,7 @@ export function calendarDayTip(
   const lines = [`${plural(day.n, 'vol')} · ${fmtDuration(day.minutes)}`];
   lines.push(day.disciplines.map((d) => DISCIPLINE_LABELS[d] ?? d).join(' et '));
   if (sites.length > 0) lines.push(`${sites.length > 1 ? 'Sites' : 'Site'}${NBSP}: ${sites.join(', ')}`);
-  return { title, lines, hint: 'Clic : fiche du jour' };
+  return { title, lines, hint: 'Clic\u00a0: fiche du jour' };
 }
 
 /** Infobulle d'une case de matrice à heures : « Août, entre 14 h et 15 h » puis vols et durée. */
@@ -87,7 +87,7 @@ export function ribbonCellTip(
       `${capitalize(MONTHS_LONG[month - 1] ?? '')} ${year}`,
       `${plural(n, 'vol')} · ${fmtDuration(minutes)}`,
     ],
-    hint: 'Clic : filtrer sur cette voile et ce mois',
+    hint: 'Clic\u00a0: filtrer sur cette voile et ce mois',
   };
 }
 
@@ -116,8 +116,8 @@ export function stripMarkTip(
   otherLabel?: string,
 ): TipContent {
   if (kind === 'mean')
-    return { title: 'Moyenne', lines: [valueText], hint: 'Trait : moyenne des autres sites' };
-  if (kind === 'site') return { title: siteLabel, lines: [valueText], hint: 'Point : la valeur de ce site' };
+    return { title: 'Moyenne', lines: [valueText], hint: 'Trait\u00a0: moyenne des autres sites' };
+  if (kind === 'site') return { title: siteLabel, lines: [valueText], hint: 'Point\u00a0: la valeur de ce site' };
   return {
     title: otherLabel ?? 'Un autre site',
     lines: [valueText],

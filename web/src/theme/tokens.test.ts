@@ -39,6 +39,8 @@ const TEXT_PAIRS: Array<[ColorKey, ColorKey]> = [
   ['accent-text', 'bg'],
   ['accent-ink', 'accent'],
   ['p-text', 'surface'],
+  ['p-text', 'bg'],
+  ['m-text', 'bg'],
   ['m-text', 'surface'],
   ['gold-text', 'gold-bg'],
   ['up-text', 'up-bg'],

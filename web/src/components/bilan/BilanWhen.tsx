@@ -203,7 +203,7 @@ function Seasons({ flights }: { flights: readonly Flight[] }) {
 export function BilanWhen() {
   const { flights, story } = useBilan();
   return (
-    <Section id="quand" title="Quand vole-t-on ?">
+    <Section id="quand" title="Quand vole-t-on&nbsp;?">
       {story.texts.quand && (
         <p className="bb-lead" data-testid="bilan-texte-quand">
           {story.texts.quand}

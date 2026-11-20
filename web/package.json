@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "analyze": "ANALYZE=1 vite build",
     "size": "node scripts/size.mjs",
+    "captures": "node scripts/captures.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit -p .",

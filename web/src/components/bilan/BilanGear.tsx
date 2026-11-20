@@ -17,7 +17,7 @@ export function BilanGear() {
   const wings = useMemo(() => wingTableRows(flights, story), [flights, story]);
   const instruments = useMemo(() => instrumentRows(flights), [flights]);
   return (
-    <Section id="matos" title="Avec quel matériel ?">
+    <Section id="matos" title="Avec quel matériel&nbsp;?">
       {story.texts.matos && (
         <p className="bb-lead" data-testid="bilan-texte-matos">
           {story.texts.matos}
@@ -34,7 +34,7 @@ export function BilanGear() {
                 <Table.Tr>
                   <Table.Th>Voile</Table.Th>
                   <Table.Th ta="right">Vols</Table.Th>
-                  <Table.Th ta="right">Temps de vol</Table.Th>
+                  <Table.Th ta="right">Heures de vol</Table.Th>
                   <Table.Th ta="right">Durée moy.</Table.Th>
                   <Table.Th ta="right">Vitesse moy.</Table.Th>
                   <Table.Th ta="right">Gain max</Table.Th>
@@ -51,7 +51,7 @@ export function BilanGear() {
                         <span
                           className="bb-new"
                           data-testid="bilan-new-wing"
-                          title={w.firstDate ? `Première sortie le ${fmtDate(w.firstDate, { withYear: true })}` : undefined}
+                          title={w.firstDate ? `Premier vol le ${fmtDate(w.firstDate, { withYear: true })}` : undefined}
                         >
                           nouvelle
                         </span>
@@ -83,7 +83,7 @@ export function BilanGear() {
                 <Table.Tr>
                   <Table.Th>Instrument</Table.Th>
                   <Table.Th ta="right">Vols</Table.Th>
-                  <Table.Th ta="right">Temps de vol</Table.Th>
+                  <Table.Th ta="right">Heures de vol</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>

@@ -22,7 +22,7 @@ export function CoverageNotice({ flights, measure }: Props) {
   const { sources, missing, n } = data;
   const detail =
     `${fmtInt(missing)} vol${missing > 1 ? 's' : ''} sur ${fmtInt(n)} (${fmtPercent(data.missingShare * 100)}) sans ${MEASURE_LABELS[measure]}. ` +
-    `Origine des statistiques : trace GPX ${fmtInt(sources.gpx)}, fiche ${fmtInt(sources.fiche)}, aucune ${fmtInt(sources.aucune)}.`;
+    `Origine des statistiques\u00a0: trace GPX ${fmtInt(sources.gpx)}, fiche ${fmtInt(sources.fiche)}, aucune ${fmtInt(sources.aucune)}.`;
   return (
     <Tooltip label={detail} multiline w={260} events={{ hover: true, focus: true, touch: true }} withArrow>
       <UnstyledButton type="button" aria-label={`Données partielles. ${detail}`} data-testid="coverage-notice">

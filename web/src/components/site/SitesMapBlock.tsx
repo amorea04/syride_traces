@@ -35,7 +35,7 @@ export function SitesMapBlock({ flights }: Props) {
     <Section
       id="carte-sites"
       title="Carte des sites"
-      subtitle="Un point par site de décollage ; la taille suit le nombre de vols. Un clic ouvre la page du site."
+      subtitle="Un point par site de décollage&nbsp;; la taille suit le nombre de vols. Un clic ouvre la page du site."
     >
       {flights.length === 0 ? (
         <EmptyNote />

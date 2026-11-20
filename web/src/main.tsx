@@ -7,9 +7,12 @@ import { App } from '@/App';
 import { cssVariablesResolver, mantineTheme } from '@/theme';
 import '@/theme/global.css';
 import { registerServiceWorker } from '@/pwa';
+import { preloadRoute } from '@/router';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Élément #root introuvable');
+
+preloadRoute(window.location.pathname);
 
 createRoot(root).render(
   <StrictMode>

@@ -17,7 +17,7 @@ import type { CoverageKey } from '@/lib/records';
 
 /** Bornes hautes (incluses) des niveaux 1 à 3, en minutes volées dans la journée ; au-delà : niveau 4 (paliers fixes du rapport). */
 export const CALENDAR_LEVELS = [30, 75, 150] as const;
-export const CALENDAR_LEVEL_LABELS = ['≤ 30 min', '≤ 1 h 15', '≤ 2 h 30', '> 2 h 30'] as const;
+export const CALENDAR_LEVEL_LABELS = ['≤ 30\u00a0min', '≤ 1\u00a0h\u00a015', '≤ 2\u00a0h\u00a030', '> 2\u00a0h\u00a030'] as const;
 
 /** Niveau d'intensité 1 à 4 d'une journée de vol. */
 export function calendarLevel(minutes: number): 1 | 2 | 3 | 4 {

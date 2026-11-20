@@ -112,7 +112,7 @@ export function GroupSeason({ flights, today }: Props) {
             height={CHART_HEIGHT}
             table={table}
             testId="season-chart"
-            ariaLabel={`Heures de vol cumulées du groupe depuis le 1er janvier : ${gap.year}, ${fmtHm(gap.minutes)}, contre ${gap.previousYear}, ${fmtHm(gap.previousMinutes)} à la même date. ${phrase}`}
+            ariaLabel={`Heures de vol cumulées du groupe depuis le 1er janvier\u00a0: ${gap.year}, ${fmtHm(gap.minutes)}, contre ${gap.previousYear}, ${fmtHm(gap.previousMinutes)} à la même date. ${phrase}`}
           />
         </>
       ) : (

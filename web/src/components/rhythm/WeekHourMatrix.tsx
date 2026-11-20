@@ -38,7 +38,7 @@ export function WeekHourMatrix({ flights }: Props) {
 
   if (flights.length === 0 || placed === 0) {
     return (
-      <Section id="quand" title="Quand vole-t-on ?">
+      <Section id="quand" title="Quand vole-t-on&nbsp;?">
         <Text size="sm" c="dimmed">
           {flights.length === 0
             ? 'Aucun vol pour ces filtres.'
@@ -51,8 +51,8 @@ export function WeekHourMatrix({ flights }: Props) {
   return (
     <Section
       id="quand"
-      title="Quand vole-t-on ?"
-      subtitle="Nombre de vols par jour de la semaine et heure de décollage ; plus la case est foncée, plus elle est chargée."
+      title="Quand vole-t-on&nbsp;?"
+      subtitle="Nombre de vols par jour de la semaine et heure de décollage&nbsp;; plus la case est foncée, plus elle est chargée."
     >
       {fav && (
         <Text size="sm" fw={600} mb="xs" data-testid="matrix-favorite">

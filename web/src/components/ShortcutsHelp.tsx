@@ -1,9 +1,9 @@
 import { Kbd, Modal, Table } from '@mantine/core';
 
 export const SHORTCUTS: readonly { keys: string; label: string }[] = [
-  { keys: '1', label: 'Activité : tout' },
-  { keys: '2', label: 'Activité : parapente' },
-  { keys: '3', label: 'Activité : paramoteur' },
+  { keys: '1', label: 'Activité\u00a0: tout' },
+  { keys: '2', label: 'Activité\u00a0: parapente' },
+  { keys: '3', label: 'Activité\u00a0: paramoteur' },
   { keys: 't', label: 'Basculer le thème clair / sombre' },
   { keys: '/', label: 'Rechercher un pilote dans les filtres' },
   { keys: '?', label: 'Afficher cette aide' },
