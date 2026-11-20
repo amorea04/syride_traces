@@ -1053,7 +1053,7 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 - [x] 7.2 `publish.py` / `make publish` fonctionnel de bout en bout (20/11/2026 : premier déploiement en 83 s avec `npm ci`, 40 s sans ; `_redirects` corrigé, cible `/` au lieu de `/index.html` qui partait en 308)
 - [x] 7.3 Option `main.py --publish 1`
 - [ ] 7.4 CI GitHub Actions au vert (fixtures uniquement) (`.github/workflows/ci.yml` écrit, à confirmer au premier push)
-- [ ] 7.6 Annonce aux pilotes ; sauvegarde de `mysite/` ; suppression de la webapp PythonAnywhere (après la recette)
+- [ ] 7.6 ~~Annonce aux pilotes~~ (pas d'annonce, décision d'Adrien du 20/11/2026) ; sauvegarde de `mysite/` ; suppression de la webapp PythonAnywhere (après la recette)
 - [x] 7.7 Archivage du code Dash (`src/legacy/`), `requirements` séparés et épinglés (scraping, export, pdf ; selenium, undetected-chromedriver, fastkml, fpdf2 à figer sur l'environnement de scraping)
 - [x] 7.8 README à jour
 - [ ] **Recette finale §9.2 validée par Adrien** (5 critères)
