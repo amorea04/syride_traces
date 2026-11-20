@@ -6,9 +6,12 @@
   var TILE_HOST = 'tiles.openfreemap.org';
   /** Plafond du cache des tuiles (entrées), éviction FIFO. */
   var TILE_MAX_ENTRIES = 300;
+  /** Purge des tuiles groupée : après ce délai sans nouvelle écriture (ms), ou dès ce nombre d'écritures en attente. */
+  var TILE_PURGE_DELAY_MS = 2000;
+  var TILE_PURGE_EVERY = 25;
 
   /** Noms de caches : changer la version purge tout l'ancien à l'activation. */
-  var VERSION = 'v1';
+  var VERSION = 'v2';
   var CACHES = {
     shell: 'syride-shell-' + VERSION,
     data: 'syride-data-' + VERSION,
@@ -115,6 +118,40 @@
     return Math.max(0, count - max);
   }
 
+  /**
+   * Fichiers compilés à retirer du cache coquille : ceux que l'`index.html` courant ne référence pas.
+   * À appeler quand l'index change de déploiement (les fichiers déjà en cache sont alors ceux de l'ancien).
+   * @param {string[]} cachedPaths chemins relatifs à la racine du scope
+   * @param {string[]} indexAssets `assetsOfIndex` de l'index courant
+   */
+  function staleAssetPaths(cachedPaths, indexAssets) {
+    return cachedPaths.filter(function (p) {
+      return p.indexOf('assets/') === 0 && indexAssets.indexOf(p) < 0;
+    });
+  }
+
+  /** Vrai si deux index ne désignent pas les mêmes fichiers compilés (nouveau déploiement). */
+  function sameAssets(a, b) {
+    if (a.length !== b.length) return false;
+    return a.every(function (p) {
+      return b.indexOf(p) >= 0;
+    });
+  }
+
+  /**
+   * Une réponse issue d'une redirection (`redirected === true`, ex. /index.html → / sur Cloudflare Pages) ne peut pas
+   * être servie à une navigation : on la reconstruit sans cet indicateur avant de la mettre en cache.
+   */
+  async function cleanResponse(response) {
+    if (!response.redirected) return response;
+    var body = await response.blob();
+    return new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+  }
+
   /** Caches de ce service worker à supprimer (anciennes versions et caches inconnus du même préfixe). */
   function obsoleteCaches(names) {
     var current = [CACHES.shell, CACHES.data, CACHES.tiles];
@@ -126,6 +163,11 @@
   root.SyrideSw = {
     CACHES: CACHES,
     TILE_MAX_ENTRIES: TILE_MAX_ENTRIES,
+    TILE_PURGE_DELAY_MS: TILE_PURGE_DELAY_MS,
+    TILE_PURGE_EVERY: TILE_PURGE_EVERY,
+    staleAssetPaths: staleAssetPaths,
+    sameAssets: sameAssets,
+    cleanResponse: cleanResponse,
     classify: classify,
     dataFilesOfMeta: dataFilesOfMeta,
     initialDataFiles: initialDataFiles,

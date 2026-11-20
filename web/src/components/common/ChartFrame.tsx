@@ -1,7 +1,7 @@
 import { Box, Button, ScrollArea, Table } from '@mantine/core';
 import type { EChartsOption } from 'echarts';
 import ReactEChartsCoreModule from 'echarts-for-react/lib/core';
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { whenNearViewport } from '@/lib/nearViewport';
 import { echartsCore, useEchartsTheme } from '@/theme/echarts';
 
@@ -37,16 +37,19 @@ interface Props {
   notMerge?: boolean;
 }
 
-/** Vrai dès que l'élément approche de l'écran (6.3) : les graphiques hors écran ne sont instanciés qu'à ce moment. */
-function useNearViewport(): [React.RefObject<HTMLDivElement | null>, boolean] {
-  const ref = useRef<HTMLDivElement>(null);
+/**
+ * Vrai dès que l'élément approche de l'écran (6.3) : les graphiques hors écran ne sont instanciés qu'à ce moment.
+ * L'élément est suivi par un ref callback : quand le nœud est remplacé (bascule tableau / graphique), l'observateur
+ * suit le nouveau. Une fois vrai, le résultat reste vrai.
+ */
+function useNearViewport(): [(el: HTMLDivElement | null) => void, boolean] {
+  const [node, setNode] = useState<HTMLDivElement | null>(null);
   const [near, setNear] = useState(false);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    return whenNearViewport(el, () => setNear(true), '300px');
-  }, []);
-  return [ref, near];
+    if (near || !node) return;
+    return whenNearViewport(node, () => setNear(true), '300px');
+  }, [node, near]);
+  return [setNode, near];
 }
 
 /**

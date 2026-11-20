@@ -1,9 +1,7 @@
 import { Text, useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type { Map as MapLibreMap, MapGeoJSONFeature, MapLayerMouseEvent, Popup } from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { whenNearViewport } from '@/lib/nearViewport';
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import '@/components/map/sitesMap.css';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -24,8 +22,7 @@ import { fmtHm, fmtInt, fmtPercent, plural } from '@/lib/format';
 import { type Bounds, type SitePointProps, type SitesMapData } from '@/lib/mapSites';
 import { useFiltersStore } from '@/store/filters';
 import { useHighlightStore } from '@/store/highlight';
-import { mapStyleUrl } from '@/theme/map';
-import type { StyleLike } from '@/theme/map';
+import { FALLBACK_STYLE, loadBaseStyle, loadMap, type BaseStyle } from '@/theme/map/loader';
 import { colors, type ColorScheme } from '@/theme/tokens';
 
 /** Marge autour de la sélection au cadrage (px), zoom maximal et durée d'animation (ms). */
@@ -38,34 +35,7 @@ const SINGLE_SITE_ZOOM = 10;
 const INITIAL_CENTER: [number, number] = [2.5, 46.5];
 const INITIAL_ZOOM = 4.5;
 
-/** MapLibre est chargé à la demande (6.1) : il n'entre dans aucun chunk de démarrage. */
-async function loadMapLibre(): Promise<typeof import('maplibre-gl')> {
-  const ml = await import('maplibre-gl');
-  // Vite ne sait pas déduire l'URL du worker ESM de MapLibre 6 : on la lui donne.
-  if (typeof ml.setWorkerUrl === 'function') ml.setWorkerUrl(workerUrl);
-  return ml;
-}
-
 const MOBILE_QUERY = '(max-width: 48em)';
-
-type BaseStyle = StyleLike & { glyphs?: string };
-/** Fond de secours si le style OpenFreeMap est injoignable : les points restent visibles. */
-const FALLBACK_STYLE: BaseStyle = { version: 8, sources: {}, layers: [{ id: 'fond', type: 'background' }] };
-
-const baseStyleCache = new Map<string, Promise<BaseStyle>>();
-function loadBaseStyle(scheme: ColorScheme): Promise<BaseStyle> {
-  const url = mapStyleUrl(scheme);
-  let p = baseStyleCache.get(url);
-  if (!p) {
-    p = fetch(url).then((r) => {
-      if (!r.ok) throw new Error(`Style de carte\u00a0: HTTP ${r.status}`);
-      return r.json() as Promise<BaseStyle>;
-    });
-    baseStyleCache.set(url, p);
-    p.catch(() => baseStyleCache.delete(url));
-  }
-  return p;
-}
 
 /** Recadre la carte sur une emprise (un seul site : centrage à un zoom fixe). */
 function fitBoundsOn(map: MapLibreMap, bounds: Bounds): void {
@@ -200,6 +170,7 @@ export function SitesMap({
   const mapRef = useRef<MapLibreMap | null>(null);
   const [ready, setReady] = useState(false);
   const [baseFailed, setBaseFailed] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
   const baseRef = useRef<BaseStyle>(FALLBACK_STYLE);
   const appliedScheme = useRef<ColorScheme | null>(null);
 
@@ -327,17 +298,14 @@ export function SitesMap({
     };
 
     const stopWaiting = whenNearViewport(container, () => {
-      void loadMapLibre().then(
-        (ml) =>
-          loadBaseStyle(live.current.scheme).then(
-            (base) => create(ml, base),
-            () => {
-              setBaseFailed(true);
-              create(ml, FALLBACK_STYLE);
-            },
-          ),
-        () => setBaseFailed(true),
-      );
+      loadMap({
+        scheme: () => live.current.scheme,
+        onReady: create,
+        onBaseFailed: () => setBaseFailed(true),
+        onMapLibreFailed: () => {
+          if (!cancelled) setMapFailed(true);
+        },
+      });
     });
 
     return () => {
@@ -442,10 +410,16 @@ export function SitesMap({
         style={{ height, width: '100%', borderRadius: 3, overflow: 'hidden' }}
         data-testid="sites-map"
       />
-      {baseFailed && (
-        <Text size="xs" c="dimmed" mt={4}>
-          Fond de carte indisponible&nbsp;: seuls les sites sont affichés.
+      {mapFailed ? (
+        <Text size="xs" c="dimmed" mt={4} role="status" data-testid="sites-map-failed">
+          Carte indisponible (hors ligne&nbsp;?). La liste des sites reste consultable.
         </Text>
+      ) : (
+        baseFailed && (
+          <Text size="xs" c="dimmed" mt={4}>
+            Fond de carte indisponible&nbsp;: seuls les sites sont affichés.
+          </Text>
+        )
       )}
     </div>
   );

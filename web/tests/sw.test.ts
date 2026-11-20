@@ -14,6 +14,11 @@ interface Sw {
   urlsToCache(urls: unknown[], scope: string): { url: string; cache: string }[];
   overflow(count: number, max: number): number;
   obsoleteCaches(names: string[]): string[];
+  staleAssetPaths(cached: string[], indexAssets: string[]): string[];
+  sameAssets(a: string[], b: string[]): boolean;
+  cleanResponse(r: unknown): Promise<Response>;
+  TILE_PURGE_DELAY_MS: number;
+  TILE_PURGE_EVERY: number;
 }
 
 /** Charge `public/sw-routing.js` (script classique) dans un faux `self`. */
@@ -151,5 +156,47 @@ describe('service worker : données et caches', () => {
       'syride-shell-v0',
       'syride-data-v0',
     ]);
+  });
+
+  it('purge les assets compilés que l’index courant ne référence plus', () => {
+    const cached = ['assets/index-old.js', 'assets/index-new.js', 'assets/Chart-old.js', 'offline.html', 'data/x.json'];
+    expect(sw.staleAssetPaths(cached, ['assets/index-new.js'])).toEqual([
+      'assets/index-old.js',
+      'assets/Chart-old.js',
+    ]);
+    expect(sw.staleAssetPaths([], ['assets/a.js'])).toEqual([]);
+  });
+
+  it('détecte un changement de déploiement (même ensemble de fichiers, ordre indifférent)', () => {
+    expect(sw.sameAssets(['assets/a.js', 'assets/b.css'], ['assets/b.css', 'assets/a.js'])).toBe(true);
+    expect(sw.sameAssets(['assets/a.js'], ['assets/b.js'])).toBe(false);
+    expect(sw.sameAssets(['assets/a.js'], ['assets/a.js', 'assets/b.js'])).toBe(false);
+  });
+
+  it('purge des tuiles groupée', () => {
+    expect(sw.TILE_PURGE_DELAY_MS).toBeGreaterThanOrEqual(1000);
+    expect(sw.TILE_PURGE_EVERY).toBeGreaterThan(1);
+  });
+});
+
+describe('service worker : réponses redirigées', () => {
+  it('reconstruit une réponse redirigée (sans indicateur, même contenu)', async () => {
+    const fake = {
+      redirected: true,
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers({ 'content-type': 'text/html' }),
+      blob: () => Promise.resolve(new Blob(['<html></html>'])),
+    };
+    const clean = await sw.cleanResponse(fake);
+    expect(clean.redirected).toBe(false);
+    expect(clean.status).toBe(200);
+    expect(clean.headers.get('content-type')).toBe('text/html');
+    expect(await clean.text()).toBe('<html></html>');
+  });
+
+  it('laisse intacte une réponse non redirigée', async () => {
+    const r = new Response('ok');
+    expect(await sw.cleanResponse(r)).toBe(r);
   });
 });

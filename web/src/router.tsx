@@ -1,6 +1,6 @@
 import { Button, Center, Loader, Stack, Text } from '@mantine/core';
 import { Component, lazy, Suspense, type ErrorInfo, type ReactNode } from 'react';
-import { Route, Routes } from 'react-router';
+import { Route, Routes, useLocation } from 'react-router';
 import { AppLayout } from '@/components/AppLayout';
 
 const BASE = import.meta.env.BASE_URL;
@@ -76,8 +76,14 @@ function PageFallback() {
 }
 
 /** Chunk de page injoignable (hors ligne sur une page jamais ouverte, déploiement entre-temps) : message plutôt que page blanche. */
-class PageErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+export class PageErrorBoundary extends Component<
+  { children: ReactNode; /** Change à chaque navigation : l'erreur de la route précédente est alors oubliée. */ resetKey?: string },
+  { failed: boolean }
+> {
   override state = { failed: false };
+  override componentDidUpdate(prev: { resetKey?: string }) {
+    if (this.state.failed && prev.resetKey !== this.props.resetKey) this.setState({ failed: false });
+  }
   static getDerivedStateFromError() {
     return { failed: true };
   }
@@ -99,12 +105,17 @@ class PageErrorBoundary extends Component<{ children: ReactNode }, { failed: boo
   }
 }
 
-function page(element: ReactNode) {
+function RouteBoundary({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
   return (
-    <PageErrorBoundary>
-      <Suspense fallback={<PageFallback />}>{element}</Suspense>
+    <PageErrorBoundary resetKey={pathname}>
+      <Suspense fallback={<PageFallback />}>{children}</Suspense>
     </PageErrorBoundary>
   );
+}
+
+function page(element: ReactNode) {
+  return <RouteBoundary>{element}</RouteBoundary>;
 }
 
 /** Routes de l'application (ROADMAP §3.4 et §5). Le routeur lui-même (`BrowserRouter`) est dans `main.tsx`. */

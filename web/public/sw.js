@@ -1,9 +1,15 @@
 /* Service worker (phase 6.4), écrit à la main : hors ligne pour la coquille et les données déjà vues.
  * Stratégies (voir sw-routing.js pour la classification) :
- *  - coquille : index.html précaché ; /assets/* cache-first (noms hashés, immuables) ;
+ *  - coquille : index.html précaché (clé = le scope, « / ») ; /assets/* cache-first (noms hashés, immuables).
+ *    Purge de la coquille : sw.js ne change pas à chaque déploiement, donc l'install ne suffit pas. Chaque fois que
+ *    l'index.html reçu en navigation (ou à l'install) désigne d'autres fichiers compilés que l'index en cache, on
+ *    supprime du cache coquille tous les /assets/* que le nouvel index ne référence pas (ils appartiennent à l'ancien
+ *    déploiement) ; les chunks paresseux du nouveau se remettent en cache au fil des chargements. Aucune réponse
+ *    redirigée n'est mise en cache (Cloudflare Pages redirige /index.html vers / et /offline.html vers /offline) :
+ *    elle est reconstruite (cleanResponse) et rangée sous une clé fixe ;
  *  - data/meta.json : stale-while-revalidate (le cache est servi, puis mis à jour pour le chargement suivant) ;
  *  - data/*.json hashés : cache-first ; purge de ce que le meta courant et le précédent ne référencent plus ;
- *  - tuiles OpenFreeMap : cache-first dans un cache plafonné (FIFO) ; styles : réseau d'abord ;
+ *  - tuiles OpenFreeMap : cache-first dans un cache plafonné (FIFO, purge groupée) ; styles : réseau d'abord ;
  *  - navigation : réseau d'abord, sinon index.html en cache, sinon offline.html.
  * Aucun autre domaine n'est mis en cache (liens syride.com : toujours le réseau). */
 /* global SyrideSw */
@@ -11,7 +17,7 @@ importScripts('sw-routing.js');
 
 var SCOPE = self.registration.scope;
 var C = SyrideSw.CACHES;
-var INDEX_URL = SCOPE + 'index.html';
+var INDEX_URL = SCOPE;
 var OFFLINE_URL = SCOPE + 'offline.html';
 var META_URL = SCOPE + 'data/meta.json';
 // Les fichiers sont servis avec « Vary: Origin » : sans cette option, une requête de module (mode cors) ne retrouverait
@@ -27,15 +33,45 @@ async function putOk(cache, request, response) {
   return response;
 }
 
+/** Met en cache une page de la coquille (sans indicateur de redirection). */
+async function putShellPage(cache, key, response) {
+  await cache.put(key, await SyrideSw.cleanResponse(response.clone()));
+}
+
+/** Retire du cache coquille les /assets/* que l'index désigné ne référence pas (voir l'en-tête). */
+async function purgeShellAssets(shell, html) {
+  var wanted = SyrideSw.assetsOfIndex(html, SCOPE);
+  var keys = await shell.keys();
+  var stale = SyrideSw.staleAssetPaths(
+    keys.map(function (k) {
+      return relPath(k.url);
+    }),
+    wanted,
+  );
+  await Promise.all(
+    stale.map(function (p) {
+      return shell.delete(SCOPE + p);
+    }),
+  );
+}
+
+/** Index précédemment mis en cache (texte), ou null. */
+async function cachedIndexHtml(shell) {
+  var hit = await shell.match(INDEX_URL, MATCH);
+  return hit ? hit.text() : null;
+}
+
 self.addEventListener('install', function (event) {
   event.waitUntil(
     (async function () {
       var shell = await caches.open(C.shell);
-      await shell.add(new Request(OFFLINE_URL, { cache: 'reload' }));
+      var offlineResponse = await fetch(OFFLINE_URL, { cache: 'reload' });
+      if (offlineResponse.ok) await putShellPage(shell, OFFLINE_URL, offlineResponse);
       var indexResponse = await fetch(INDEX_URL, { cache: 'reload' });
       if (indexResponse.ok) {
-        await shell.put(INDEX_URL, indexResponse.clone());
-        var html = await indexResponse.text();
+        await putShellPage(shell, INDEX_URL, indexResponse);
+        var html = await indexResponse.clone().text();
+        await purgeShellAssets(shell, html);
         // La page courante a déjà chargé ces fichiers avant l'installation : on les met à l'abri pour le hors ligne.
         await Promise.all(
           SyrideSw.assetsOfIndex(html, SCOPE).map(function (p) {
@@ -88,7 +124,14 @@ async function navigate(request) {
     // Toute page de l'application est le même index.html (repli SPA) : on garde la version la plus récente.
     if (response.ok && (response.headers.get('content-type') || '').indexOf('text/html') >= 0) {
       var shell = await caches.open(C.shell);
-      await shell.put(INDEX_URL, response.clone());
+      var html = await response.clone().text();
+      var before = await cachedIndexHtml(shell);
+      await putShellPage(shell, INDEX_URL, response);
+      if (
+        before !== null &&
+        !SyrideSw.sameAssets(SyrideSw.assetsOfIndex(before, SCOPE), SyrideSw.assetsOfIndex(html, SCOPE))
+      )
+        await purgeShellAssets(shell, html);
     }
     return response;
   } catch {
@@ -154,11 +197,40 @@ async function metaStrategy(event) {
     return hit;
   }
   try {
-    return await update;
+    var fresh = await update;
+    // Réponse non valide (5xx…) alors qu'un meta est en cache : on garde le cache.
+    return !fresh.ok && hit ? hit : fresh;
   } catch (error) {
     if (hit) return hit;
     throw error;
   }
+}
+
+// Purge des tuiles différée : on ne liste pas le cache à chaque écriture. Elle part après un court silence ou dès
+// qu'assez d'écritures se sont accumulées ; l'éviction reste FIFO (les plus anciennes clés d'abord).
+var tileWrites = 0;
+var tileTimer = null;
+
+async function trimTiles() {
+  tileWrites = 0;
+  var cache = await caches.open(C.tiles);
+  var keys = await cache.keys();
+  var extra = SyrideSw.overflow(keys.length, SyrideSw.TILE_MAX_ENTRIES);
+  for (var i = 0; i < extra; i++) await cache.delete(keys[i]);
+}
+
+function scheduleTileTrim() {
+  tileWrites++;
+  if (tileTimer) clearTimeout(tileTimer);
+  if (tileWrites >= SyrideSw.TILE_PURGE_EVERY) {
+    tileTimer = null;
+    trimTiles().catch(function () {});
+    return;
+  }
+  tileTimer = setTimeout(function () {
+    tileTimer = null;
+    trimTiles().catch(function () {});
+  }, SyrideSw.TILE_PURGE_DELAY_MS);
 }
 
 async function tileStrategy(request) {
@@ -168,9 +240,7 @@ async function tileStrategy(request) {
   var response = await fetch(request);
   if (response.ok) {
     await cache.put(request, response.clone());
-    var keys = await cache.keys();
-    var extra = SyrideSw.overflow(keys.length, SyrideSw.TILE_MAX_ENTRIES);
-    for (var i = 0; i < extra; i++) await cache.delete(keys[i]);
+    scheduleTileTrim();
   }
   return response;
 }
