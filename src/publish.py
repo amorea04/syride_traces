@@ -306,7 +306,7 @@ def step_deploy(project: str, dry_run: bool) -> None:
     whoami = subprocess.run(npx("wrangler", "whoami"), cwd=str(WEB_DIR), env=ENV, capture_output=True, text=True)
     if whoami.returncode != 0 or "not authenticated" in (whoami.stdout + whoami.stderr).lower():
         raise PublishError("wrangler n'est pas connecté à Cloudflare : lance `cd web && npx wrangler login`.")
-    run(npx("wrangler", "pages", "deploy", "dist", "--project-name", project, "--branch", DEPLOY_BRANCH), WEB_DIR)
+    run(npx("wrangler", "pages", "deploy", "dist", "--project-name", project, "--branch", DEPLOY_BRANCH, "--commit-dirty=true"), WEB_DIR)
 
 
 def step_report(project: str, started: float) -> None:

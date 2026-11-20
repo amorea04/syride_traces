@@ -26,6 +26,19 @@ Reste à décider (hors périmètre du lot)
 
 À vérifier seulement après déploiement (non reproductible en `vite preview`) : service worker (cache-first des `/assets`, SWR de `meta.json`, hors ligne), en-têtes de `public/_headers` (CSP, Cache-Control immuable, compression brotli de Cloudflare), HTTP/2 et latence réelle. Lighthouse relancé sur l'URL déployée donnera la valeur définitive.
 
+### Mesure sur l'URL déployée (phase 7, 20/11/2026)
+
+`lighthouse@13.6.0`, profil mobile par défaut, `https://syride-analyse.pages.dev` (Cloudflare Pages, HTTP/2, brotli). Rapports dans `web/audits/lighthouse/deploye/` (ignorés par git).
+
+| Page | Perf | A11y | BP | LCP | TBT | CLS |
+|---|---|---|---|---|---|---|
+| `/` | 52 | 100 | 100 | 4,5 s | 4 050 ms | 0 |
+| `/vols` | 77 | 100 | 100 | 3,5 s | 560 ms | 0,006 |
+| `/pilote/j2f/2025` | 57 | 100 | 100 | 4,7 s | 1 170 ms | 0,01 |
+| `/sites` | 61 | 100 | 100 | 3,9 s | 1 180 ms | 0,016 |
+
+Le déploiement ne change presque rien à la performance simulée : le frein est le calcul côté navigateur (TBT, CPU x4), surtout sur `/`, et la chaîne `meta.json` puis `flights.json`. Accessibilité et bonnes pratiques restent à 100. 6.3 reste ouvert : chantier d'optimisation à part.
+
 ## 6.5 Responsive
 
 `npm run build && npm run captures` photographie 12 routes x 4 largeurs (360, 768, 1280, 1920) x clair/sombre = 96 captures JPEG (qualité 50, 15 Mo) dans `web/audits/captures/`, sur les **fixtures** uniquement, et liste les débordements horizontaux. Un test e2e (`e2e/responsive.spec.ts`) vérifie l'absence de défilement horizontal à 360 px sur chaque route.

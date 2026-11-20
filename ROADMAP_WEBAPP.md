@@ -1038,7 +1038,7 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 ### Phase 6 : Finitions
 - [x] 6.1 Découpage du code, imports à la carte (JS initial 913 → 174 Ko gzip)
 - [x] 6.2 Budgets respectés (JS ≤ 250 Ko gzip, données ≤ 250 Ko gzip, D21)
-- [ ] 6.3 Lighthouse mobile : Perf ≥ 90, A11y ≥ 95, BP ≥ 95 (20/11/2026 : A11y et BP à 100 partout ; Perf 52 à 70 en simulation, à remesurer sur l'URL déployée en phase 7, voir `web/audits/PHASE6.md`)
+- [ ] 6.3 Lighthouse mobile : Perf ≥ 90, A11y ≥ 95, BP ≥ 95 (20/11/2026 : A11y et BP à 100 partout ; Perf 52 à 77 sur l'URL déployée, frein = calcul navigateur et chaîne de données, voir `web/audits/PHASE6.md`)
 - [x] 6.4 PWA et mode hors ligne
 - [x] 6.5 Revue responsive (4 largeurs, captures : `npm run captures`, gardées en local)
 - [x] 6.6 Passe éditoriale des libellés (glossaire dans `web/audits/PHASE6.md`)
@@ -1049,8 +1049,8 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 - [x] PR relue et fusionnée · **`/clear`**
 
 ### Phase 7 : Déploiement et bascule
-- [ ] 7.1 Projet Cloudflare Pages créé, `wrangler login` fait (par Adrien)
-- [ ] 7.2 `publish.py` / `make publish` fonctionnel de bout en bout (20/11/2026 : `make publish-dry` validé sur les vraies données en 24 s, smoke 3/3, D12 OK, liens Syride 200 ; reste le premier vrai déploiement)
+- [x] 7.1 Projet Cloudflare Pages créé, `wrangler login` fait (par Adrien) (20/11/2026 ; wrangler 4.165 redirige `pages project create` vers Workers : création avec `--force`, une seule fois)
+- [x] 7.2 `publish.py` / `make publish` fonctionnel de bout en bout (20/11/2026 : premier déploiement en 83 s avec `npm ci`, 40 s sans ; `_redirects` corrigé, cible `/` au lieu de `/index.html` qui partait en 308)
 - [x] 7.3 Option `main.py --publish 1`
 - [ ] 7.4 CI GitHub Actions au vert (fixtures uniquement) (`.github/workflows/ci.yml` écrit, à confirmer au premier push)
 - [ ] 7.6 Annonce aux pilotes ; sauvegarde de `mysite/` ; suppression de la webapp PythonAnywhere (après la recette)
