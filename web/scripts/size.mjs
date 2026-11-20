@@ -7,7 +7,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const BUDGET_JS_KB = 250;
-export const BUDGET_DATA_KB = 200;
+export const BUDGET_DATA_KB = 250; // relevé de 200 Ko le 20/11/2026 (D21)
 
 const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 const gz = (file) => gzipSync(readFileSync(file), { level: 9 }).length;

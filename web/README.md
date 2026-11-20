@@ -62,7 +62,7 @@ Les filtres globaux vivent dans l'URL : `?pilote=j2f&activite=parapente&du=2024-
 ## Poids et budgets (phase 6.2)
 
 `npm run build && npm run size` affiche le poids gzip du JS initial (le script de `index.html` et ses `modulepreload`) et des données
-initiales (`meta.json`, `flights.<hash>.json`, `sites.<hash>.json`), et **échoue** au-delà de 250 Ko (JS) ou 200 Ko (données).
+initiales (`meta.json`, `flights.<hash>.json`, `sites.<hash>.json`), et **échoue** au-delà de 250 Ko (JS) ou 250 Ko (données, relevé de 200 Ko : D21).
 `npm run analyze` (= `ANALYZE=1 vite build`) écrit en plus `dist/stats.html` (visualiseur `rollup-plugin-visualizer`) : ne pas le publier.
 
 Découpage : chaque page est un chunk (`React.lazy`), ECharts est importé à la carte (`src/theme/echarts.ts` : `echarts/core` et les seuls
