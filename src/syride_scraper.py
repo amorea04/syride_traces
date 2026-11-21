@@ -528,7 +528,8 @@ def load_sheet_raw(folder: str, num: str):
         if os.path.exists(plain_path):
             with open(plain_path, "r", encoding="utf-8") as fp:
                 return fp.read()
-    except (OSError, EOFError, UnicodeDecodeError):
+    except Exception as e:   # gzip tronqué, zlib.error, décodage... : jamais bloquant pour l'appelant
+        print(f"Warning: fiche brute illisible du vol {num} ({type(e).__name__})", flush=True)
         return None
     return None
 

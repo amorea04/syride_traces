@@ -31,8 +31,8 @@ def read(tmp_path, num):
     return json.loads(json_path(tmp_path, num).read_text(encoding="utf-8"))
 
 
-def reconcile(conn, tmp_path, items, today=TODAY):
-    return flights_db.reconcile_pilot(conn, str(tmp_path), PILOT, items, today=today)
+def reconcile(conn, tmp_path, items, today=TODAY, **kwargs):
+    return flights_db.reconcile_pilot(conn, str(tmp_path), PILOT, items, today=today, **kwargs)
 
 
 def status(conn, num):
@@ -119,12 +119,38 @@ def test_garde_fou_80_pourcent(tmp_path, conn):
     report = reconcile(conn, tmp_path, items[:7])    # 70 % : liste tronquée probable
     assert report["guard_triggered"] and report["absent"] == []
     assert {status(conn, n) for n in range(1, 11)} == {"present"}
-    assert read(tmp_path, 10)["syride_status"] == "present"
+    assert read(tmp_path, 10).get("syride_status") != "absent"
 
     report = reconcile(conn, tmp_path, items[:8])    # 80 % : marques posées
     assert not report["guard_triggered"] and report["absent"] == ["9", "10"]
     # liste vide alors que des vols sont connus : garde-fou aussi
     assert reconcile(conn, tmp_path, [])["guard_triggered"]
+
+
+def test_garde_fou_compte_les_vols_syride_des_deux_cotes(tmp_path, conn):
+    for num in range(1, 11):
+        make_flight(tmp_path, num)
+    for num in range(11, 21):
+        make_flight(tmp_path, num, is_syride=False)
+    items = [item(n) for n in range(1, 11)] + [item(n, is_syride=False) for n in range(11, 21)]
+    reconcile(conn, tmp_path, items)
+    # 7 vols Syride sur 10, mais 17 entrées en tout : les vols non Syride ne doivent pas aveugler la garde
+    report = reconcile(conn, tmp_path, items[:7] + items[10:])
+    assert report["guard_triggered"] and report["absent"] == []
+
+
+def test_liste_incomplete_aucune_marque_absent(tmp_path, conn):
+    for num in range(1, 11):
+        make_flight(tmp_path, num)
+    items = [item(n) for n in range(1, 11)]
+    reconcile(conn, tmp_path, items)
+    # 9 sur 10 = 90 % passerait le garde-fou, mais l'appelant dit que la liste est tronquée (limit atteinte)
+    report = reconcile(conn, tmp_path, items[:9] + [item(100)], complete=False)
+    assert report["absent"] == [] and report["absent_skipped"] and not report["guard_triggered"]
+    assert report["new"] == ["100"]   # le reste du travail est fait
+    assert read(tmp_path, 10).get("syride_status") != "absent"
+    report = reconcile(conn, tmp_path, items[:9] + [item(100)])
+    assert report["absent"] == ["10"]
 
 
 def test_vol_non_syride_jamais_marque_absent(tmp_path, conn):
@@ -137,25 +163,49 @@ def test_vol_non_syride_jamais_marque_absent(tmp_path, conn):
 
 def test_doublons_probables(tmp_path, conn):
     make_flight(tmp_path, 10, heure="11h12", flight_time="00:09:59")
-    make_flight(tmp_path, 11, heure="11h20", flight_time="00:10:30")    # jumeau de 10
+    make_flight(tmp_path, 11, heure="11h14", flight_time="00:10:30")    # jumeau de 10
     make_flight(tmp_path, 12, heure="11h40", flight_time="00:09:59")    # trop loin en heure
     make_flight(tmp_path, 13, heure="11h12", flight_time="00:20:00")    # durée trop différente
     make_flight(tmp_path, 14, heure="11h12", flight_time="00:09:59", date="08/11/2026")   # autre jour
-    items = [item(10), item(11, heure="11h20", flight_time="00:10:30"), item(12, heure="11h40"),
-             item(13, flight_time="00:20:00"), item(14, date="08/11/2026")]
+    make_flight(tmp_path, 15, heure="11h18", flight_time="00:09:59")    # 5 min d'écart : pas un jumeau
+    items = [item(10), item(11, heure="11h14", flight_time="00:10:30"), item(12, heure="11h40"),
+             item(13, flight_time="00:20:00"), item(14, date="08/11/2026"), item(15, heure="11h18")]
     report = reconcile(conn, tmp_path, items)
     assert report["duplicates"] == [("10", "11")]
     dup = dict(conn.execute("SELECT num, duplicate_of FROM flights"))
     assert dup["11"] == "10" and dup["10"] is None and dup["12"] is None
 
     # un vol qui n'est plus jumeau perd sa marque
-    conn.execute("UPDATE flights SET data_json=replace(data_json, '11h20', '15h00') WHERE num='11'")
+    conn.execute("UPDATE flights SET data_json=replace(data_json, '11h14', '15h00') WHERE num='11'")
     assert flights_db.find_duplicates(conn, PILOT) == []
 
     path = flights_db.write_duplicates_report(conn, str(tmp_path), [PILOT])
     assert path == str(tmp_path / "_rapport_doublons.txt")
     text = open(path, encoding="utf-8").read()
     assert f"{PILOT} : 1 doublon(s) probable(s)" in text and "11 doublon de 10" in text
+
+
+def test_doublons_ignorent_les_vols_courts(tmp_path, conn):
+    # treuil : vols de moins de 5 min enchaînés, jumeaux exacts ou non, jamais signalés
+    make_flight(tmp_path, 1, heure="11h12", flight_time="00:03:10")
+    make_flight(tmp_path, 2, heure="11h12", flight_time="00:03:10")
+    make_flight(tmp_path, 3, heure="12h00", flight_time="00:05:00")
+    make_flight(tmp_path, 4, heure="12h00", flight_time="00:05:30")
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    assert flights_db.find_duplicates(conn, PILOT) == [(3, 4)]
+
+
+def test_rapport_doublons_paires_absentes_en_premier(tmp_path, conn):
+    make_flight(tmp_path, 1, heure="09:00", flight_time="00:20:00")
+    make_flight(tmp_path, 2, heure="09:00", flight_time="00:20:00")
+    make_flight(tmp_path, 3, heure="14:00", flight_time="00:30:00", syride_status="absent")
+    make_flight(tmp_path, 4, heure="14:00", flight_time="00:30:00")
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    flights_db._update_duplicates(conn, PILOT)
+    text = open(flights_db.write_duplicates_report(conn, str(tmp_path), [PILOT]),
+                encoding="utf-8").read()
+    assert text.index("4 doublon de 3") < text.index("2 doublon de 1")
+    assert "absent de Syride" in text
 
 
 def test_rapport_doublons_vide(tmp_path, conn):
@@ -167,7 +217,6 @@ def test_aucun_json_reecrit_quand_rien_ne_change(tmp_path, conn):
     for num in (1, 2, 3):
         make_flight(tmp_path, num, plafond="300", instrument="None")
     items = [item(n, instrument="None") for n in (1, 2, 3)]
-    reconcile(conn, tmp_path, items)   # première passe : pose syride_status = present
     before = {n: json_path(tmp_path, n).stat().st_mtime_ns for n in (1, 2, 3)}
     contents = {n: json_path(tmp_path, n).read_bytes() for n in (1, 2, 3)}
 
@@ -177,6 +226,53 @@ def test_aucun_json_reecrit_quand_rien_ne_change(tmp_path, conn):
     assert {n: json_path(tmp_path, n).read_bytes() for n in (1, 2, 3)} == contents
     # last_seen_list n'existe que dans la base
     assert conn.execute("SELECT DISTINCT last_seen_list FROM flights").fetchall() == [("2026-12-25",)]
+
+
+def test_json_sans_syride_status_jamais_reecrit_pour_poser_present(tmp_path, conn):
+    # JSON réels : aucune clé syride_status (= present). Une réconciliation complète ne touche à rien.
+    for num in (1, 2, 3):
+        make_flight(tmp_path, num, plafond="300")
+        assert "syride_status" not in read(tmp_path, num)
+    items = [item(n) for n in (1, 2, 3)]
+    before = {n: json_path(tmp_path, n).stat().st_mtime_ns for n in (1, 2, 3)}
+    report = reconcile(conn, tmp_path, items)
+    assert report["new"] == report["modified"] == report["absent"] == report["reappeared"] == []
+    assert {n: json_path(tmp_path, n).stat().st_mtime_ns for n in (1, 2, 3)} == before
+    assert all("syride_status" not in read(tmp_path, n) for n in (1, 2, 3))
+    assert {status(conn, n) for n in (1, 2, 3)} == {"present"}
+    assert conn.execute("SELECT DISTINCT last_seen_list FROM flights").fetchall() == [(TODAY,)]
+
+
+def test_json_illisible_jamais_ecrase(tmp_path, conn):
+    for num in (1, 2, 3, 4, 5):
+        make_flight(tmp_path, num, plafond="300")
+    items = [item(n) for n in (1, 2, 3, 4, 5)]
+    reconcile(conn, tmp_path, items)
+    broken = json_path(tmp_path, 2)
+    original = broken.read_text(encoding="utf-8")
+    broken.write_text(original[:40], encoding="utf-8")     # JSON tronqué
+    mtime = broken.stat().st_mtime_ns
+
+    report = reconcile(conn, tmp_path, items + [item(6)])
+    assert report["unreadable"] == ["2"] and report["new"] == ["6"]
+    assert broken.read_text(encoding="utf-8") == original[:40] and broken.stat().st_mtime_ns == mtime
+    # absent de la liste ET illisible : pas écrasé non plus
+    report = reconcile(conn, tmp_path, [item(n) for n in (1, 3, 4, 5, 6)])
+    assert broken.read_text(encoding="utf-8") == original[:40] and report["absent"] == []
+
+
+def test_empreinte_inchangee_court_circuite_la_comparaison(tmp_path, conn, monkeypatch):
+    make_flight(tmp_path, 1, plafond="300")
+    items = [item(1)]
+    reconcile(conn, tmp_path, items)
+    assert conn.execute("SELECT list_hash FROM flights").fetchone()[0] == flights_db.list_hash(items[0])
+    reads = []
+    original = flights_db._read_json
+    monkeypatch.setattr(flights_db, "_read_json", lambda p: reads.append(p) or original(p))
+    reconcile(conn, tmp_path, items)
+    assert reads == []   # liste identique : JSON non relu
+    reconcile(conn, tmp_path, [item(1, voile="Autre")])
+    assert len(reads) == 1 and read(tmp_path, 1)["voile"] == "Autre"
 
 
 def test_donnees_de_fiche_intactes_et_pkl(tmp_path, conn):

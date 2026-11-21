@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS flights (
 # Colonnes ajoutées après la première version de la base (ALTER TABLE idempotent dans connect)
 _NEW_COLUMNS = [
     ("has_sheet_raw", "INTEGER DEFAULT 0"),    # fiche brute <num>.sheet.html.gz présente
-    ("track_source", "TEXT"),                  # « fv-config », « gpx » ou NULL
+    ("track_source", "TEXT"),                  # « fv-config », « gpx », « none » (fiche sans trace) ou NULL
     ("track_stats", "TEXT"),                   # statistiques (JSON, avec version) de la meilleure trace
     ("syride_status", "TEXT DEFAULT 'unknown'"),  # present / absent / unknown
     ("last_seen_list", "TEXT"),                # date de la dernière liste où le vol figurait
@@ -130,6 +130,11 @@ def _has_ext(folder: str, ext: str) -> bool:
     return any(f.lower().endswith(ext) for f in os.listdir(folder))
 
 
+def _has_sheet_raw(folder: str, num: str) -> bool:
+    """Fiche brute présente, compressée (<num>.sheet.html.gz) ou non (<num>.sheet.html)."""
+    return any(os.path.exists(os.path.join(folder, f"{num}.sheet.html{ext}")) for ext in (".gz", ""))
+
+
 def _read_fv_config(folder: str, num: str):
     """Trace `fv-config` de la fiche brute du vol (dict), ou None."""
     from syride_scraper import load_sheet_raw   # import tardif : syride_scraper charge Selenium
@@ -182,7 +187,7 @@ def sync_pilot(conn: sqlite3.Connection, main_path: str, pilot_folder: str,
             mtime = os.path.getmtime(json_path)
             has_gpx = int(_has_ext(folder, ".gpx"))
             has_igc = int(_has_ext(folder, ".igc"))
-            has_raw = int(os.path.exists(os.path.join(folder, f"{num}.sheet.html.gz")))
+            has_raw = int(_has_sheet_raw(folder, num))
 
             row = conn.execute(
                 "SELECT coords_done, gpx_done, gpx_stats, json_mtime, track_stats, "
@@ -239,7 +244,8 @@ def _upsert_json(conn, pilot_folder, num, data, has_gpx, has_igc, mtime):
     is_syride = int(data.get("is_syride") is True)
     # Fiche lue = statistiques de la fiche présentes dans le JSON
     has_sheet = int(data.get("plafond") is not None)
-    syride_status = data.get("syride_status") or "unknown"
+    # Clé absente du JSON = « present » (on n'écrit « absent » que sur constat, voir reconcile_pilot)
+    syride_status = data.get("syride_status") or "present"
     conn.execute(
         """INSERT INTO flights (pilot, num, data_json, is_syride, has_gpx, has_igc, has_sheet,
                                json_mtime, syride_status)
@@ -257,19 +263,27 @@ def _upsert_json(conn, pilot_folder, num, data, has_gpx, has_igc, mtime):
     )
 
 
-def _compute_stats(folder, num, has_gpx, get_track):
-    """(statistiques, source) de la meilleure trace : fv-config, puis GPX ; sinon (None, None)."""
+def _compute_stats(folder, num, has_gpx, has_raw, get_track):
+    """
+    (statistiques, source, statistiques GPX) de la meilleure trace : fv-config, puis GPX.
+    Les statistiques GPX sont aussi calculées quand la fv-config prime (et qu'un GPX existe) :
+    elles servent de repli à load_pilot_frames pour garder la parité du dédoublonnage entre
+    deux jumeaux dont un seul a sa fiche brute. Sans trace exploitable : (None, "none", None)
+    si une fiche brute existe (échec mémorisé, la fiche n'est pas relue à chaque passage),
+    sinon (None, None, None).
+    """
+    gpx = None
+    if has_gpx:
+        gpx_path = _find_gpx(folder, num)
+        gpx = track_stats.compute_gpx_stats(gpx_path) if gpx_path else None
     track = get_track()
     if track is not None:
         stats = track_stats.compute_track_stats(track)
         if stats:
-            return stats, "fv-config"
-    if has_gpx:
-        gpx_path = _find_gpx(folder, num)
-        stats = track_stats.compute_gpx_stats(gpx_path) if gpx_path else None
-        if stats:
-            return stats, "gpx"
-    return None, None
+            return stats, "fv-config", gpx
+    if gpx:
+        return gpx, "gpx", gpx
+    return None, ("none" if has_raw else None), None
 
 
 def _update_derived(conn, pilot_folder, num, folder, row, has_gpx, has_raw):
@@ -290,10 +304,15 @@ def _update_derived(conn, pilot_folder, num, folder, row, has_gpx, has_raw):
             track_cache["track"] = _read_fv_config(folder, num) if has_raw else None
         return track_cache["track"]
 
+    cached = json.loads(cached_json) if cached_json else None
+
     # Coordonnées de départ : fiche brute, sinon GPX/KML. Un vol dont les coordonnées sont
-    # déjà connues (GPX/KML) les garde quand une fiche brute arrive.
+    # déjà connues (GPX/KML) les garde quand une fiche brute arrive. Une fiche brute déjà
+    # reconnue sans trace exploitable (source « none », version à jour) n'est pas relue.
+    raw_known_empty = (source == "none" and has_raw and old_raw and cached is not None
+                       and cached.get("version") == track_stats.STATS_VERSION)
     if not coords_done:
-        point = _first_point(get_track()) if has_raw and get_track() else None
+        point = _first_point(get_track()) if has_raw and not raw_known_empty and get_track() else None
         if point is None:
             track_file = _find_track_file(folder, num)
             if track_file is not None:
@@ -305,7 +324,6 @@ def _update_derived(conn, pilot_folder, num, folder, row, has_gpx, has_raw):
             did_coords = True
 
     # Statistiques : base ancienne (gpx_stats, gpx_done) -> copiées dans track_stats sans recalcul
-    cached = json.loads(cached_json) if cached_json else None
     legacy_stale = False
     if stats_done and cached is None and gpx_stats and has_gpx and not has_raw:
         legacy = json.loads(gpx_stats)
@@ -324,19 +342,22 @@ def _update_derived(conn, pilot_folder, num, folder, row, has_gpx, has_raw):
             recompute = True      # calcul modifié depuis
         elif source != "fv-config" and ((has_raw and not old_raw) or (has_gpx and not old_gpx)):
             recompute = True      # une meilleure trace est apparue
-        elif (source == "fv-config" and not has_raw) or (source == "gpx" and not has_gpx):
+        elif ((source in ("fv-config", "none") and not has_raw)
+              or (source == "gpx" and not has_gpx)):
             recompute = True      # la trace qui servait de source a disparu
     elif stats_done or cached_json or source:
         conn.execute("UPDATE flights SET track_stats=NULL, track_source=NULL, gpx_stats=NULL, "
                      "gpx_done=0 WHERE pilot=? AND num=?", key)
 
     if recompute:
-        stats, source = _compute_stats(folder, num, has_gpx, get_track)
+        stats, source, gpx = _compute_stats(folder, num, has_gpx, has_raw, get_track)
+        if source == "none":
+            stats = {"version": track_stats.STATS_VERSION}   # mémorise l'échec (voir ci-dessus)
         conn.execute(
             "UPDATE flights SET track_stats=?, track_source=?, gpx_stats=?, gpx_done=1 "
             "WHERE pilot=? AND num=?",
             (json.dumps(stats) if stats else None, source,
-             json.dumps(stats) if source == "gpx" else None) + key)
+             json.dumps(gpx) if gpx else None) + key)
         did_stats = True
 
     conn.execute("UPDATE flights SET has_sheet_raw=? WHERE pilot=? AND num=?", (has_raw,) + key)
@@ -408,6 +429,9 @@ def get_global_queue(conn: sqlite3.Connection, pilots: list, fill_igc: bool = Fa
         queue.append(item)
 
     def sort_key(item):
+        if files_by_pilot is None:   # ordre historique : (IGC seul en dernier, numéro décroissant)
+            igc_only = not (item["need_info"] or item["need_gpx"])
+            return (igc_only, -(int(item["num"]) if item["num"].isdigit() else 0))
         if item["need_info"]:
             group = 0
         elif item["need_gpx"]:
@@ -574,25 +598,38 @@ def load_pilot_frames(conn: sqlite3.Connection, pilot_folder: str):
     """
     rows = conn.execute(
         "SELECT num, data_json, is_syride, coords_done, longitude, latitude, track_stats, "
-        "syride_status FROM flights WHERE pilot=? ORDER BY num",
+        "syride_status, track_source, gpx_stats FROM flights WHERE pilot=? ORDER BY num",
         (pilot_folder,),
     ).fetchall()
+
+    # Jumeaux exacts (même date, heure et durée) : voir _twin_fallback
+    twin_groups = {}
+    for num, data_json, *_ in rows:
+        data = json.loads(data_json)
+        key = tuple(_norm(data.get(k)) for k in ("date", "heure", "flight_time"))
+        if None not in key:
+            twin_groups.setdefault(key, []).append(num)
+    source_of = {r[0]: r[8] for r in rows}
+    twin_of = {num: key for key, nums in twin_groups.items() if len(nums) > 1 for num in nums}
+    twin_sources = {key: {source_of[n] for n in twin_groups[key]} for key in set(twin_of.values())}
 
     data_list, coords = [], []
     incomplete = 0
     n_trace = n_gpx = 0
-    for num, data_json, is_syride, coords_done, lon, lat, stats_json, syride_status in rows:
+    for (num, data_json, is_syride, coords_done, lon, lat, stats_json, syride_status,
+         source, gpx_json) in rows:
         data = json.loads(data_json)
-        # Information de la page liste, conservée dans le JSON mais volontairement absente
-        # du pkl pour que celui-ci garde le même format qu'avant.
-        data.pop("altitude_max", None)
-        data.pop("nom_vol", None)
-        # Historique des modifications de la liste (réconciliation) : propre au JSON
-        data.pop("historique_liste", None)
+        # Clés de la page liste (ou de la réconciliation) absentes de l'ancien format du pkl :
+        # conservées dans le JSON, volontairement absentes du pkl (seules les colonnes validées
+        # `vario_min`, `hauteur_sol_max`, `heure_plafond`, `syride_status` s'y ajoutent).
+        for key in ("altitude_max", "nom_vol", "historique_liste", "date_publication"):
+            data.pop(key, None)
         # Lien de téléchargement signé : expiré depuis longtemps, sans intérêt dans le pkl
         data.pop("adresse_zip", None)
 
-        stats = json.loads(stats_json) if stats_json else None
+        stats = json.loads(stats_json) if stats_json and source != "none" else None
+        if source == "fv-config" and num in twin_of:
+            stats = _twin_fallback(stats, gpx_json, twin_sources[twin_of[num]])
         data["source_stats"] = apply_track_stats(data, stats)
         n_trace += data["source_stats"] == "trace"
         n_gpx += data["source_stats"] == "gpx"
@@ -626,6 +663,25 @@ def load_pilot_frames(conn: sqlite3.Connection, pilot_folder: str):
                 df_data[col] = None
     df_long_lat = pd.DataFrame(coords, columns=["num_activite", "longitude", "latitude"])
     return df_data, df_long_lat
+
+
+def _twin_fallback(stats, gpx_json, sources):
+    """
+    Parité du dédoublonnage (analyze_functions.remove_duplicate_flights, dont la clé contient
+    plafond, gain, vitesse_max...). Deux jumeaux exacts (même date, heure et durée) doivent
+    recevoir des statistiques de la MÊME source. Si l'un des deux n'a pas (encore) de fiche
+    brute exploitable (`sources` : sources de statistiques du groupe), le jumeau qui en a une
+    se contente de ce qu'il aurait eu sans fiche brute : ses statistiques GPX si elles sont
+    connues, sinon celles de la fiche du JSON. Sinon, avec le rattrapage progressif, un jumeau
+    serait corrigé de quelques mètres avant l'autre et le doublon reviendrait dans le pkl.
+    Le jumeau retrouve ses statistiques de trace dès que l'autre a sa fiche brute.
+    """
+    if sources == {"fv-config"}:
+        return stats
+    gpx = json.loads(gpx_json) if gpx_json else None
+    if gpx and gpx.get("version") == track_stats.STATS_VERSION:
+        return gpx
+    return None
 
 
 # ------------------------ Réconciliation avec la liste Syride ------------------------
@@ -713,11 +769,17 @@ def _hour_minutes(text):
     return int(match.group(1)) * 60 + int(match.group(2)) if match else None
 
 
+DUP_MAX_HOUR_GAP = 3      # minutes d'écart maximal sur l'heure de départ
+DUP_MAX_DURATION_GAP = 60  # secondes d'écart maximal sur la durée
+DUP_MIN_DURATION = 300     # secondes : les deux vols doivent durer au moins 5 min (les vols de
+                           # treuil enchaînés de 2 à 6 min ne sont pas des doublons)
+
+
 def find_duplicates(conn: sqlite3.Connection, pilot: str) -> list:
     """
-    Doublons probables d'un pilote : même date, heure à moins de 10 min, durée à moins de
-    2 min, numéros différents. Retourne [(num_ancien, num_recent)] triés (numéros entiers).
-    Ne modifie rien.
+    Doublons probables d'un pilote : même date, heure à moins de 3 min, durée à moins de
+    60 s, les deux vols d'au moins 5 min, numéros différents. Retourne [(num_ancien,
+    num_recent)] triés (numéros entiers). Ne modifie rien.
     """
     flights = []
     for num, data_json in conn.execute("SELECT num, data_json FROM flights WHERE pilot=?", (pilot,)):
@@ -726,7 +788,7 @@ def find_duplicates(conn: sqlite3.Connection, pilot: str) -> list:
         data = json.loads(data_json)
         minutes, duration = _hour_minutes(data.get("heure")), _duration_seconds(data.get("flight_time"))
         day = _norm(data.get("date"))
-        if day is None or minutes is None or duration is None:
+        if day is None or minutes is None or duration is None or duration[0] < DUP_MIN_DURATION:
             continue
         flights.append((day, minutes, duration[0], int(num)))
     flights.sort()
@@ -734,9 +796,9 @@ def find_duplicates(conn: sqlite3.Connection, pilot: str) -> list:
     pairs = []
     for i, (day, minutes, seconds, num) in enumerate(flights):
         for day2, minutes2, seconds2, num2 in flights[i + 1:]:
-            if day2 != day or minutes2 - minutes > 10:
+            if day2 != day or minutes2 - minutes > DUP_MAX_HOUR_GAP:
                 break
-            if abs(seconds2 - seconds) <= 120 and num2 != num:
+            if abs(seconds2 - seconds) <= DUP_MAX_DURATION_GAP and num2 != num:
                 pairs.append((min(num, num2), max(num, num2)))
     return sorted(set(pairs))
 
@@ -757,12 +819,18 @@ def _update_duplicates(conn, pilot):
 
 
 def reconcile_pilot(conn: sqlite3.Connection, main_path: str, pilot: str, list_items: list,
-                    today=None) -> dict:
+                    today=None, complete: bool = True) -> dict:
     """
-    Compare la liste COMPLÈTE d'un pilote sur Syride (`list_items`, au format de
-    get_nav_infos_bs) au contenu du disque et met à jour les JSON et l'index. Pas de réseau.
+    Compare la liste d'un pilote sur Syride (`list_items`, au format de get_nav_infos_bs) au
+    contenu du disque et met à jour les JSON et l'index. Pas de réseau.
 
-      - vol nouveau (dossier absent)  -> JSON créé (champs de fiche à None) ;
+    `complete` : la liste reçue est-elle la liste COMPLÈTE du pilote ? L'APPELANT doit passer
+    complete=False quand le nombre de vols reçus atteint la limite demandée à Syride
+    (`limit=N`) : la liste est alors probablement tronquée, et le marqueur de fin de la page
+    (`syride-no-more-activity`) n'est pas fiable. Aucun vol n'est marqué « absent » avec
+    complete=False ; les vols nouveaux et modifiés sont traités quand même.
+
+      - vol nouveau (JSON absent du disque) -> JSON créé (champs de fiche à None) ;
       - vol connu dont un champ de liste (LIST_FIELDS) a changé sur Syride -> ce champ
         seulement est mis à jour dans le JSON, l'ancienne valeur est tracée dans
         `historique_liste` ({"date", "champ", "avant", "apres"}). Ne sont pas des modifications :
@@ -770,29 +838,32 @@ def reconcile_pilot(conn: sqlite3.Connection, main_path: str, pilot: str, list_i
         vieux JSON (ex. altitude_max), une valeur qui devient manquante dans la liste ;
       - vol Syride du disque absent de la liste -> syride_status = "absent" dans le JSON ;
         rien n'est jamais supprimé ; il repasse "present" s'il réapparaît ;
-      - vol présent -> syride_status = "present" (écrit seulement s'il change) ; la date de la
-        dernière liste est gardée dans la base seulement (last_seen_list) ;
-      - garde-fou : liste de moins de 80 % des vols Syride connus -> aucune marque « absent » ;
-      - doublons probables -> colonne duplicate_of (voir _update_duplicates).
+      - clé syride_status absente du JSON = « present » : on n'écrit un JSON que pour passer à
+        « absent » ou pour revenir d'« absent » (jamais juste pour poser « present ») ; la date
+        de la dernière liste est gardée dans la base seulement (last_seen_list) ;
+      - JSON existant mais illisible : jamais écrasé, listé dans le rapport (« unreadable ») ;
+      - garde-fou : moins de 80 % des vols Syride connus (comptés des deux côtés : vols
+        `is_syride` seulement) -> aucune marque « absent » ;
+      - doublons probables -> colonne duplicate_of (voir find_duplicates).
 
     Aucun JSON n'est réécrit quand rien ne change. Les jetons éphémères de la liste
     (flight_token, expires, token) ne sont jamais écrits.
 
     Retourne {"new", "modified": [{"num", "fields"}], "absent", "reappeared",
-    "duplicates": [(a, b)], "guard_triggered"}.
+    "duplicates": [(a, b)], "guard_triggered", "absent_skipped" (pas de marque « absent » :
+    garde-fou ou liste incomplète), "unreadable"}.
     """
     from syride_scraper import save_flight_data   # import tardif : syride_scraper charge Selenium
 
     today_str = _today_str(today)
     pilot_dir = os.path.join(main_path, pilot)
-    report = {"new": [], "modified": [], "absent": [], "reappeared": [],
-              "duplicates": [], "guard_triggered": False}
+    report = {"new": [], "modified": [], "absent": [], "reappeared": [], "duplicates": [],
+              "guard_triggered": False, "absent_skipped": False, "unreadable": []}
 
     sync_pilot(conn, main_path, pilot)   # la base reflète le disque avant de comparer
-    known = {num: (json.loads(data_json), is_syride, status or "unknown")
-             for num, data_json, is_syride, status in conn.execute(
-                 "SELECT num, data_json, is_syride, syride_status FROM flights WHERE pilot=?",
-                 (pilot,))}
+    known = {num: (is_syride, stored_hash, status) for num, is_syride, stored_hash, status in
+             conn.execute("SELECT num, is_syride, list_hash, syride_status FROM flights WHERE pilot=?",
+                          (pilot,))}
 
     items = {}
     for item in list_items:
@@ -800,31 +871,43 @@ def reconcile_pilot(conn: sqlite3.Connection, main_path: str, pilot: str, list_i
         if num.isdigit() and num not in items:
             items[num] = item
 
-    syride_known = sum(1 for _, is_syride, _ in known.values() if is_syride)
-    report["guard_triggered"] = len(list_items) < 0.8 * syride_known
+    syride_known = sum(1 for is_syride, _, _ in known.values() if is_syride)
+    syride_listed = sum(1 for item in items.values() if item.get("is_syride"))
+    report["guard_triggered"] = syride_listed < 0.8 * syride_known
+    mark_absent = complete and not report["guard_triggered"]
+    report["absent_skipped"] = not mark_absent
 
-    def write(num, data):
+    def json_path_of(num):
+        return os.path.join(pilot_dir, "traces", num, f"{num}.json")
+
+    def write(data):
         save_flight_data(main_repertoire=pilot_dir, flight_data=data, quiet=True)
 
-    # --- vols de la liste : nouveaux, modifiés, présents
+    # --- vols de la liste : nouveaux, modifiés, revenus
     for num, item in items.items():
         fields = {k: v for k, v in item.items() if k not in _TOKEN_KEYS}
-        if num not in known:
+        json_path = json_path_of(num)
+        if not os.path.exists(json_path):
             data = dict(fields)
             for field in FLIGHT_SHEET_FIELDS:
                 if field != "adresse_zip":
                     data.setdefault(field, None)
             data["syride_status"] = "present"
-            save_flight_data(main_repertoire=pilot_dir, flight_data=data)
+            write(data)
             report["new"].append(num)
             continue
 
-        _, _, status = known[num]
-        json_path = os.path.join(pilot_dir, "traces", num, f"{num}.json")
+        if num in known:
+            _, stored_hash, status = known[num]
+            # Empreinte de liste inchangée depuis la dernière réconciliation : rien à comparer,
+            # le JSON n'est relu que si le vol était « absent » (retour à constater).
+            if stored_hash is not None and stored_hash == list_hash(item) and status != "absent":
+                continue
         try:
             data = _read_json(json_path)
         except (OSError, ValueError) as e:
             print(f"Warning: JSON illisible ({json_path}) : {e}")
+            report["unreadable"].append(num)
             continue
 
         changed = False
@@ -844,31 +927,33 @@ def reconcile_pilot(conn: sqlite3.Connection, main_path: str, pilot: str, list_i
                 report["modified"].append({"num": num, "fields": modified})
                 changed = True
 
-        if data.get("syride_status") != "present":
+        if data.get("syride_status") == "absent":   # clé absente = « present » : rien à écrire
             data["syride_status"] = "present"
+            report["reappeared"].append(num)
             changed = True
-            if status == "absent":
-                report["reappeared"].append(num)
         if changed:
-            write(num, data)
+            write(data)
 
     # --- vols du disque absents de la liste
-    if not report["guard_triggered"]:
-        for num, (data, is_syride, status) in sorted(known.items(), key=lambda kv: int(kv[0])
-                                                     if kv[0].isdigit() else 0):
-            if is_syride and num not in items and status != "absent":
-                json_path = os.path.join(pilot_dir, "traces", num, f"{num}.json")
-                try:
-                    data = _read_json(json_path)
-                except (OSError, ValueError):
-                    continue
+    if mark_absent:
+        for num in sorted((n for n, (is_syride, _, _) in known.items() if is_syride and n not in items),
+                          key=int):
+            try:
+                data = _read_json(json_path_of(num))
+            except (OSError, ValueError) as e:
+                print(f"Warning: JSON illisible ({json_path_of(num)}) : {e}")
+                report["unreadable"].append(num)
+                continue
+            if data.get("syride_status") != "absent":
                 data["syride_status"] = "absent"
-                write(num, data)
+                write(data)
                 report["absent"].append(num)
 
     # --- index : relire les JSON modifiés, puis dates de liste, empreintes, doublons
     sync_pilot(conn, main_path, pilot)
     for num, item in items.items():
+        if num in report["unreadable"]:
+            continue
         conn.execute("UPDATE flights SET last_seen_list=?, list_hash=? WHERE pilot=? AND num=?",
                      (today_str, list_hash(item), pilot, num))
     report["duplicates"] = _update_duplicates(conn, pilot)
@@ -879,27 +964,42 @@ def reconcile_pilot(conn: sqlite3.Connection, main_path: str, pilot: str, list_i
 def write_duplicates_report(conn: sqlite3.Connection, main_path: str, pilots: list) -> str:
     """
     Écrit <main_path>/_rapport_doublons.txt : les doublons probables (colonne duplicate_of) des
-    pilotes demandés, à valider par une personne. Jamais de suppression. Retourne le chemin.
+    pilotes demandés, à valider par une personne. Jamais de suppression. Pour chaque pilote,
+    les paires dont un des deux vols n'existe plus sur Syride (statut « absent », réimport
+    probable) sont listées en premier. Retourne le chemin.
     """
-    lines = ["Doublons probables (même pilote, même date, heure à moins de 10 min, durée à moins",
-             "de 2 min, numéros différents). Le vol au numéro le plus grand est signalé comme",
-             "doublon du plus ancien. Rien n'a été supprimé : à vérifier à la main.", ""]
+    lines = ["Doublons probables (même pilote, même date, heure à moins de 3 min, durée à moins",
+             "de 60 s, les deux vols d'au moins 5 min, numéros différents). Le vol au numéro le",
+             "plus grand est signalé comme doublon du plus ancien. Pour chaque pilote, les paires",
+             "dont un vol est absent de Syride sont en premier. Rien n'a été supprimé : à vérifier",
+             "à la main.", ""]
     total = 0
     for pilot in sorted(pilots):
+        status = {num: st for num, st in conn.execute(
+            "SELECT num, syride_status FROM flights WHERE pilot=?", (pilot,))}
         rows = conn.execute(
-            "SELECT CAST(duplicate_of AS INTEGER), CAST(num AS INTEGER), data_json, syride_status "
-            "FROM flights WHERE pilot=? AND duplicate_of IS NOT NULL "
-            "ORDER BY CAST(duplicate_of AS INTEGER), CAST(num AS INTEGER)", (pilot,)).fetchall()
+            "SELECT duplicate_of, num, data_json FROM flights WHERE pilot=? AND duplicate_of IS NOT NULL",
+            (pilot,)).fetchall()
         if not rows:
             continue
-        lines.append(f"{pilot} : {len(rows)} doublon(s) probable(s)")
-        for original, num, data_json, status in rows:
-            data = json.loads(data_json)
+        entries = []
+        for original, num, data_json in rows:
+            gone = "absent" in (status.get(original), status.get(num))
+            entries.append((not gone, int(original), int(num), json.loads(data_json),
+                            status.get(num), status.get(original)))
+        entries.sort(key=lambda e: e[:3])
+        lines.append(f"{pilot} : {len(entries)} doublon(s) probable(s)")
+        previous = None
+        for not_gone, original, num, data, st, st_original in entries:
+            if not_gone != previous:
+                lines.append("  -- un des deux vols est absent de Syride --" if not not_gone
+                             else "  -- les deux vols sont présents sur Syride --")
+                previous = not_gone
             lines.append(f"  {num} doublon de {original} | {data.get('date')} {data.get('heure')} | "
                          f"{data.get('site')} | durée {data.get('flight_time')} | "
-                         f"voile {data.get('voile')} | statut Syride : {status}")
+                         f"voile {data.get('voile')} | statut Syride : {st} (original : {st_original})")
         lines.append("")
-        total += len(rows)
+        total += len(entries)
     if total == 0:
         lines.append("Aucun doublon probable.")
 

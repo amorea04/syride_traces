@@ -65,6 +65,17 @@ def test_sheet_raw_illisible(tmp_path):
     assert scraper.load_sheet_raw(str(folder), "5") is None
 
 
+def test_sheet_raw_deflate_abime_et_mauvais_encodage(tmp_path, capsys):
+    folder = tmp_path / "traces" / "5"
+    folder.mkdir(parents=True)
+    good = gzip.compress(HTML.encode("utf-8"))
+    (folder / "5.sheet.html.gz").write_bytes(good[:12] + b"\x00" * 20 + good[32:])   # zlib.error
+    assert scraper.load_sheet_raw(str(folder), "5") is None
+    assert "illisible" in capsys.readouterr().out
+    (folder / "5.sheet.html.gz").write_bytes(gzip.compress(b"\xff\xfe\xfa"))         # pas de l'UTF-8
+    assert scraper.load_sheet_raw(str(folder), "5") is None
+
+
 def test_sheet_raw_ecriture_atomique(tmp_path, monkeypatch):
     scraper.save_sheet_raw(str(tmp_path), "123", "ancienne")
 

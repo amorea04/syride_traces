@@ -1,6 +1,7 @@
 """Tests de l'index flights.db : migration, trace prioritaire, file d'attente, réanalyse.
 Pilotes fictifs dans tmp_path, trace synthétique, sans réseau."""
 
+import gzip
 import importlib
 import json
 import os
@@ -220,7 +221,7 @@ def test_priorite_fv_config_sur_gpx(tmp_path, conn):
     assert r["plafond"] == "560" and r["vario_min"] == -3.5
     assert r["hauteur_sol_max"] == pytest.approx(520.0, abs=1.0)
     assert r["vario_max"] == "2.5" and r["g_max"] == "1.4"   # comblés : la fiche était vide
-    assert r["syride_status"] == "unknown"
+    assert r["syride_status"] == "present"   # clé absente du JSON = present
 
 
 def test_gpx_seul(tmp_path, conn):
@@ -292,7 +293,7 @@ def test_nouvelles_colonnes_none_sans_trace(tmp_path, conn):
 def test_pipeline_ne_remplit_pas_les_nouvelles_colonnes(tmp_path, conn):
     import analyze_functions
     make_flight(tmp_path, 1, plafond="300")
-    make_flight(tmp_path, 2, raw=make_track())
+    make_flight(tmp_path, 2, raw=make_track(), heure="12h30")   # pas un jumeau du vol 1
     flights_db.sync_pilot(conn, str(tmp_path), PILOT)
     df, _ = flights_db.load_pilot_frames(conn, PILOT)
     out = analyze_functions.assign_data_types(analyze_functions.valeurs_manquantes(df))
@@ -440,3 +441,111 @@ def test_reparse_signale_les_erreurs(tmp_path, conn, monkeypatch):
     monkeypatch.setattr(syride_parsing, "parse_flight_sheet", boom)
     result = flights_db.reparse_pilot(conn, str(tmp_path), PILOT)
     assert result["read"] == 0 and result["errors"] == [("1", "fiche incompréhensible")]
+
+
+# ------------------------ corrections de la revue du lot D ------------------------
+
+
+def _after_dedup(conn):
+    """Vols restant après le dédoublonnage du pipeline (analyze_functions)."""
+    import analyze_functions
+    df, _ = flights_db.load_pilot_frames(conn, PILOT)
+    out = analyze_functions.remove_duplicate_flights(
+        analyze_functions.assign_data_types(analyze_functions.valeurs_manquantes(
+            analyze_functions.start_pipeline(df))))
+    return sorted(out["num_activite"]), df
+
+
+def test_jumeaux_memes_statistiques_pendant_le_rattrapage(tmp_path, conn):
+    # 1 et 2 : même vol importé deux fois (même date, heure, durée) ; seule la fiche de 1 est
+    # récupérée. Sans repli, 1 aurait un plafond de trace (560) et 2 celui de la fiche (300) :
+    # le doublon survivrait au dédoublonnage du pipeline.
+    make_flight(tmp_path, 1, raw=make_track(), plafond="300", gain="100")
+    make_flight(tmp_path, 2, plafond="300", gain="100")
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    assert row(conn, 1, "track_source")[0] == "fv-config"   # la trace est bien connue de la base
+    kept, df = _after_dedup(conn)
+    assert kept == [1] and set(df["source_stats"]) == {"fiche"}
+
+    # la fiche du second arrive : les deux passent ensemble à la trace
+    scraper.save_sheet_raw(str(tmp_path / PILOT), "2", fiche_html(make_track()))
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    kept, df = _after_dedup(conn)
+    assert kept == [1] and set(df["source_stats"]) == {"trace"}
+
+
+def test_jumeaux_avec_gpx_gardent_les_statistiques_gpx(tmp_path, conn):
+    make_flight(tmp_path, 1, gpx=True, raw=make_track(), plafond="300")
+    make_flight(tmp_path, 2, gpx=True, plafond="300")
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    assert row(conn, 1, "gpx_stats")[0] is not None   # GPX calculé même quand la fv-config prime
+    kept, df = _after_dedup(conn)
+    assert kept == [1] and set(df["source_stats"]) == {"gpx"}
+
+
+def test_non_jumeaux_gardent_la_trace(tmp_path, conn):
+    make_flight(tmp_path, 1, raw=make_track(), plafond="300")
+    make_flight(tmp_path, 2, plafond="300", heure="15h00")
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    df, _ = flights_db.load_pilot_frames(conn, PILOT)
+    assert dict(zip(df["num_activite"], df["source_stats"])) == {"1": "trace", "2": "fiche"}
+
+
+def test_cles_de_liste_absentes_du_pkl(tmp_path, conn):
+    make_flight(tmp_path, 1, plafond="300", date_publication="21/11/2026", nom_vol="X",
+                historique_liste=[], altitude_max="900")
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    df, _ = flights_db.load_pilot_frames(conn, PILOT)
+    assert not {"date_publication", "nom_vol", "historique_liste", "altitude_max"} & set(df.columns)
+    assert {"vario_min", "hauteur_sol_max", "heure_plafond", "syride_status"} <= set(df.columns)
+
+
+def test_fiche_brute_non_compressee_detectee(tmp_path, conn):
+    make_flight(tmp_path, 1, plafond="300")
+    folder = tmp_path / PILOT / "traces" / "1"
+    (folder / "1.sheet.html").write_text(fiche_html(make_track()), encoding="utf-8")
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    assert row(conn, 1, "has_sheet_raw", "track_source") == (1, "fv-config")
+
+
+def test_fiche_brute_corrompue_ne_bloque_rien(tmp_path, conn):
+    make_flight(tmp_path, 1, plafond="300")
+    make_flight(tmp_path, 2, raw=make_track(), plafond="300", heure="12h30")
+    folder = tmp_path / PILOT / "traces" / "1"
+    good = gzip.compress(fiche_html(make_track()).encode("utf-8"))
+    (folder / "1.sheet.html.gz").write_bytes(good[:12] + b"\x00" * 20 + good[32:])   # deflate abîmé
+    assert scraper.load_sheet_raw(str(folder), "1") is None
+    assert flights_db.sync_pilot(conn, str(tmp_path), PILOT) == 2
+    assert row(conn, 1, "has_sheet_raw")[0] == 1
+    assert row(conn, 2, "track_source")[0] == "fv-config"
+    result = flights_db.reparse_pilot(conn, str(tmp_path), PILOT)
+    assert result["read"] == 1 and result["errors"] == [("1", "fiche brute illisible")]
+
+
+def test_fiche_sans_fv_config_pas_relue_a_chaque_passage(tmp_path, conn, monkeypatch):
+    make_flight(tmp_path, 1, plafond="300")
+    scraper.save_sheet_raw(str(tmp_path / PILOT), "1", "<html><body>pas de trace</body></html>")
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    assert row(conn, 1, "track_source", "coords_done") == ("none", 0)
+
+    calls = []
+    monkeypatch.setattr(scraper, "load_sheet_raw", lambda *a: calls.append(a))
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    assert calls == []   # ni relue ni analysée
+    df, _ = flights_db.load_pilot_frames(conn, PILOT)
+    assert df.iloc[0]["source_stats"] == "fiche"
+
+    # une nouvelle version des statistiques refait l'essai
+    conn.execute("UPDATE flights SET track_stats='{\"version\": 0}'")
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    assert len(calls) >= 1
+
+
+def test_file_historique_ordre_sans_files_by_pilot(tmp_path, conn):
+    # avec files_by_pilot=None : (IGC seul en dernier, numéro décroissant), infos et GPX mêlés
+    make_flight(tmp_path, 10)                            # infos + gpx
+    make_flight(tmp_path, 20, plafond="300")             # gpx seul
+    make_flight(tmp_path, 30, gpx=True, plafond="300")   # IGC seul
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    queue = flights_db.get_global_queue(conn, [PILOT], fill_igc=True)
+    assert nums(queue) == ["20", "10", "30"]
