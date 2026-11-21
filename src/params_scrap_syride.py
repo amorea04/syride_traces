@@ -55,6 +55,18 @@ PILOTES = {
     # "francois_s": ("Fran&ccedil;ois%20S", False),
 }
 
+# Pilotes dont on télécharge aussi les fichiers Syride (sinon : trace lue dans la fiche).
+# Valeurs possibles par pilote : ("gpx",) ou ("gpx", "igc") (le KML n'est pas téléchargé).
+# La clé est le dossier du pilote. La fiche brute (trace complète `fv-config`) est enregistrée
+# pour TOUS les pilotes ; un pilote absent d'ici n'a aucun téléchargement.
+FICHIERS_PAR_PILOTE = {"AdrienM": ("gpx", "igc")}
+
+# Nombre de fiches de vol consultées par lancement (défaut de --max-sheets). Syride en autorise
+# environ 50 par jour : 40 laisse une marge pour un second lancement dans la journée. Les vols
+# nouveaux ou incomplets passent d'abord, le rattrapage des fiches brutes utilise le reste. Le
+# script s'arrête plus tôt si Syride affiche une limite.
+MAX_SHEETS_PAR_LANCEMENT = 40
+
 # Dérivés (ne pas modifier : utilisés par main.py et create_global_pkl.py)
 # Pilotes scrapés par défaut (nom du dossier)
 pilots = [folder for folder, scrape in PILOTES.values() if scrape]

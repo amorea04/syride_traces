@@ -27,7 +27,7 @@ jobs:
       - run: pip install -r src/requirements-export.txt
       - name: pytest (comme make test-py)
         working-directory: src
-        run: python -m pytest web_export/tests -q -p no:cacheprovider -p no:dash
+        run: python -m pytest web_export/tests scraping_tests -q -p no:cacheprovider -p no:dash
 
   web:
     name: Tests web

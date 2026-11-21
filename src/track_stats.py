@@ -1,5 +1,10 @@
 """
-Statistiques d'un vol calculées à partir de son fichier GPX (fonctions pures, sans réseau).
+Statistiques d'un vol calculées à partir de sa trace (fonctions pures, sans réseau).
+
+Deux sources, même calcul (stats_from_series) :
+    - le fichier GPX du vol (compute_gpx_stats), source « gpx » ;
+    - la trace `fv-config` de la fiche Syride (compute_track_stats), source « fv-config » :
+      1 point par seconde, avec vario, g, altitude du sol et extrema horodatés.
 
 Un GPX Syride contient, pour chaque point : latitude, longitude, altitude (<ele>) et heure
 (<time>), environ un point par seconde. On en déduit :
@@ -27,19 +32,22 @@ NON calculés ici, car le GPX ne permet pas de retrouver les valeurs de Syride :
 Retourne None si le fichier est illisible ou contient trop peu de points.
 """
 
-import math
+import re
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
 
 SPEED_MEDIAN = 5    # points
-STATS_VERSION = 2   # à incrémenter si le calcul change : les stats en cache sont recalculées
+STATS_VERSION = 4   # à incrémenter si le calcul change : les stats en cache sont recalculées
 MIN_POINTS = 10
 
 # Champs fournis par compute_gpx_stats
 GPX_STAT_FIELDS = ["duree_vol", "plafond", "gain", "vitesse_max"]
+# Champs supplémentaires fournis par compute_track_stats (trace fv-config)
+TRACK_STAT_FIELDS = ["vario_min", "vario_max", "g_max", "vitesse_max_fiche",
+                     "hauteur_sol_max", "heure_plafond"]
 
 
 def _parse_time(text):
@@ -72,18 +80,20 @@ def read_gpx_points(path: str):
 
     t = np.array(times)
     alt = np.array(eles)
-    lat = np.radians(lats)
-    lon = np.radians(lons)
-    # Distance haversine entre points successifs (km)
-    if len(t) > 1:
+    return t, alt, cumulative_distance_km(lats, lons)
+
+
+def cumulative_distance_km(lats, lons):
+    """Distance haversine cumulée (km) le long de points lat/lon en degrés ; 0 au premier point."""
+    lat = np.radians(np.asarray(lats, dtype=float))
+    lon = np.radians(np.asarray(lons, dtype=float))
+    if len(lat) > 1:
         dlat = np.diff(lat)
         dlon = np.diff(lon)
         a = np.sin(dlat / 2) ** 2 + np.cos(lat[:-1]) * np.cos(lat[1:]) * np.sin(dlon / 2) ** 2
         step = 2 * 6371.0 * np.arcsin(np.sqrt(np.clip(a, 0, 1)))
-        dist = np.concatenate([[0.0], np.cumsum(step)])
-    else:
-        dist = np.zeros(len(t))
-    return t, alt, dist
+        return np.concatenate([[0.0], np.cumsum(step)])
+    return np.zeros(len(lat))
 
 
 def _robust_max_speed(t, dist):
@@ -103,12 +113,11 @@ def _hms(seconds: float) -> str:
     return f"{seconds // 3600:02d}:{(seconds % 3600) // 60:02d}:{seconds % 60:02d}"
 
 
-def compute_gpx_stats(path: str):
-    """Statistiques du vol (dict de GPX_STAT_FIELDS) ou None si le GPX est inexploitable."""
-    try:
-        t, alt, dist = read_gpx_points(path)
-    except Exception:
-        return None
+def stats_from_series(t, alt, dist):
+    """Statistiques (dict de GPX_STAT_FIELDS + version) depuis des séries numpy, ou None.
+
+    t : secondes, alt : mètres, dist : distance cumulée en km (même longueur).
+    """
     if len(t) < MIN_POINTS:
         return None
 
@@ -127,3 +136,118 @@ def compute_gpx_stats(path: str):
         "vitesse_max": int(round(vmax)) if vmax is not None else None,
         "version": STATS_VERSION,
     }
+
+
+def compute_gpx_stats(path: str):
+    """Statistiques du vol (dict de GPX_STAT_FIELDS) ou None si le GPX est inexploitable."""
+    try:
+        t, alt, dist = read_gpx_points(path)
+    except Exception:
+        return None
+    return stats_from_series(t, alt, dist)
+
+
+def _extremum_value(extrema, icon):
+    """Premier nombre lu dans le libellé de l'extremum d'icône donnée, ou None."""
+    for ext in extrema or []:
+        if not isinstance(ext, dict) or ext.get("icon") != icon:
+            continue
+        m = re.search(r"-?\d+(?:[.,]\d+)?", str(ext.get("label", "")).replace("\u2212", "-"))
+        if m:
+            return float(m.group(0).replace(",", "."))
+    return None
+
+
+def _column(points, index):
+    """Colonne `index` de `points` en float (NaN si absente), ou None si inutilisable."""
+    try:
+        col = np.array([p[index] if len(p) > index else np.nan for p in points], dtype=float)
+    except (TypeError, ValueError):
+        return None
+    return col if np.isfinite(col).any() else None
+
+
+def compute_track_stats(track):
+    """Statistiques d'une trace `fv-config` (dict décodé) ou None si elle est inexploitable.
+
+    Champs de GPX_STAT_FIELDS et de TRACK_STAT_FIELDS, `source` = « fv-config » et `version`.
+    """
+    if not isinstance(track, dict):
+        return None
+    points, times = track.get("points"), track.get("times")
+    if not points or not times or len(points) != len(times) or len(points) < MIN_POINTS:
+        return None
+    try:
+        arr = np.array([[float(p[0]), float(p[1]), float(p[2])] for p in points])
+        t = np.array(times, dtype=float)
+    except (TypeError, ValueError, IndexError):
+        return None
+    if not (np.isfinite(arr).all() and np.isfinite(t).all()):
+        return None
+
+    base = stats_from_series(t, arr[:, 2], cumulative_distance_km(arr[:, 0], arr[:, 1]))
+    if base is None:
+        return None
+
+    # La trace fv-config est rééchantillonnée à 1 point/s : quand l'instrument ne donne une
+    # position que toutes les ~2 s, la position est répétée (jusqu'à ~40 % des points). Les
+    # vitesses point à point alternent alors entre 0 et le double de la vraie vitesse, et la
+    # médiane glissante surestime la vitesse max (porte IV : 122 km/h au lieu de 68). On la
+    # calcule donc sur les seules positions nouvelles, comme pour le GPX.
+    moved = np.r_[True, (np.diff(arr[:, 0]) != 0) | (np.diff(arr[:, 1]) != 0)]
+    if not moved.all():
+        vmax = _robust_max_speed(t[moved], cumulative_distance_km(arr[moved, 0], arr[moved, 1]))
+        base["vitesse_max"] = int(round(vmax)) if vmax is not None else None
+
+    extrema = track.get("extrema")
+    vario_max = _extremum_value(extrema, "up")
+    vario_min = _extremum_value(extrema, "down")
+    g_max = _extremum_value(extrema, "g")
+    if vario_max is None or vario_min is None:
+        vario = _column(points, 4)
+        if vario is not None:
+            if vario_max is None:
+                vario_max = float(np.nanmax(vario))
+            if vario_min is None:
+                vario_min = float(np.nanmin(vario))
+    if g_max is None:
+        g = _column(points, 5)
+        if g is not None:
+            g_max = float(np.nanmax(g))
+
+    hauteur_sol_max = None
+    terrain = track.get("terrain")
+    if terrain:
+        try:
+            ter = np.array([[float(a), float(b)] for a, b in terrain])
+            ter = ter[np.argsort(ter[:, 0], kind="stable")]
+            if len(ter) and np.isfinite(ter).all():
+                sol = np.interp(t, ter[:, 0], ter[:, 1])
+                hauteur_sol_max = float((arr[:, 2] - sol).max())
+        except (TypeError, ValueError, IndexError):
+            hauteur_sol_max = None
+
+    base.update({
+        "vario_min": vario_min,
+        "vario_max": vario_max,
+        "g_max": g_max,
+        "vitesse_max_fiche": _extremum_value(extrema, "speed"),
+        "hauteur_sol_max": hauteur_sol_max,
+        "heure_plafond": float(t[int(np.argmax(arr[:, 2]))]),
+        "source": "fv-config",
+    })
+    return base
+
+
+def track_to_gpx(track, path):
+    """Écrit un GPX 1.1 minimal (lat, lon, ele, time UTC) depuis une trace `fv-config`."""
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<gpx version="1.1" creator="syride_traces" xmlns="http://www.topografix.com/GPX/1/1">',
+             "<trk><trkseg>"]
+    for p, t in zip(track["points"], track["times"]):
+        iso = datetime.fromtimestamp(float(t), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        lines.append('<trkpt lat="{:.6f}" lon="{:.6f}"><ele>{:.1f}</ele><time>{}</time></trkpt>'
+                     .format(float(p[0]), float(p[1]), float(p[2]), iso))
+    lines += ["</trkseg></trk>", "</gpx>"]
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")

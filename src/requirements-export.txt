@@ -6,3 +6,4 @@ jsonschema==4.17.3
 python-dotenv==1.0.1   # params_scrap_syride.py (lecture du .env)
 plotly==5.4.0          # plotly.express, importé par legacy/app_functions.py (expected_stats.py)
 pytest==7.2.2
+beautifulsoup4==4.11.2  # syride_parsing.py (tests scraping_tests, comme requirements-scraping.txt)

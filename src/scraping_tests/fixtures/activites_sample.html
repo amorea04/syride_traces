@@ -1,0 +1,154 @@
+ 
+<style type="text/css">
+.imageSite {
+	float:left;
+	border-radius: 5px;
+	margin-right: 10px;
+	margin-top:5px;
+	cursor:hand;
+}
+.activityPhotoPreview {
+	width:220px;
+	height:62px;
+	flex:0 0 220px;
+	overflow:hidden;
+	cursor:default;
+}
+.activityPhotoPreview img {
+	display:block;
+	width:100%;
+	height:100%;
+	object-fit:cover;
+	cursor:pointer;
+}
+.activityPhotoPlaceholder {
+	width:100%;
+	height:100%;
+	box-sizing:border-box;
+	align-items:center;
+	justify-content:center;
+	gap:8px;
+	padding:6px;
+	background:#eceff1;
+	color:#687782;
+	font-size:14px;
+	text-align:center;
+}
+.activityPhotoPlaceholder svg { flex:0 0 22px; }
+@media (max-width:600px) {
+	.activityPhotoPreview { width:110px; flex-basis:110px; }
+	.activityPhotoPlaceholder { flex-direction:column; gap:3px; font-size:12px; }
+}
+.pictoLoupe { 
+	position:absolute; 
+	cursor:hand;
+	top:120px;
+	left:7px;   
+}   
+</style>
+ 
+<script type="text/javascript">
+window.flightThumbTexts = {
+	progress: "Generation...",
+	error: "Generation impossible" 
+};
+window.flightThumbLangue = "fr";
+if (typeof window.regenerateFlightThumb !== 'function') {
+	window.regenerateFlightThumb = function(idSession) {
+		var button = $('#regenFlightThumb_' + idSession);
+		var image = $('#flightThumb_' + idSession);
+		button.data('label', button.html());
+		button.html(window.flightThumbTexts.progress);
+		button.css('pointer-events', 'none');
+		ajax4session({
+			url: '/ajax/vols/regenerer-miniature.php?l=' + encodeURIComponent(window.flightThumbLangue),
+			type: 'POST',
+			dataType: 'json',
+			data: { idSession: idSession },
+			success: function(response) {
+				if (response && response.ok && response.url) {
+					image.attr('src', response.url + '?t=' + (new Date()).getTime());
+					button.hide();
+				} else {
+					openAlertPopup((response && response.message) ? response.message : window.flightThumbTexts.error);
+					button.html(button.data('label'));
+					button.css('pointer-events', '');
+				}
+			},
+			error: function() {
+				openAlertPopup(window.flightThumbTexts.error);
+				button.html(button.data('label'));
+				button.css('pointer-events', '');
+			}
+		});
+	};
+}
+</script>
+<div id='activite4048184' class="boxno" style="width:auto;height:auto;position:relative;padding:10px 10px 30px 10px;margin:10px;vertical-align: middle;text-align: left;background-color:#ffff;" ><div class="dateActivite">Publié le <font style='font-weight:bold;'>07/11/2026 - 12h19</font></div>		<div class="bouton" style="position:absolute;bottom:7px;right:7px;padding:2px 5px;" onclick='open_commentaire(4048184);'><img title='0 commentaire(s)' height=10px border="no" src="/images/interface/pictoCommentaire.png"> 0</div>
+		
+					<div id=flightArea class="" style='display: flex; align-items: center;position:relative;'>
+					<div id="photoGpsDiv" style="position:relative;cursor:pointer;" onclick="showFlightInPopup(3766574, 1795263521, 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', false);">
+														<img id="flightThumb_3766574" class="photoGps" src="/flightThumbs/3766/3766574.jpg">
+													</div>
+						<div id=flightStats>
+							<div style="display:inline;" id="type3766574">
+								Vol moteur</div><div style='display:inline' id='site3766574'> à <a href='/fr/sites/SiteTest1'>SiteTest1</a> <div id=siteLocalisation style='display:inline-block'>(<img src='/images/flags/France.jpg'> France / Nouvelle-Aquitaine)</div></div><ul style='margin-top:5px;'>Nom du vol : <font style='font-weight:bold;' id='nom3766574'>07-11-2026</font></ul><ul>Date : <font style='font-weight:bold'>07/11/2026 - 11h12</font></ul><ul>Temps de vol : <font style='font-weight:bold'>1h 06min</font></ul><ul id='voile3766574'>Voile utilisée : <font style='font-weight:bold'>Daytona</font> (ITV <img id=glideBrand height=13px src='/images/voile/18.gif'>)</ul><ul>Distance parcourue : <font style='font-weight:bold'>38km</font></ul><ul>Altitude maximum : <font style='font-weight:bold'>629m</font></ul><ul>Instrument utilisé : <font style='font-weight:bold'>Evolution</font> </ul>							</div>
+						</div>
+					
+				<div style="position:absolute;left:11px;bottom:2px;" class="emoticon-picker"></div></div><div id='activite4042582' class="boxno" style="width:auto;height:auto;position:relative;padding:10px 10px 30px 10px;margin:10px;vertical-align: middle;text-align: left;background-color:#ffff;" ><div class="dateActivite">Publié le <font style='font-weight:bold;'>01/11/2026 - 15h24</font></div>		<div class="bouton" style="position:absolute;bottom:7px;right:7px;padding:2px 5px;" onclick='open_commentaire(4042582);'><img title='0 commentaire(s)' height=10px border="no" src="/images/interface/pictoCommentaire.png"> 0</div>
+		
+					<div id=flightArea class="syc-flight-layout" style='display: flex; align-items: center;position:relative;'>
+					<div id="photoGpsDiv" style="position:relative;cursor:pointer;" onclick="showFlightInPopup(3761544, 1795263521, 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', false);">
+														<img id="flightThumb_3761544" class="photoGps" src="/flightThumbs/3761/3761544.jpg">
+													</div>
+						<div id=flightStats>
+							<div style="display:inline;" id="type3761544">
+								Vol site</div><div style='display:inline' id='site3761544'> à <a href='/fr/sites/SiteTest2'>SiteTest2</a> <div id=siteLocalisation style='display:inline-block'>(<img src='/images/flags/France.jpg'> France / Occitanie)</div></div><ul style='margin-top:5px;'>Nom du vol : <font style='font-weight:bold;' id='nom3761544'>01-11-2026</font></ul><ul>Date : <font style='font-weight:bold'>01/11/2026 - 14h59</font></ul><ul>Temps de vol : <font style='font-weight:bold'>23min</font></ul><ul id='voile3761544'>Voile utilisée : <font style='font-weight:bold'>Eden 8</font> (Mac Para <img id=glideBrand height=13px src='/images/voile/19.gif'>)</ul><ul>Distance parcourue : <font style='font-weight:bold'>5km</font></ul><ul>Altitude maximum : <font style='font-weight:bold'>1836m</font></ul><ul>Instrument utilisé : <font style='font-weight:bold'>Nav XL</font> </ul>							</div>
+						<style>
+.syc-companions{clear:both;margin:5px 0 0;display:flex;flex-wrap:wrap;align-items:center;text-align:left;min-width:0;max-width:100%}
+.syc-companions-avatars{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.syc-companion{position:relative;display:inline-flex;flex:0 0 40px;width:40px;height:40px;box-sizing:border-box;border:0;border-radius:50%;background:#fff;text-decoration:none;vertical-align:middle}
+.syc-companion img{position:absolute;left:4px;top:4px;width:32px;height:32px;max-width:none;border:0;border-radius:50%;object-fit:cover;margin:0;padding:0}
+.syc-companion svg{position:absolute;inset:0;width:40px;height:40px;pointer-events:none}
+.syc-companion:focus-visible{outline:2px solid #364952;outline-offset:3px}
+.syc-companion:hover{box-shadow:0 0 0 2px #f6d7bc}
+.syc-flight-layout{display:grid!important;grid-template-columns:max-content minmax(0,1fr);align-items:center}
+.syc-flight-layout>#photoGpsDiv{grid-column:1;grid-row:1 / span 2}
+.syc-flight-layout>#flightStats{grid-column:2;grid-row:1;min-width:0}
+.syc-flight-layout>.syc-companions{grid-column:2;grid-row:2;align-self:start}
+@media(max-width:650px){
+ .syc-flight-layout{grid-template-columns:minmax(0,1fr)}
+ .syc-flight-layout>#photoGpsDiv{position:relative!important;grid-column:1;grid-row:1;top:0;align-self:start;justify-self:start;width:max-content}
+ .syc-flight-layout>#flightStats{grid-column:1;grid-row:1;align-self:start;top:0!important;margin-top:0px!important;margin-bottom:0!important}
+ .syc-flight-layout>.syc-companions{grid-column:1;grid-row:2;margin:5px}
+}
+</style><div class="syc-companions" role="group" aria-label="Compagnons de vol" onclick="event.stopPropagation();"><span class="syc-companions-avatars"><a class="syc-companion" href="/fr/pilotes/PiloteTest/3762814" title="PiloteTest : 91 % de vol partagé" aria-label="PiloteTest : 91 % de vol partagé" data-score="9060" data-flight-id="3762814" data-flight-expires="1795263521" data-flight-token="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" onclick="event.stopPropagation();if(event.button===0&amp;&amp;!event.ctrlKey&amp;&amp;!event.metaKey&amp;&amp;!event.shiftKey&amp;&amp;!event.altKey&amp;&amp;typeof showFlightInPopup===&quot;function&quot;){event.preventDefault();showFlightInPopup(Number(this.dataset.flightId),Number(this.dataset.flightExpires),this.dataset.flightToken,false);}"><img src="/images/riders/99999_profile.jpg" alt="" width="32" height="32" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/noImage_mini.jpg';"><svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="18" fill="none" stroke="#dce4e9" stroke-width="3"/><circle cx="20" cy="20" r="18" fill="none" stroke="#43B131" stroke-width="3" pathLength="100" stroke-dasharray="90.60 100" stroke-linecap="round" transform="rotate(-90 20 20)"/></svg></a><a class="syc-companion" href="/fr/pilotes/PiloteTest/3761541" title="PiloteTest : 89 % de vol partagé" aria-label="PiloteTest : 89 % de vol partagé" data-score="8871" data-flight-id="3761541" data-flight-expires="1795263521" data-flight-token="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" onclick="event.stopPropagation();if(event.button===0&amp;&amp;!event.ctrlKey&amp;&amp;!event.metaKey&amp;&amp;!event.shiftKey&amp;&amp;!event.altKey&amp;&amp;typeof showFlightInPopup===&quot;function&quot;){event.preventDefault();showFlightInPopup(Number(this.dataset.flightId),Number(this.dataset.flightExpires),this.dataset.flightToken,false);}"><img src="/images/riders/99999_profile.jpg" alt="" width="32" height="32" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/noImage_mini.jpg';"><svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="18" fill="none" stroke="#dce4e9" stroke-width="3"/><circle cx="20" cy="20" r="18" fill="none" stroke="#43B131" stroke-width="3" pathLength="100" stroke-dasharray="88.71 100" stroke-linecap="round" transform="rotate(-90 20 20)"/></svg></a><a class="syc-companion" href="/fr/pilotes/PiloteTest/3771938" title="PiloteTest : 57 % de vol partagé" aria-label="PiloteTest : 57 % de vol partagé" data-score="5703" data-flight-id="3771938" data-flight-expires="1795263521" data-flight-token="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" onclick="event.stopPropagation();if(event.button===0&amp;&amp;!event.ctrlKey&amp;&amp;!event.metaKey&amp;&amp;!event.shiftKey&amp;&amp;!event.altKey&amp;&amp;typeof showFlightInPopup===&quot;function&quot;){event.preventDefault();showFlightInPopup(Number(this.dataset.flightId),Number(this.dataset.flightExpires),this.dataset.flightToken,false);}"><img src="/images/noImage_mini.jpg" alt="" width="32" height="32" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/noImage_mini.jpg';"><svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="18" fill="none" stroke="#dce4e9" stroke-width="3"/><circle cx="20" cy="20" r="18" fill="none" stroke="#43B131" stroke-width="3" pathLength="100" stroke-dasharray="57.03 100" stroke-linecap="round" transform="rotate(-90 20 20)"/></svg></a></span></div></div>
+					
+				<div style="position:absolute;left:11px;bottom:2px;" class="emoticon-picker"></div></div><div id='activite4042475' class="boxno" style="width:auto;height:auto;position:relative;padding:10px 10px 30px 10px;margin:10px;vertical-align: middle;text-align: left;background-color:#ffff;" ><div class="dateActivite">Publié le <font style='font-weight:bold;'>01/11/2026 - 13h45</font></div>		<div class="bouton" style="position:absolute;bottom:7px;right:7px;padding:2px 5px;" onclick='open_commentaire(4042475);'><img title='0 commentaire(s)' height=10px border="no" src="/images/interface/pictoCommentaire.png"> 0</div>
+		
+					<div id=flightArea class="syc-flight-layout" style='display: flex; align-items: center;position:relative;'>
+					<div id="photoGpsDiv" style="position:relative;cursor:pointer;" onclick="showFlightInPopup(3761463, 1795263521, 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', false);">
+														<img id="flightThumb_3761463" class="photoGps" src="/flightThumbs/3761/3761463.jpg">
+													</div>
+						<div id=flightStats>
+							<div style="display:inline;" id="type3761463">
+								Vol site</div><div style='display:inline' id='site3761463'> à <a href='/fr/sites/SiteTest3'>SiteTest3</a> <div id=siteLocalisation style='display:inline-block'>(<img src='/images/flags/France.jpg'> France / Occitanie)</div></div><ul style='margin-top:5px;'>Nom du vol : <font style='font-weight:bold;' id='nom3761463'>01-11-2026</font></ul><ul>Date : <font style='font-weight:bold'>01/11/2026 - 13h26</font></ul><ul>Temps de vol : <font style='font-weight:bold'>17min</font></ul><ul id='voile3761463'>Voile utilisée : <font style='font-weight:bold'>Eden 8</font> (Mac Para <img id=glideBrand height=13px src='/images/voile/19.gif'>)</ul><ul>Distance parcourue : <font style='font-weight:bold'>4km</font></ul><ul>Altitude maximum : <font style='font-weight:bold'>1725m</font></ul><ul>Instrument utilisé : <font style='font-weight:bold'>Nav XL</font> </ul>							</div>
+						<div class="syc-companions" role="group" aria-label="Compagnons de vol" onclick="event.stopPropagation();"><span class="syc-companions-avatars"><a class="syc-companion" href="/fr/pilotes/PiloteTest/3761462" title="PiloteTest : 90 % de vol partagé" aria-label="PiloteTest : 90 % de vol partagé" data-score="9000" data-flight-id="3761462" data-flight-expires="1795263521" data-flight-token="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" onclick="event.stopPropagation();if(event.button===0&amp;&amp;!event.ctrlKey&amp;&amp;!event.metaKey&amp;&amp;!event.shiftKey&amp;&amp;!event.altKey&amp;&amp;typeof showFlightInPopup===&quot;function&quot;){event.preventDefault();showFlightInPopup(Number(this.dataset.flightId),Number(this.dataset.flightExpires),this.dataset.flightToken,false);}"><img src="/images/riders/99999_profile.jpg" alt="" width="32" height="32" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/noImage_mini.jpg';"><svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="18" fill="none" stroke="#dce4e9" stroke-width="3"/><circle cx="20" cy="20" r="18" fill="none" stroke="#43B131" stroke-width="3" pathLength="100" stroke-dasharray="90.00 100" stroke-linecap="round" transform="rotate(-90 20 20)"/></svg></a><a class="syc-companion" href="/fr/pilotes/PiloteTest/3771937" title="PiloteTest : 60 % de vol partagé" aria-label="PiloteTest : 60 % de vol partagé" data-score="5965" data-flight-id="3771937" data-flight-expires="1795263521" data-flight-token="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" onclick="event.stopPropagation();if(event.button===0&amp;&amp;!event.ctrlKey&amp;&amp;!event.metaKey&amp;&amp;!event.shiftKey&amp;&amp;!event.altKey&amp;&amp;typeof showFlightInPopup===&quot;function&quot;){event.preventDefault();showFlightInPopup(Number(this.dataset.flightId),Number(this.dataset.flightExpires),this.dataset.flightToken,false);}"><img src="/images/noImage_mini.jpg" alt="" width="32" height="32" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/noImage_mini.jpg';"><svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="18" fill="none" stroke="#dce4e9" stroke-width="3"/><circle cx="20" cy="20" r="18" fill="none" stroke="#43B131" stroke-width="3" pathLength="100" stroke-dasharray="59.65 100" stroke-linecap="round" transform="rotate(-90 20 20)"/></svg></a><a class="syc-companion" href="/fr/pilotes/PiloteTest/3762813" title="PiloteTest : 36 % de vol partagé" aria-label="PiloteTest : 36 % de vol partagé" data-score="3598" data-flight-id="3762813" data-flight-expires="1795263521" data-flight-token="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" onclick="event.stopPropagation();if(event.button===0&amp;&amp;!event.ctrlKey&amp;&amp;!event.metaKey&amp;&amp;!event.shiftKey&amp;&amp;!event.altKey&amp;&amp;typeof showFlightInPopup===&quot;function&quot;){event.preventDefault();showFlightInPopup(Number(this.dataset.flightId),Number(this.dataset.flightExpires),this.dataset.flightToken,false);}"><img src="/images/riders/99999_profile.jpg" alt="" width="32" height="32" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/noImage_mini.jpg';"><svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="18" fill="none" stroke="#dce4e9" stroke-width="3"/><circle cx="20" cy="20" r="18" fill="none" stroke="#43B131" stroke-width="3" pathLength="100" stroke-dasharray="35.98 100" stroke-linecap="round" transform="rotate(-90 20 20)"/></svg></a></span></div></div>
+					
+				<div style="position:absolute;left:11px;bottom:2px;" class="emoticon-picker"></div></div><div id='activite4042241' class="boxno" style="width:auto;height:auto;position:relative;padding:10px 10px 30px 10px;margin:10px;vertical-align: middle;text-align: left;background-color:#ffff;" ><div class="dateActivite">Publié le <font style='font-weight:bold;'>01/11/2026 - 11h06</font></div>		<div class="bouton" style="position:absolute;bottom:7px;right:7px;padding:2px 5px;" onclick='open_commentaire(4042241);'><img title='0 commentaire(s)' height=10px border="no" src="/images/interface/pictoCommentaire.png"> 0</div>
+		
+					<div id=flightArea class="syc-flight-layout" style='display: flex; align-items: center;position:relative;'>
+					<div id="photoGpsDiv" style="position:relative;cursor:pointer;" onclick="showFlightInPopup(3761259, 1795263521, 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', false);">
+														<img id="flightThumb_3761259" class="photoGps" src="/flightThumbs/3761/3761259.jpg">
+													</div>
+						<div id=flightStats>
+							<div style="display:inline;" id="type3761259">
+								Vol site</div><div style='display:inline' id='site3761259'> à <a href='/fr/sites/SiteTest4'>SiteTest4</a> <div id=siteLocalisation style='display:inline-block'>(<img src='/images/flags/France.jpg'> France / Occitanie)</div></div><ul style='margin-top:5px;'>Nom du vol : <font style='font-weight:bold;' id='nom3761259'>01-11-2026</font></ul><ul>Date : <font style='font-weight:bold'>01/11/2026 - 10h56</font></ul><ul>Temps de vol : <font style='font-weight:bold'>9min</font></ul><ul id='voile3761259'>Voile utilisée : <font style='font-weight:bold'>Eden 8</font> (Mac Para <img id=glideBrand height=13px src='/images/voile/19.gif'>)</ul><ul>Distance parcourue : <font style='font-weight:bold'>3km</font></ul><ul>Altitude maximum : <font style='font-weight:bold'>1639m</font></ul><ul>Instrument utilisé : <font style='font-weight:bold'>Nav XL</font> </ul>							</div>
+						<div class="syc-companions" role="group" aria-label="Compagnons de vol" onclick="event.stopPropagation();"><span class="syc-companions-avatars"><a class="syc-companion" href="/fr/pilotes/PiloteTest/3762812" title="PiloteTest : 7 % de vol partagé" aria-label="PiloteTest : 7 % de vol partagé" data-score="702" data-flight-id="3762812" data-flight-expires="1795263521" data-flight-token="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" onclick="event.stopPropagation();if(event.button===0&amp;&amp;!event.ctrlKey&amp;&amp;!event.metaKey&amp;&amp;!event.shiftKey&amp;&amp;!event.altKey&amp;&amp;typeof showFlightInPopup===&quot;function&quot;){event.preventDefault();showFlightInPopup(Number(this.dataset.flightId),Number(this.dataset.flightExpires),this.dataset.flightToken,false);}"><img src="/images/riders/99999_profile.jpg" alt="" width="32" height="32" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/noImage_mini.jpg';"><svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="18" fill="none" stroke="#dce4e9" stroke-width="3"/><circle cx="20" cy="20" r="18" fill="none" stroke="#43B131" stroke-width="3" pathLength="100" stroke-dasharray="7.02 100" stroke-linecap="round" transform="rotate(-90 20 20)"/></svg></a></span></div></div>
+					
+				<div style="position:absolute;left:11px;bottom:2px;" class="emoticon-picker"></div></div><div id='activite4045108' class="boxno" style="width:auto;height:auto;position:relative;padding:10px 10px 30px 10px;margin:10px;vertical-align: middle;text-align: left;background-color:#ffff;" ><div class="dateActivite">Publié le <font style='font-weight:bold;'>03/11/2026 - 17h08</font></div>		<div class="bouton" style="position:absolute;bottom:7px;right:7px;padding:2px 5px;" onclick='open_commentaire(4045108);'><img title='0 commentaire(s)' height=10px border="no" src="/images/interface/pictoCommentaire.png"> 0</div>
+							<div style='display: flex; align-items: center;position:relative'>
+						<img id=flightNoSysImg class="photoNoSys" src="/images/interface/pilote_volNoSys.png">
+						<div id=flightStatsNoSys>
+						<div id="type3763839">Vol bord de mer sans instrument.</div><ul style='margin-top:5px;'>Site de vol : <font style='font-weight:bold;' id='site3763839'>SiteTest5</font></ul><ul>Nom du vol : <font style='font-weight:bold;' id='nom3763839'>VolTest1</font></ul><ul>Date : <font style='font-weight:bold'>24/10/2026 - 15h00</font></ul><ul>Temps de vol : <font style='font-weight:bold'>10min</font></ul><ul id='voile3763839'>Voile utilisée : <font style='font-weight:bold'>Mullet</font> (Flow Paragliders <img id=glideBrand height=13px src='/images/voile/55.gif'>)</ul>					</div></div>
+									<div style="position:absolute;left:11px;bottom:2px;" class="emoticon-picker"></div></div>

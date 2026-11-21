@@ -17,6 +17,7 @@ ATTENTION : parent.html peut contenir des informations personnelles
 
 import argparse
 import os
+import re
 import time
 
 from selenium.webdriver.common.by import By
@@ -25,6 +26,11 @@ import params_scrap_syride as params
 from browser_session import create_driver, open_site_and_login, wait_for_cloudflare
 
 KEYWORDS = ("download", "gpx", "zip", "kml", "fichevol")
+
+
+def _mask_secrets(url: str) -> str:
+    """Masque la valeur des paramètres `token` et `key` d'une URL (jetons signés)."""
+    return re.sub(r"([?&](?:token|key)=)[^&#]*", r"\1***", url, flags=re.IGNORECASE)
 
 
 def main():
@@ -71,13 +77,32 @@ def main():
         names = sorted({c["name"] for c in driver.get_cookies()})
         log(f"Cookies (noms) : {names}")
 
+        # Requêtes réseau vers syride.com (lues dans la page : aucune valeur de cookie, jetons masqués)
+        log("\n--- Requêtes réseau syride.com (performance.getEntriesByType) ---")
+        try:
+            entries = driver.execute_script(
+                "return performance.getEntriesByType('resource').map(function(e)"
+                "{return [e.name, e.initiatorType];});"
+            ) or []
+        except Exception as e:
+            entries = []
+            log(f"  lecture impossible ({e})")
+        shown = 0
+        for name, initiator in entries:
+            if "syride.com" not in name:
+                continue
+            log(f"  [{initiator}] {_mask_secrets(name)}")
+            shown += 1
+        if shown == 0:
+            log("  (aucune)")
+
         # Liens intéressants dans la page parente
         log("\n--- Liens <a> de la page contenant un mot-clé ---")
         found = 0
         for a in driver.find_elements(By.TAG_NAME, "a"):
             href = a.get_attribute("href") or ""
             if any(k in href.lower() for k in KEYWORDS):
-                log(f"  {href}")
+                log(f"  {_mask_secrets(href)}")
                 found += 1
         if found == 0:
             log("  (aucun)")
@@ -105,7 +130,7 @@ def main():
                 for a in driver.find_elements(By.TAG_NAME, "a"):
                     href = a.get_attribute("href") or ""
                     if any(k in href.lower() for k in KEYWORDS):
-                        log(f"    lien : {href}")
+                        log(f"    lien : {_mask_secrets(href)}")
                 log(f"    éléments .volTexte (ancienne fiche) : "
                     f"{len(driver.find_elements(By.CLASS_NAME, 'volTexte'))}")
                 log(f"    éléments .fv-metric (fiche actuelle) : "
