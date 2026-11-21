@@ -81,7 +81,7 @@ Expression robuste (testée sur les 5 pages) :
 
 ```python
 re.search(r"name=[\"']?idRider[\"']?\s+value=[\"']?(\d+)", html) \
-    or re.search(r"activites\.php\?[^'\"]*?idRider=(\d+)", html)
+    or re.search(r"activites\.php[^\n]*?[?&]idRider=(\d+)", html)   # l'URL est coupée par des quotes JS
 ```
 
 La page du pilote (`/fr/pilotes/<pseudo>`) répond 200 **sans cookie** (147 Ko), mais ne contient que les 10 premières

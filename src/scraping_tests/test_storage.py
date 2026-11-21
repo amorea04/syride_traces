@@ -100,8 +100,8 @@ def test_raw_ignore_par_le_scan(tmp_path):
 
 
 def test_parse_fv_config():
-    ok = '<html><script id="fv-config" type="application/json">{"points": [[1, 2, 3]]}</script></html>'
-    assert parse_fv_config(ok) == {"points": [[1, 2, 3]]}
+    ok = '<html><script id="fv-config" type="application/json">{"points": [[1, 2, 3]], "times": [1]}</script></html>'
+    assert parse_fv_config(ok) == {"points": [[1, 2, 3]], "times": [1]}
     assert parse_fv_config("<html></html>") is None
     assert parse_fv_config('<script id="fv-config">{pas du json</script>') is None
     assert parse_fv_config('<script id="fv-config">[1, 2]</script>') is None

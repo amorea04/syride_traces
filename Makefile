@@ -16,7 +16,7 @@ expected-stats:
 	$(PYTHON) web/scripts/expected_stats.py
 
 test-py:
-	cd src && $(PYTHON) -m pytest web_export/tests -q -p no:cacheprovider -p no:dash
+	cd src && $(PYTHON) -m pytest web_export/tests scraping_tests -q -p no:cacheprovider -p no:dash
 
 # Export, build, contrôles puis déploiement Cloudflare Pages (src/publish.py)
 publish:

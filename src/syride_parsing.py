@@ -5,8 +5,11 @@ Elles prennent du texte ou du HTML et retournent des données : on peut donc les
 directement sur des pages enregistrées.
 
   - page liste d'un pilote : extract_flight_data, get_nav_infos_bs
-  - fiche de vol (iframe)  : extract_flight_data2, parse_flight_sheet
+  - réponse de activites.php : parse_id_rider, parse_activities_response
+  - fiche de vol (iframe)  : extract_flight_data2, parse_flight_sheet, parse_flight_sheet_full,
+                             parse_fv_config
   - messages de limite     : detect_limit (fiches), detect_download_limit (téléchargements)
+  - divers                 : is_turnstile_gate, normalize_missing
 """
 
 import json
@@ -26,7 +29,11 @@ DAILY_LIMIT_MARKER = "limite quotidienne"     # limite quotidienne : inutile de 
 # JSON avec les fiches. Autre formulation : l'ajouter ici (minuscules, « contient »).
 DOWNLOAD_LIMIT_MARKERS = ("download limit", "limite de téléchargement", "limite de telechargement")
 
-# Champs ajoutés à chaque vol à partir de la fiche de vol
+# Champs ajoutés à chaque vol à partir de la fiche de vol.
+# `vario_min` (bandeau « Vario min. ») est aussi lu par parse_flight_sheet_full, mais il
+# n'est volontairement PAS dans cette liste : le pkl le reçoit déjà comme colonne optionnelle
+# (flights_db.TRACK_NEW_FIELDS, calculée depuis la trace), et cette liste sert à créer des
+# champs vides dans les JSON de la liste et à exiger des colonnes dans le pkl.
 FLIGHT_SHEET_FIELDS = [
     "date_activite", "site_activite", "distance_activite", "distance_cumulee",
     "vitesse_max", "vitesse_moyenne", "plafond", "gain", "duree_vol",
@@ -423,9 +430,12 @@ def extract_flight_data2(flight_data: str):
 #                           (Décollage, Voile, Instrument, Distance cumulée, Vitesse moyenne,
 #                           Vitesse max, G max) — certaines lignes peuvent être absentes
 #   - <time datetime="2026-11-07T11:12"> : date du vol
+#   - « Gain » (dl.fv-info) et « Vario min. » (bandeau) sont de nouveau AFFICHÉS (constaté
+#     le 21/11/2026) : leur valeur affichée est prioritaire.
 #   - <script id="fv-config" type="application/json"> : points de la trace
-#     [lat, lon, altitude, vitesse, vario, g, ...] ; sert à recalculer le « Gain »,
-#     qui n'est plus affiché (gain = altitude max - altitude au décollage).
+#     [lat, lon, altitude, vitesse, vario, g, vario lissé], horodatages, terrain, extrema ;
+#     le « Gain » (altitude max - altitude du premier point) n'en est calculé qu'en repli,
+#     si la fiche ne l'affiche pas.
 
 # Libellé affiché (minuscules, sans « : ») -> champ du JSON
 _NEW_SHEET_LABELS = {
@@ -433,6 +443,9 @@ _NEW_SHEET_LABELS = {
     "temps de vol": "duree_vol",
     "plafond": "plafond",
     "vario max": "vario_max",
+    "vario min.": "vario_min",
+    "vario min": "vario_min",
+    "gain": "gain",
     "distance cumulée": "distance_cumulee",
     "vitesse moyenne": "vitesse_moyenne",
     "vitesse max": "vitesse_max",
@@ -511,6 +524,7 @@ def parse_new_flight_sheet(soup: BeautifulSoup) -> dict:
                 raw.setdefault(label, dd.get_text(" ", strip=True))
 
     sheet = {field: None for field in FLIGHT_SHEET_FIELDS if field != "adresse_zip"}
+    sheet["vario_min"] = None
     for label, field in _NEW_SHEET_LABELS.items():
         if label not in raw:
             continue
@@ -537,7 +551,9 @@ def parse_new_flight_sheet(soup: BeautifulSoup) -> dict:
     elif "décollage" in raw:
         sheet["site_activite"] = raw["décollage"].split("(")[0].strip() or None
 
-    sheet["gain"] = _gain_from_config(soup)
+    # Gain : valeur affichée en priorité ; calcul depuis fv-config seulement en repli
+    if sheet.get("gain") is None:
+        sheet["gain"] = _gain_from_config(soup)
 
     for field in _INT_SHEET_FIELDS:
         if sheet.get(field) is not None:
@@ -548,10 +564,22 @@ def parse_new_flight_sheet(soup: BeautifulSoup) -> dict:
     return sheet
 
 
+# Clés de fv-config retirées : jeton et URL signées (éphémères, jamais à conserver)
+_FV_CONFIG_DROP_KEYS = ("token", "url3d")
+_SIGNED_URL_MARKERS = ("key=", "token=", "expires=", "signature=")
+
+
 def parse_fv_config(html: str):
     """
-    Trace de la fiche : contenu JSON de `<script id="fv-config">` (points, times, terrain,
-    extrema, ...), ou None si le bloc est absent ou illisible. Aucune validation ici.
+    Trace de la fiche : contenu JSON de `<script id="fv-config">`, validé et nettoyé, ou None
+    (avec un message court si le bloc existe mais est invalide ; sans message s'il est absent).
+
+    Validation : `points` et `times` non vides, de même longueur ; `times` croissants (au sens
+    large : un doublon d'horodatage est toléré, un retour en arrière non) ; chaque point commence
+    par [latitude, longitude] dans [-90, 90] / [-180, 180].
+    Conservés : points, times, terrain, extrema, offset, distance, units (et les autres clés
+    non sensibles). Retirés : `token`, `url3d` et toute clé dont la valeur est une URL signée
+    (contenant key=, token=, expires= ou signature=).
     """
     try:
         tag = BeautifulSoup(html, "html.parser").find("script", id="fv-config")
@@ -559,20 +587,213 @@ def parse_fv_config(html: str):
             return None
         config = json.loads(tag.string or tag.get_text())
     except Exception:
+        print("fv-config illisible (JSON invalide), trace ignorée.")
         return None
-    return config if isinstance(config, dict) else None
+    if not isinstance(config, dict):
+        print("fv-config : contenu inattendu (objet JSON attendu), trace ignorée.")
+        return None
+
+    points, times = config.get("points"), config.get("times")
+    if not isinstance(points, list) or not isinstance(times, list) or not points:
+        print("fv-config sans points ou sans horodatages, trace ignorée.")
+        return None
+    if len(points) != len(times):
+        print(f"fv-config : {len(points)} points pour {len(times)} horodatages, trace ignorée.")
+        return None
+    try:
+        if any(b < a for a, b in zip(times, times[1:])):
+            print("fv-config : horodatages non croissants, trace ignorée.")
+            return None
+        for point in points:
+            lat, lon = point[0], point[1]
+            if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+                print("fv-config : coordonnées hors limites, trace ignorée.")
+                return None
+    except (TypeError, IndexError, KeyError):
+        print("fv-config : points ou horodatages mal formés, trace ignorée.")
+        return None
+
+    for key in list(config):
+        value = config[key]
+        if key in _FV_CONFIG_DROP_KEYS or (
+            isinstance(value, str) and any(m in value for m in _SIGNED_URL_MARKERS)
+        ):
+            del config[key]
+    return config
+
+
+def parse_id_rider(html: str):
+    """
+    `idRider` d'un pilote, lu dans sa page (`/fr/pilotes/<pseudo>`) : input caché `idRider`,
+    sinon paramètre `idRider=` de l'URL `activites.php`. None si introuvable.
+    (Expression du contrat src/migration/SYRIDE_API.md, section 3, dont le repli est élargi :
+    dans la vraie page l'URL est coupée par des quotes JavaScript, « ...limit='+n+'&l=fr&idRider=
+    <id>... », ce que `[^'"]*?` du contrat ne traversait pas.)
+    """
+    text = html or ""
+    match = re.search(r"name=[\"']?idRider[\"']?\s+value=[\"']?(\d+)", text) or re.search(
+        r"activites\.php[^\n]*?[?&]idRider=(\d+)", text
+    )
+    return match.group(1) if match else None
+
+
+# ------------------------ Réponse de activites.php ------------------------
+
+END_OF_LIST_MARKER = "<!-- syride-no-more-activity -->"
+_FLIGHT_POPUP_RE = re.compile(r"showFlightInPopup\(\s*(\d+)\s*,\s*(\d+)\s*,\s*'([^']*)'")
+_ACTIVITY_ID_RE = re.compile(r"^activite\d{5,10}$")
+_TYPE_ID_RE = re.compile(r"^type\d{5,10}$")
+
+
+def _flight_token(activity, num: str):
+    """{"expires": int, "token": str} lu dans showFlightInPopup du vol `num`, sinon None."""
+    for match in _FLIGHT_POPUP_RE.finditer(str(activity)):
+        if match.group(1) == num:
+            return {"expires": int(match.group(2)), "token": match.group(3)}
+    return None
+
+
+def parse_activities_response(html: str, pilote: str) -> dict:
+    """
+    Lit la réponse de `activites.php` (fragment HTML, ou page du pilote).
+    Retourne {"flights": [dict, ...], "end_of_list": bool, "activity_ids": [str, ...]} :
+      - flights : un dict par vol, dans l'ordre de la liste : sortie de get_nav_infos_bs, plus
+        `nom_vol`, `date_publication` (texte « 07/11/2026 - 12h19 ») et `flight_token`
+        ({"expires", "token"} ; None pour un vol non Syride, qui n'a pas de fiche). Le jeton
+        est éphémère (~30 min) : à ne jamais enregistrer sur disque ;
+      - end_of_list : marqueur « syride-no-more-activity » présent (plus rien après) ;
+      - activity_ids : tous les `id_activite` lus, vols ou non, dans l'ordre (le dernier sert
+        de `beforeId` pour la page suivante).
+    Les activités qui ne sont pas des vols (photo, message : pas de `type<num>`) sont ignorées
+    sans message. Lève ValueError si aucune activité n'est lisible ET qu'il n'y a pas de
+    marqueur de fin (mise en page changée, réponse vide ou page d'erreur).
+    """
+    text = html or ""
+    end_of_list = END_OF_LIST_MARKER in text
+    soup = BeautifulSoup(text, "html.parser")
+    activities = soup.find_all(id=_ACTIVITY_ID_RE)
+
+    if not activities and not end_of_list:
+        raise ValueError(
+            f"Aucune activité lisible dans la réponse de la liste de {pilote} "
+            f"({len(text)} caractères) : mise en page de Syride changée, réponse vide ou "
+            f"page d'erreur."
+        )
+
+    flights, activity_ids = [], []
+    for activity in activities:
+        activity_ids.append(activity.get("id").replace("activite", ""))
+        if activity.find(id=_TYPE_ID_RE) is None:
+            continue   # pas un vol (photo, message...)
+        try:
+            num, flight = get_nav_infos_bs(activity=activity, pilote=pilote)
+        except Exception:
+            print(f"activite{activity_ids[-1]} : lecture impossible, ignorée.")
+            continue
+        if num == "None":
+            continue
+
+        name_tag = activity.find(id=f"nom{num}")
+        flight["nom_vol"] = normalize_missing(name_tag.get_text(" ", strip=True)) if name_tag else None
+
+        published = activity.find(class_="dateActivite")
+        published_text = None
+        if published is not None:
+            bold = published.find("font")
+            raw = (bold or published).get_text(" ", strip=True)
+            published_text = normalize_missing(re.sub(r"^Publié le\s*", "", raw))
+        flight["date_publication"] = published_text
+
+        flight["flight_token"] = _flight_token(activity, num) if flight.get("is_syride") else None
+        flights.append(flight)
+
+    return {"flights": flights, "end_of_list": end_of_list, "activity_ids": activity_ids}
+
+
+# ------------------------ Utilitaires ------------------------
+
+
+def normalize_missing(value):
+    """
+    Valeur manquante -> None : None, "None", "", "nan" (et espaces seuls) donnent None ; toute
+    autre valeur est rendue inchangée (une chaîne est nettoyée de ses espaces de bord).
+    Sert à lire les anciens JSON (« None », «  ») sans les réécrire.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        cleaned = value.strip()
+        return None if cleaned.lower() in ("", "none", "nan") else cleaned
+    try:
+        if value != value:   # float NaN
+            return None
+    except Exception:
+        pass
+    return value
+
+
+def is_turnstile_gate(html_or_text: str) -> bool:
+    """
+    Vrai si la page parente affiche un défi Turnstile qu'un humain doit valider
+    (`flightTurnstileGate`, `cf-turnstile` ou `turnstile`).
+    Heuristique : on cherche ces mots dans le HTML en ignorant les balises <script>/<style>/
+    <template>/<noscript> et les éléments cachés (attribut `hidden`, `display:none`), pour ne
+    pas confondre un défi réellement visible avec le simple chargement du script Turnstile.
+    Un texte brut (sans balise) est examiné tel quel.
+    """
+    text = html_or_text or ""
+    if "turnstile" not in text.lower() and "flightturnstilegate" not in text.lower():
+        return False
+    soup = BeautifulSoup(text, "html.parser")
+    if soup.find(True) is None:
+        return True   # texte brut : le mot est présent, on ne peut pas juger de la visibilité
+    for tag in soup(["script", "style", "template", "noscript"]):
+        tag.decompose()
+    for tag in soup.find_all(True):
+        if tag.attrs is None:
+            continue   # déjà retiré avec un parent caché
+        if tag.has_attr("hidden") or "display:none" in (tag.get("style") or "").replace(" ", "").lower():
+            tag.decompose()
+    for tag in soup.find_all(True):
+        if tag.attrs is None:
+            continue
+        marks = [tag.get("id") or "", " ".join(tag.get("class") or [])]
+        marks += [str(v) for k, v in tag.attrs.items() if k.startswith("data-")]
+        if any("turnstile" in m.lower() or "flightturnstilegate" in m.lower() for m in marks):
+            return True
+    return False
+
+
+# ------------------------ Fiche : fonctions publiques ------------------------
 
 
 def parse_flight_sheet(html: str):
     """
     Extrait les statistiques et les liens de téléchargement d'une fiche de vol.
-    Retourne (sheet, links) :
+    Retourne (sheet, links) : adaptateur de parse_flight_sheet_full (sans la trace).
         sheet : champs de FLIGHT_SHEET_FIELDS (adresse_zip = lien GPX, ou ZIP à défaut)
-        links : {"gpx": url|None, "igc": url|None}
+                plus `vario_min` (fiche « fv- ») ;
+        links : {"gpx": url|None, "igc": url|None, "kml": url|None}
     """
+    sheet, links, _ = _parse_sheet(html, with_track=False)
+    return sheet, links
+
+
+def parse_flight_sheet_full(html: str):
+    """
+    Retourne (sheet, links, track) :
+        sheet : voir parse_flight_sheet ; « Gain » et « Vario min. » affichés par la fiche,
+                le gain calculé depuis fv-config servant seulement de repli ;
+        links : {"gpx", "igc", "kml"} (url ou None) ;
+        track : parse_fv_config(html) (dict validé) ou None.
+    """
+    return _parse_sheet(html, with_track=True)
+
+
+def _parse_sheet(html: str, with_track: bool):
     soup = BeautifulSoup(html, "html.parser")
 
-    links = {"gpx": None, "igc": None}
+    links = {"gpx": None, "igc": None, "kml": None}
     zip_link = None
     for a in soup.find_all("a"):
         href = a.get("href")
@@ -583,6 +804,8 @@ def parse_flight_sheet(html: str):
             links["gpx"] = full
         elif "type=igc" in href and links["igc"] is None:
             links["igc"] = full
+        elif "type=kml" in href and links["kml"] is None:
+            links["kml"] = full
         elif ("downloadZIP" in href or "type=zip" in href) and zip_link is None:
             zip_link = full
 
@@ -614,10 +837,11 @@ def parse_flight_sheet(html: str):
             "duree_vol": flight_duration,
             "vario_max": vario_max,
             "g_max": g_max,
+            "vario_min": None,   # non affiché par l'ancienne mise en page
         }
     # Nettoyage des espaces / tabulations / retours à la ligne résiduels
     for key, value in sheet.items():
         if isinstance(value, str):
             sheet[key] = value.strip()
     sheet["adresse_zip"] = links["gpx"] or zip_link
-    return sheet, links
+    return sheet, links, (parse_fv_config(html) if with_track else None)
