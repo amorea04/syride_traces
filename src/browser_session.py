@@ -1,14 +1,22 @@
 """
-Session navigateur unique pour scraper tous les pilotes Syride, en 3 phases :
+Session de scraping Syride pour tous les pilotes, en 3 phases :
 
-  1. IDENTIFICATION  : nouvelles traces de tous les pilotes ; enregistrement des informations de
-                       la page liste (date, temps de vol, voile, distance, altitude max,
-                       instrument...) dans <pilote>/traces/<num>/<num>.json. Aucune fiche.
-  2. COMPLÉTION      : lecture des dossiers ; pour chaque vol à qui il manque des informations
-                       ou des fichiers, consultation de la fiche (informations propres à la
-                       fiche) puis téléchargement IMMÉDIAT du GPX et de l'IGC (liens signés qui
-                       expirent vite).
+  1. LISTE           : liste des vols de chaque pilote lue par HTTP simple (sans Chrome, sans
+                       connexion) puis réconciliée avec le disque : vols nouveaux (JSON créé),
+                       modifiés (champ de liste changé, historique conservé), absents de Syride
+                       (marqués, jamais supprimés), réapparus ; doublons probables signalés
+                       dans _rapport_doublons.txt. Aucune fiche. Tourne aussi en --dry-run.
+  2. COMPLÉTION      : lecture des dossiers ; pour chaque vol à qui il manque des informations,
+                       la fiche brute ou des fichiers, consultation de la fiche dans Chrome
+                       (navigation vers la page du vol : la page de Syride ouvre elle-même la
+                       fiche et exécute son widget Turnstile ; si un défi demande une action,
+                       le script attend que l'humain le valide). La fiche brute (qui contient la
+                       trace) est enregistrée tout de suite ; les GPX / IGC ne sont téléchargés
+                       que pour les pilotes dont le profil le prévoit (FICHIERS_PAR_PILOTE).
+                       Chrome n'est ouvert que s'il y a au moins une fiche à lire.
   3. INDEX           : mise à jour de la base SQLite (le pkl est généré ensuite).
+
+Le code ne fait jamais d'appel direct à ficheVol.php ni à l'autorisation d'affichage.
 
 Rien n'est jamais supprimé. Gestion des limites de Syride (stratégie « dégradée ») :
 
@@ -19,11 +27,10 @@ Rien n'est jamais supprimé. Gestion des limites de Syride (stratégie « dégra
     consommée) ;
   - « Limite quotidienne de 50 fiches » : la phase 2 s'arrête, on passe à la phase 3.
 
-La phase 1 a déjà enregistré les informations de la liste, et le lancement suivant complète
-ce qui manque (fichiers GPX/IGC compris).
+Le lancement suivant complète ce qui manque.
 
 Autres points : une seule fenêtre Chrome, pause automatique en cas de vérification
-Cloudflare (voir syride_scraper), profil Chrome persistant (_chrome_profile).
+Cloudflare ou Turnstile (voir syride_scraper), profil Chrome persistant (_chrome_profile).
 """
 
 import os
@@ -38,7 +45,6 @@ import undetected_chromedriver as uc
 import flights_db
 import params_scrap_syride as params
 import syride_scraper as scraper
-from syride_parsing import FLIGHT_SHEET_FIELDS
 from syride_scraper import wait_for_cloudflare
 
 SYRIDE_LOGIN_URL = "https://www.syride.com/fr/moncompte"
@@ -144,37 +150,55 @@ def open_site_and_login(driver) -> bool:
     return logged_in
 
 
-# ------------------------ Identification des nouvelles traces ------------------------
+# ------------------------ Phase 1 : liste des vols (HTTP, sans Chrome) ------------------------
 
 
-def identify_new_traces(driver, path: str, pilot: str, scroll: int) -> int:
+def sync_pilot_list(conn, transport, path: str, pilot: str, dry_run: bool = False) -> dict:
     """
-    Parcourt la page du pilote (avec scroll), repère les traces absentes du disque et
-    enregistre immédiatement leurs informations (JSON). Retourne leur nombre.
+    Phase 1 pour UN pilote, sans navigateur : lit sa liste de vols sur Syride par HTTP
+    (idRider mis en cache dans la base), garde un instantané de la liste (`_raw`), puis
+    réconcilie la liste avec le disque (vols nouveaux, modifiés, absents, réapparus ; voir
+    flights_db.reconcile_pilot). Affiche un bilan d'une ligne.
+
+    dry_run : lecture seule. Rien n'est écrit (ni JSON, ni instantané, ni base, ni idRider) ;
+    le bilan est celui qu'aurait donné une exécution réelle.
+
+    Retourne {"pilot", "listed", "complete", "report"} (report : voir reconcile_pilot).
+    Lève scraper.PilotPageError si la liste est illisible.
     """
-    repertoire_pilote = os.path.join(path, pilot)
-    known = scraper.initiate_search(main_repertoire=repertoire_pilote)
+    id_rider = flights_db.get_id_rider(conn, pilot)
+    try:
+        html, parsed = scraper.fetch_pilot_list(transport, pilot, id_rider)
+    except scraper.PilotPageError:
+        if id_rider is None:
+            raise
+        # idRider en cache devenu invalide (compte recréé ?) : on le relit sur la page
+        html, parsed = scraper.fetch_pilot_list(transport, pilot, None)
 
-    # Pré-chargement de la page du pilote pour laisser passer un éventuel défi Cloudflare
-    driver.get(PILOT_BASE_URL + pilot)
-    wait_for_cloudflare(driver)
+    if not dry_run:
+        if parsed["id_rider"] != id_rider:
+            flights_db.set_id_rider(conn, pilot, parsed["id_rider"])
+        scraper.save_list_snapshot(os.path.join(path, pilot), html)
 
-    new_navs, dict_navs = scraper.get_all_navs(
-        pilote=pilot, known_traces=known, scroll=scroll, driver=driver
-    )
+    report = flights_db.reconcile_pilot(conn, path, pilot, parsed["flights"],
+                                        complete=parsed["complete"], dry_run=dry_run)
 
-    for nav, data_nav in dict_navs.items():
-        # Même format que les anciens JSON : les champs de la fiche sont présents, vides
-        for field in FLIGHT_SHEET_FIELDS:
-            if field != "adresse_zip":
-                data_nav.setdefault(field, None)
-        scraper.save_flight_data(main_repertoire=repertoire_pilote, flight_data=data_nav)
+    line = (f"{pilot} : {len(parsed['flights'])} vols sur Syride, {len(report['new'])} nouveaux, "
+            f"{len(report['modified'])} modifiés, {len(report['absent'])} absents, "
+            f"{len(report['reappeared'])} réapparus")
+    if report["guard_triggered"]:
+        line += ", garde-fou déclenché"
+    if not parsed["complete"]:
+        line += ", liste possiblement incomplète : aucun vol marqué absent"
+    print(line, flush=True)
+    if report["unreadable"]:
+        print(f"   Attention : {len(report['unreadable'])} JSON illisible(s), laissé(s) intact(s) "
+              f"(ex. {', '.join(report['unreadable'][:5])}).")
+    return {"pilot": pilot, "listed": len(parsed["flights"]), "complete": parsed["complete"],
+            "report": report}
 
-    print(f"{len(dict_navs)} nouvelle(s) trace(s) enregistrée(s) (informations de la liste).")
-    return len(dict_navs)
 
-
-# ------------------------ Complétion d'un vol ------------------------
+# ------------------------ Phase 2 : complétion d'un vol ------------------------
 
 
 def _read_sheet(driver, pilot, nav, budget):
@@ -210,7 +234,7 @@ def _download_one(driver, repertoire_pilote, pilot, nav, link, download_dir, ext
                 print(f"\n[Trace {nav}] Lien {ext.upper()} expiré, fichier ignoré.", flush=True)
                 return False
             print(f"\n[Trace {nav}] Lien expiré, relecture de la fiche pour un lien neuf...", flush=True)
-            sheet, links, _ = _read_sheet(driver, pilot, nav, budget)
+            sheet, links, _track, _html, _ = _read_sheet(driver, pilot, nav, budget)
             link = links.get(ext) or (sheet["adresse_zip"] if ext == "gpx" else None)
             if link is None:
                 return False
@@ -224,19 +248,22 @@ def _download_one(driver, repertoire_pilote, pilot, nav, link, download_dir, ext
 
 
 def process_flight(driver, download_dir, path, pilot, nav, data_nav, budget,
-                   need_gpx=True, need_igc=True, need_info=True, allow_download=True):
+                   need_gpx=True, need_igc=True, need_info=True, allow_download=True,
+                   need_raw=True, files=()):
     """
-    Consulte la fiche d'UN vol Syride et complète ce qui manque :
+    Consulte la fiche d'UN vol Syride (par la navigation Chrome vers la page du vol : jamais
+    d'appel direct à ficheVol.php ni à l'autorisation d'affichage) et complète ce qui manque :
+      - la fiche brute est enregistrée TOUT DE SUITE (need_raw) : elle contient la trace ;
       - need_info / need_gpx : JSON enrichi avec les informations propres à la fiche ;
-      - need_gpx             : téléchargement du GPX ;
-      - need_igc             : téléchargement de l'IGC (même fiche, donc sans fiche en plus).
+      - téléchargement du GPX (need_gpx) et de l'IGC (need_igc), SEULEMENT pour les extensions
+        de `files` (profil du pilote, ex. ("gpx", "igc") ; () = pas de fichiers).
 
     allow_download=False : mode « informations seules » (limite quotidienne de téléchargement
     atteinte) : la fiche est lue et le JSON enregistré, mais aucun fichier n'est téléchargé.
 
     Retourne (statut, nb_limites_par_minute) avec statut parmi :
       "ok"                : tout ce qui était demandé est fait ;
-      "nolink"            : la fiche n'offre aucun GPX (ne plus retenter) ;
+      "nolink"            : ni trace dans la fiche ni GPX à télécharger (ne plus retenter) ;
       "failed"            : échec de téléchargement ;
       "info_only"         : JSON complété, fichiers non téléchargés (mode informations seules) ;
       "download_blocked"  : la limite quotidienne de téléchargement vient d'être atteinte
@@ -244,7 +271,10 @@ def process_flight(driver, download_dir, path, pilot, nav, data_nav, budget,
     """
     repertoire_pilote = os.path.join(path, pilot)
 
-    sheet, links, n_limits = _read_sheet(driver, pilot, nav, budget)
+    sheet, links, track, html, n_limits = _read_sheet(driver, pilot, nav, budget)
+
+    if need_raw and html:
+        scraper.save_sheet_raw(repertoire_pilote, nav, html)
 
     if need_info or need_gpx:
         # La fiche est lue : on enregistre tout de suite ses informations, même si le
@@ -254,9 +284,16 @@ def process_flight(driver, download_dir, path, pilot, nav, data_nav, budget,
         data_nav.pop("adresse_zip", None)
         scraper.save_flight_data(main_repertoire=repertoire_pilote, flight_data=data_nav)
 
-    # Absence de lien GPX : information fournie par la fiche, indépendante des téléchargements
-    if need_gpx and sheet["adresse_zip"] is None:
+    # Ni trace dans la fiche ni lien GPX : rien à tirer de ce vol, on ne le retente plus.
+    # Un GPX voulu mais sans lien n'est pas retenté non plus (comportement historique).
+    no_gpx_link = sheet["adresse_zip"] is None
+    if no_gpx_link and (track is None or need_gpx):
         return "nolink", n_limits
+
+    want_gpx = need_gpx and "gpx" in files
+    want_igc = need_igc and "igc" in files
+    if not (want_gpx or want_igc):
+        return "ok", n_limits
 
     # Limite quotidienne de téléchargement déjà atteinte : la fiche a servi à compléter le JSON
     if not allow_download:
@@ -264,12 +301,12 @@ def process_flight(driver, download_dir, path, pilot, nav, data_nav, budget,
 
     # Téléchargements IMMÉDIATS : les liens signés expirent vite
     try:
-        if need_gpx:
+        if want_gpx:
             if not _download_one(driver, repertoire_pilote, pilot, nav, sheet["adresse_zip"],
                                  download_dir, "gpx", budget, reread_on_expiry=True):
                 return "failed", n_limits
 
-        if need_igc:
+        if want_igc:
             if links.get("igc"):
                 time.sleep(random.uniform(1, 2))
                 if not _download_one(driver, repertoire_pilote, pilot, nav, links["igc"],
@@ -277,7 +314,7 @@ def process_flight(driver, download_dir, path, pilot, nav, data_nav, budget,
                     print(f"[Trace {nav}] IGC non téléchargé.", flush=True)
             else:
                 print(f"[Trace {nav}] Pas de lien IGC dans la fiche.", flush=True)
-                if not (need_gpx or need_info):
+                if not (want_gpx or need_info):
                     return "nolink", n_limits  # travail « IGC seul » impossible : on ne retente plus
     except scraper.DownloadLimitError as e_dl:
         print(f"\n[Trace {nav}] Limite de téléchargement atteinte ({e_dl}).", flush=True)
@@ -306,23 +343,32 @@ def _tasks_label(item) -> str:
         tasks.append("GPX")
     if item["need_igc"]:
         tasks.append("IGC")
+    if item.get("need_raw"):
+        tasks.append("fiche brute")
     return " + ".join(tasks)
 
 
-def process_pilots(path: str, pilots: list, scroll: int, do_scrape: bool = True,
+PILOT_DELAY = 1.0   # pause (s) entre deux listes de pilotes, par politesse envers Syride
+
+
+def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = True,
                    max_sheets=None, fill_igc: bool = False, db_path: str = None,
                    tasks: str = "all", private: bool = False,
-                   dry_run: bool = False) -> dict:
+                   dry_run: bool = False, files_by_pilot: dict = None,
+                   backfill_raw: bool = True, files_override=None,
+                   transport=None, reparse: bool = False) -> dict:
     """
     Traite les pilotes en 3 phases, avec UNE seule fenêtre Chrome (ouverte seulement si
-    nécessaire) :
+    nécessaire, c'est-à-dire si la file de la phase 2 n'est pas vide) :
 
-      PHASE 1 (si do_scrape) : identification des nouvelles traces de TOUS les pilotes et
-          enregistrement des informations de la page liste. Aucune fiche n'est consultée,
-          donc aucune limite de Syride ne peut interrompre cette phase.
+      PHASE 1 (si do_scrape) : liste des vols de TOUS les pilotes lue par HTTP (sans Chrome),
+          réconciliée avec le disque : vols nouveaux, modifiés, absents, réapparus. Aucune
+          fiche n'est consultée, donc aucune limite de Syride ne peut interrompre cette phase.
+          Elle tourne aussi en simulation (lecture seule).
       PHASE 2 : lecture des dossiers de tous les pilotes, liste des vols à qui il manque des
-          informations ou des fichiers, puis consultation des fiches (plus récents d'abord)
-          pour compléter les JSON et télécharger GPX + IGC.
+          informations, des fichiers ou la fiche brute, puis consultation des fiches (plus
+          récents d'abord) : enregistrement de la fiche brute, complétion des JSON, et
+          téléchargement des GPX / IGC pour les seuls pilotes dont le profil le prévoit.
           - limite « trop de fiches consultées » : attente puis reprise ;
           - limite de TÉLÉCHARGEMENT : on cesse de télécharger mais on continue à
             parcourir les fiches pour compléter les JSON (les vols à qui il ne manque que des
@@ -338,30 +384,48 @@ def process_pilots(path: str, pilots: list, scroll: int, do_scrape: bool = True,
     private  : lance Chrome en navigation privée, avec un profil temporaire supprimé à la fin :
                pas de cookies ni de session conservés (reconnexion et éventuel défi Cloudflare
                à chaque lancement). Le profil persistant _chrome_profile n'est pas utilisé.
-    dry_run  : simulation. Aucune page n'est ouverte (pas de Chrome), aucune fiche consultée,
-               aucun fichier téléchargé : le script lit les dossiers et affiche seulement ce
-               qu'il ferait.
+    dry_run  : simulation. Aucune page Chrome n'est ouverte, aucune fiche consultée, aucun
+               fichier téléchargé ; la phase 1 (liste par HTTP) lit Syride mais n'écrit rien ;
+               le script affiche seulement ce qu'il ferait. (L'index SQLite `db_path` est
+               tout de même mis à jour : pointer `db_path` vers une copie pour un essai.)
+    scroll   : OBSOLÈTE, ignoré (la liste n'est plus lue par défilement de page).
+    files_by_pilot : {pilote: ("gpx", "igc")} = fichiers téléchargés par pilote (profils,
+               voir params_scrap_syride.FICHIERS_PAR_PILOTE) ; un pilote absent n'a pas de
+               fichiers (sa fiche est lue, pas de téléchargement). None = aucun profil.
+    files_override : tuple d'extensions ; s'il est donné, il remplace les profils pour TOUS
+               les pilotes de l'exécution (ex. () = aucun fichier).
+    backfill_raw : met aussi en file les vols à qui il ne manque que la fiche brute.
+    transport : transport HTTP de la liste (défaut : syride_scraper.HttpTransport) ; fourni
+               par les tests.
+    reparse  : remplace les phases 1 et 2 par la réanalyse hors ligne des fiches brutes
+               (flights_db.reparse_pilot : ni réseau, ni Chrome) ; la phase 3 suit.
 
     Retourne {"failed_pilots": [...], "stopped": message ou None, "sheets_used": n,
               "pending": nombre de vols restant à compléter (fiches),
               "downloads_blocked": True si la limite quotidienne de téléchargement a été atteinte,
               "pending_downloads": nombre de vols dont il reste des fichiers à télécharger}.
     """
-    os.makedirs(path, exist_ok=True)
     db_path = db_path or os.path.join(path, flights_db.DB_NAME)
+    if not dry_run:
+        os.makedirs(path, exist_ok=True)
     conn = flights_db.connect(db_path)
+
+    if files_override is not None:
+        files_by_pilot = {p: tuple(files_override) for p in pilots}
+    else:
+        files_by_pilot = dict(files_by_pilot or {})
 
     download_dir = os.path.abspath(os.path.join(path, "_tmp_downloads"))
     if private:
         profile_dir = None if dry_run else tempfile.mkdtemp(prefix="syride_private_")
     else:
         profile_dir = os.path.abspath(os.path.join(path, "_chrome_profile"))
-    os.makedirs(download_dir, exist_ok=True)
 
     ctx = {"driver": None, "logged_in": False}
 
     def get_driver():
         if ctx["driver"] is None:
+            os.makedirs(download_dir, exist_ok=True)
             ctx["driver"] = create_driver(download_dir=download_dir, profile_dir=profile_dir,
                                          private=private)
             ctx["logged_in"] = open_site_and_login(ctx["driver"])
@@ -395,22 +459,54 @@ def process_pilots(path: str, pilots: list, scroll: int, do_scrape: bool = True,
 
     try:
         # ---------------- PHASE 1 ----------------
-        print(f"\n{sep}\nPHASE 1/3 : identification des nouvelles traces\n{sep}")
-        if do_scrape and not dry_run:
-            for pilot in pilots:
-                print(f"--- Pilote : {pilot} ---")
+        print(f"\n{sep}\nPHASE 1/3 : liste des vols de chaque pilote (HTTP, sans Chrome)\n{sep}")
+        if reparse:
+            print("Ignorée (--reparse 1 : réanalyse hors ligne des fiches brutes).")
+        elif do_scrape:
+            if dry_run:
+                print("Simulation : les listes sont lues sur Syride, rien n'est écrit.")
+            http = transport or scraper.HttpTransport()
+            n_duplicates = 0
+            for k, pilot in enumerate(pilots):
+                if k > 0 and PILOT_DELAY:
+                    time.sleep(PILOT_DELAY)
                 try:
-                    identify_new_traces(get_driver(), path, pilot, scroll)
+                    result = sync_pilot_list(conn, http, path, pilot, dry_run=dry_run)
+                    n_duplicates += len(result["report"]["duplicates"])
                 except Exception:
                     print(traceback.format_exc())
-                    print(f"Échec de l'identification pour {pilot}, passage au suivant.")
+                    print(f"Échec de la lecture de la liste de {pilot}, passage au suivant.")
                     failed_pilots.append(pilot)
+            if dry_run:
+                print(f"{n_duplicates} doublon(s) probable(s) (simulation : rapport non écrit).")
+            else:
+                report_path = flights_db.write_duplicates_report(conn, path, pilots)
+                marks = ",".join("?" for _ in pilots)
+                n_duplicates = conn.execute(
+                    f"SELECT COUNT(*) FROM flights WHERE duplicate_of IS NOT NULL "
+                    f"AND pilot IN ({marks})", list(pilots)).fetchone()[0]
+                print(f"{n_duplicates} doublon(s) probable(s), voir {report_path}")
         else:
-            print("Ignorée (--scrape 0)." if not dry_run else "Ignorée (simulation --dry-run).")
+            print("Ignorée (--scrape 0).")
 
         # ---------------- PHASE 2 ----------------
-        print(f"\n{sep}\nPHASE 2/3 : compléter les informations et télécharger les fichiers\n{sep}")
+        print(f"\n{sep}\nPHASE 2/3 : fiches brutes, informations de fiche et fichiers\n{sep}")
         sync_all()
+        if reparse:
+            print("Réanalyse hors ligne des fiches brutes (ni réseau, ni Chrome) :")
+            if dry_run:
+                print("  Simulation (--dry-run) : réanalyse non exécutée (elle réécrit des JSON).")
+            for pilot in ([] if dry_run else pilots):
+                try:
+                    res = flights_db.reparse_pilot(conn, path, pilot)
+                except Exception:
+                    print(traceback.format_exc())
+                    failed_pilots.append(pilot)
+                    continue
+                print(f"  {pilot} : {res['read']} fiche(s) relue(s), {res['updated']} JSON mis à jour, "
+                      f"{len(res['errors'])} erreur(s)")
+                for num, message in res["errors"][:5]:
+                    print(f"     {num} : {message}")
 
         # Bilan de ce qui a été lu sur le disque, pilote par pilote
         for pilot in pilots:
@@ -418,15 +514,20 @@ def process_pilots(path: str, pilots: list, scroll: int, do_scrape: bool = True,
             print(f"{pilot} : {st['total']} dossier(s) de vol lu(s), {st['syride']} vol(s) Syride | "
                   f"sans GPX : {st['no_gpx']} | sans infos de fiche : {st['no_sheet']} | "
                   f"sans IGC : {st['no_igc']}{'' if fill_igc else ' (non traités sans --fill-igc)'} | "
+                  f"sans fiche brute : {st['no_raw']} | "
                   f"sans lien, ignorés : {st['no_link']}")
             if st["orphans"]:
                 print(f"   Attention : {len(st['orphans'])} dossier(s) sans JSON ignoré(s) "
                       f"(ex. {', '.join(sorted(st['orphans'])[:5])}). Un lancement avec scraping "
-                      f"(sans --scrape 0) les repère à nouveau s'ils sont vides.")
+                      f"(sans --scrape 0) recrée leur JSON si le vol est encore sur Syride.")
 
-        queue = flights_db.get_global_queue(conn, pilots, fill_igc=fill_igc, tasks=tasks)
+        queue = [] if reparse else flights_db.get_global_queue(
+            conn, pilots, fill_igc=fill_igc, tasks=tasks,
+            files_by_pilot=files_by_pilot, backfill_raw=backfill_raw)
 
-        if not queue:
+        if reparse:
+            pass
+        elif not queue:
             print("Rien à compléter : toutes les traces sont à jour.")
         else:
             per_pilot = {}
@@ -434,12 +535,13 @@ def process_pilots(path: str, pilots: list, scroll: int, do_scrape: bool = True,
                 per_pilot[item["pilot"]] = per_pilot.get(item["pilot"], 0) + 1
             print(f"{len(queue)} vol(s) à compléter : "
                   + ", ".join(f"{p} ({n})" for p, n in per_pilot.items()))
-            kinds = {"info+files": 0, "info": 0, "files": 0}
+            kinds = {"info+files": 0, "info": 0, "files": 0, "raw": 0}
             for item in queue:
                 kinds[flights_db.flight_kind(item)] += 1
             print(f"  dont : {kinds['info+files']} avec JSON incomplet + fichiers manquants | "
                   f"{kinds['info']} avec JSON incomplet seulement | "
-                  f"{kinds['files']} avec fichiers manquants seulement (JSON complet)"
+                  f"{kinds['files']} avec fichiers manquants seulement (JSON complet) | "
+                  f"{kinds['raw']} avec fiche brute manquante seulement"
                   f"   [mode --tasks {tasks}]")
 
             if dry_run:
@@ -466,7 +568,8 @@ def process_pilots(path: str, pilots: list, scroll: int, do_scrape: bool = True,
 
                 # Téléchargements bloqués pour la journée : un vol à qui il ne manque que des
                 # fichiers n'apporte rien (la fiche ne ferait que consommer le quota de fiches).
-                if downloads_blocked and not item["need_info"]:
+                if downloads_blocked and not item["need_info"] and not (
+                        item["need_raw"] and backfill_raw):
                     pending_downloads += 1
                     continue
 
@@ -483,6 +586,7 @@ def process_pilots(path: str, pilots: list, scroll: int, do_scrape: bool = True,
                         driver, download_dir, path, pilot, nav, data_nav, budget,
                         need_gpx=item["need_gpx"], need_igc=item["need_igc"],
                         need_info=item["need_info"], allow_download=not downloads_blocked,
+                        need_raw=item["need_raw"], files=files_by_pilot.get(pilot) or (),
                     )
                 except (scraper.DailyLimitError, scraper.RateLimitError, SheetBudgetReached) as e_block:
                     blocked = _blocked_reason(e_block, budget)
@@ -533,6 +637,16 @@ def process_pilots(path: str, pilots: list, scroll: int, do_scrape: bool = True,
         print(f"\n{sep}\nPHASE 3/3 : mise à jour de l'index\n{sep}")
         try:
             sync_all()
+            no_raw = {}
+            for pilot in pilots:
+                n = flights_db.summary(conn, path, pilot)["no_raw"]
+                if n:
+                    no_raw[pilot] = n
+            if no_raw:
+                print("Vols sans fiche brute : " + ", ".join(f"{p} ({n})" for p, n in no_raw.items())
+                      + f" (total {sum(no_raw.values())}).")
+            else:
+                print("Tous les vols Syride ont leur fiche brute.")
         finally:
             if ctx["driver"] is not None:
                 try:

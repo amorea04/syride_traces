@@ -55,6 +55,12 @@ PILOTES = {
     # "francois_s": ("Fran&ccedil;ois%20S", False),
 }
 
+# Pilotes dont on télécharge aussi les fichiers Syride (sinon : trace lue dans la fiche).
+# Valeurs possibles par pilote : ("gpx",), ("gpx", "igc"), ("gpx", "igc", "kml").
+# La clé est le dossier du pilote. La fiche brute (trace complète `fv-config`) est enregistrée
+# pour TOUS les pilotes ; un pilote absent d'ici n'a aucun téléchargement.
+FICHIERS_PAR_PILOTE = {"AdrienM": ("gpx", "igc")}
+
 # Dérivés (ne pas modifier : utilisés par main.py et create_global_pkl.py)
 # Pilotes scrapés par défaut (nom du dossier)
 pilots = [folder for folder, scrape in PILOTES.values() if scrape]

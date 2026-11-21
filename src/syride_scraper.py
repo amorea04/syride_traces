@@ -17,21 +17,23 @@ import os
 import re
 import shutil
 import time
-import traceback
+import urllib.error
+import urllib.parse
+import urllib.request
 import zipfile
 from datetime import datetime
 
-from bs4 import BeautifulSoup
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 
 from syride_parsing import (
     detect_download_limit,
     detect_limit,
-    get_nav_infos_bs,
-    parse_flight_sheet,
+    is_turnstile_gate,
+    parse_activities_response,
+    parse_flight_sheet_full,
+    parse_id_rider,
 )
 
 
@@ -87,6 +89,41 @@ def wait_for_cloudflare(driver, poll: float = 2.0) -> None:
     waited = 0.0
     next_reminder = 60.0
     while is_cloudflare_challenge(driver):
+        time.sleep(poll)
+        waited += poll
+        if waited >= next_reminder:
+            print(f"  ... toujours en attente ({int(waited)} s)", flush=True)
+            next_reminder += 60.0
+
+    time.sleep(2)
+    print("Vérification validée, reprise.\n", flush=True)
+
+
+def _parent_has_turnstile_gate(driver) -> bool:
+    """Vrai si la page PARENTE (hors iframe) affiche un défi Turnstile à valider."""
+    try:
+        driver.switch_to.default_content()
+        return is_turnstile_gate(driver.page_source)
+    except Exception:
+        return False
+
+
+def wait_for_turnstile(driver, poll: float = 2.0) -> None:
+    """
+    Bloque tant que la page du vol affiche un défi Turnstile : c'est à l'HUMAIN de le valider
+    dans la fenêtre Chrome. Le code ne résout, ne contourne et ne simule jamais ce défi.
+    """
+    if not _parent_has_turnstile_gate(driver):
+        return
+
+    print("\n" + "!" * 60)
+    print("Vérification Turnstile de Syride détectée sur la page du vol.")
+    print("Valide-la dans la fenêtre Chrome : le script reprendra seul.")
+    print("!" * 60, flush=True)
+
+    waited = 0.0
+    next_reminder = 60.0
+    while _parent_has_turnstile_gate(driver):
         time.sleep(poll)
         waited += poll
         if waited >= next_reminder:
@@ -163,128 +200,131 @@ def login_to_syride(driver, email: str, password: str, timeout: int = 20) -> boo
     return True
 
 
-def _visible_activity_ids(driver) -> set:
-    """
-    Numéros des vols actuellement chargés dans la page du pilote.
-    Le numéro du vol (nom du dossier) est porté par l'élément id="type<numéro>" : l'id
-    "activite<n>" de la page est un autre numéro, différent pour les vols récents.
-    """
-    try:
-        ids = driver.execute_script(
-            "return Array.from(document.querySelectorAll('[id^=\"type\"]')).map(e => e.id);"
-        ) or []
-    except Exception:
-        return set()
-    return {i[len("type"):] for i in ids if i[len("type"):].isdigit()}
+# ------------------------ Liste des vols d'un pilote (HTTP simple) ------------------------
 
-
-def scroll_until_known(driver, known_traces, max_scroll: int, pause: float = 2.0,
-                       stable_rounds: int = 3) -> dict:
-    """
-    Fait défiler la page du pilote jusqu'à ce que :
-      - une trace DÉJÀ connue soit chargée (+ un défilement de marge) : toutes les traces
-        plus récentes sont alors affichées ;
-      - ou que plus rien ne se charge (stable_rounds défilements sans nouvelle activité) :
-        on est en bas de la page ;
-      - ou que max_scroll défilements aient été faits (plafond de sécurité).
-    Retourne {"scrolls": n, "reached_known": bool, "end_of_page": bool}.
-    """
-    known = set(known_traces)
-    reached_known = False
-    end_of_page = False
-    last_count, stable, n = -1, 0, 0
-    print(f"Défilement de la page (max {max_scroll})... ", end="", flush=True)
-    for n in range(1, max_scroll + 1):
-        ids = _visible_activity_ids(driver)
-        if known and ids & known:
-            if reached_known:
-                break  # un défilement de marge déjà fait après la première trace connue
-            reached_known = True
-        if len(ids) == last_count:
-            stable += 1
-            if stable >= stable_rounds:
-                end_of_page = True
-                break
-        else:
-            stable = 0
-        last_count = len(ids)
-        print(f"{n} ", end="", flush=True)
-        try:
-            driver.find_element(By.TAG_NAME, "body").send_keys(Keys.END)
-        except Exception:
-            pass
-        time.sleep(pause)
-    print("")
-    time.sleep(3)  # laisser finir le dernier chargement
-    return {"scrolls": n, "reached_known": reached_known, "end_of_page": end_of_page}
+SITE_URL = "https://www.syride.com/"
+PILOT_BASE_URL = "https://www.syride.com/fr/pilotes/"
+ACTIVITIES_URL = "https://www.syride.com/ajax/pilotes/activites.php"
+GENERIC_USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
+LIST_LIMIT = 5000       # activités demandées d'un coup
+LIST_PAGE_SIZE = 1000   # taille des pages de repli (beforeId)
+LIST_MAX_PAGES = 50     # garde-fou de la pagination
 
 
 class PilotPageError(Exception):
-    """La page du pilote ne contient aucune activité lisible (mise en page changée ?)."""
+    """La page ou la liste du pilote ne contient aucune activité lisible (mise en page changée ?)."""
 
 
-def get_all_navs(pilote: str, known_traces: list, scroll: int, driver,
-                 base_url: str = "https://www.syride.com/fr/pilotes/"):
+class HttpTransport:
     """
-    Parcourt la page d'un pilote (avec défilement) et identifie les traces absentes de
-    known_traces. Retourne (liste_des_numéros, {numéro: informations_de_la_liste}).
-
-    scroll : nombre MAXIMUM de défilements ; -1 = automatique (60). Le défilement s'arrête
-    dès qu'une trace déjà connue est chargée, ou en bas de la page.
-
-    Lève PilotPageError si AUCUNE activité n'est lue sur la page (le HTML est enregistré
-    pour diagnostic) : sans cette alerte, un changement du site donnerait silencieusement
-    « 0 nouvelle trace ».
+    Transport HTTP minimal (urllib, bibliothèque standard) pour la liste des vols : cette
+    liste est publique mais exige un en-tête Referer (voir src/migration/SYRIDE_API.md).
+    Aucun cookie, aucune information personnelle : un User-Agent générique.
     """
-    driver.get(base_url + pilote)
 
-    nb_scroll = 60 if scroll == -1 else scroll
+    def __init__(self, user_agent: str = GENERIC_USER_AGENT, timeout: float = 60):
+        self.user_agent = user_agent
+        self.timeout = timeout
 
-    driver.implicitly_wait(10)
-    scroll_info = scroll_until_known(driver, known_traces, max_scroll=nb_scroll)
-    soup = BeautifulSoup(driver.page_source, "html.parser")
-
-    activities = soup.find_all(id=re.compile(r"^activite\d{5,10}$"))
-    if not activities:
-        debug_path = os.path.abspath(f"_debug_pilot_page_{pilote}.html")
+    def get_text(self, url: str, referer: str) -> str:
+        request = urllib.request.Request(url, headers={
+            "Referer": referer,
+            "User-Agent": self.user_agent,
+            "Accept-Language": "fr",
+            "Accept-Encoding": "gzip",
+        })
         try:
-            with open(debug_path, "w", encoding="utf-8") as fp:
-                fp.write(driver.page_source)
-        except Exception:
-            debug_path = "(enregistrement impossible)"
-        raise PilotPageError(
-            f"Aucune activité lue sur la page de {pilote} (mise en page de Syride changée, "
-            f"page vide ou non chargée). HTML enregistré : {debug_path}"
-        )
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                body = response.read()
+                encoding = (response.headers.get("Content-Encoding") or "").lower()
+                charset = response.headers.get_content_charset() or "utf-8"
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f"Erreur HTTP {e.code} pour {url}") from e
+        except urllib.error.URLError as e:
+            raise RuntimeError(f"Requête impossible pour {url} : {e.reason}") from e
+        if encoding == "gzip" or body[:2] == b"\x1f\x8b":
+            body = gzip.decompress(body)
+        return body.decode(charset, errors="replace")
 
-    dict_navs = {}
-    for activity in activities:
+
+def _save_debug_html(pilote: str, html: str) -> str:
+    safe = re.sub(r"[^A-Za-z0-9_.-]", "_", pilote)
+    debug_path = os.path.abspath(f"_debug_pilot_page_{safe}.html")
+    try:
+        with open(debug_path, "w", encoding="utf-8") as fp:
+            fp.write(html or "")
+    except Exception:
+        debug_path = "(enregistrement impossible)"
+    return debug_path
+
+
+def fetch_pilot_list(transport, pilote: str, id_rider=None):
+    """
+    Lit la liste complète des vols d'un pilote, sans navigateur.
+
+    Retourne (html_brut, parsed) :
+      - html_brut : les réponses de la liste concaténées (pour l'instantané `_raw`) ;
+      - parsed    : sortie de parse_activities_response (flights dédoublonnés, activity_ids,
+        end_of_list), plus `id_rider` (celui utilisé) et `complete` : vrai seulement si la
+        dernière page reçue contient MOINS d'activités que la limite demandée. Le marqueur de
+        fin de Syride n'est pas fiable : sans `complete`, aucun vol ne doit être marqué absent.
+
+    `id_rider` absent : lu sur la page du pilote. Pagination de repli si la première réponse
+    atteint la limite : `append=1&beforeId=<dernier id_activite>`, par pages de 1000, jusqu'à
+    une page plus courte (garde-fou : 50 pages, `complete` reste alors faux).
+    Lève PilotPageError (HTML enregistré pour diagnostic) si l'identifiant est introuvable ou
+    si la réponse n'est pas lisible.
+    """
+    page_url = PILOT_BASE_URL + urllib.parse.quote(pilote, safe="")
+    if id_rider is None:
+        page = transport.get_text(page_url, referer=SITE_URL)
+        id_rider = parse_id_rider(page)
+        if id_rider is None:
+            raise PilotPageError(
+                f"idRider introuvable sur la page de {pilote} (mise en page de Syride changée ?). "
+                f"HTML enregistré : {_save_debug_html(pilote, page)}"
+            )
+
+    base = f"{ACTIVITIES_URL}?limit={{limit}}&l=fr&idRider={id_rider}&apli=0"
+    raw_parts, flights, activity_ids, seen = [], [], [], set()
+    end_of_list = False
+    complete = False
+    limit = LIST_LIMIT
+    url = base.format(limit=limit)
+
+    for page_number in range(LIST_MAX_PAGES + 1):
+        html = transport.get_text(url, referer=page_url)
         try:
-            num_activite, dict_activity = get_nav_infos_bs(activity=activity, pilote=pilote)
-            dict_navs[f"{num_activite}"] = dict_activity
-        except Exception:
-            print("", "\n", traceback.format_exc())
+            parsed = parse_activities_response(html, pilote)
+        except ValueError as e:
+            if page_number == 0:
+                raise PilotPageError(f"{e} HTML enregistré : {_save_debug_html(pilote, html)}") from e
+            raise PilotPageError(f"{e} (page {page_number + 1} de la liste)") from e
+        raw_parts.append(html)
+        activity_ids.extend(parsed["activity_ids"])
+        end_of_list = parsed["end_of_list"]
+        for flight in parsed["flights"]:
+            num = str(flight.get("num_activite"))
+            if num not in seen:
+                seen.add(num)
+                flights.append(flight)
 
-    if not dict_navs:
-        raise PilotPageError(
-            f"{len(activities)} activité(s) trouvée(s) sur la page de {pilote}, mais aucune "
-            f"n'a pu être lue (format des activités changé ?)."
-        )
+        received = len(parsed["activity_ids"])
+        if received < limit:
+            complete = True
+            break
+        if end_of_list or page_number >= LIST_MAX_PAGES:
+            break   # fin annoncée par le marqueur seul, ou garde-fou : liste jugée incomplète
+        limit = LIST_PAGE_SIZE
+        url = base.format(limit=limit) + f"&append=1&beforeId={parsed['activity_ids'][-1]}"
 
-    dict_navs = {
-        key: value
-        for key, value in dict_navs.items()
-        if key not in known_traces and key != "None"
+    return "\n".join(raw_parts), {
+        "flights": flights, "end_of_list": end_of_list, "activity_ids": activity_ids,
+        "id_rider": id_rider, "complete": complete,
     }
-
-    if known_traces and not scroll_info["reached_known"] and not scroll_info["end_of_page"]:
-        print(f"ATTENTION : aucune trace déjà connue n'a été atteinte après "
-              f"{scroll_info['scrolls']} défilements : des traces plus anciennes peuvent "
-              f"manquer. Relance avec --scroll {nb_scroll * 2}.")
-
-    final_list = list(dict_navs.keys())
-    print(f"{len(activities)} activité(s) lue(s), {len(final_list)} nouvelle(s) trace(s).")
-    return final_list, dict_navs
 
 
 # ------------------------ Fiche de vol ------------------------
@@ -298,31 +338,42 @@ def _page_text(driver) -> str:
         return ""
 
 
+MAX_TURNSTILE_WAITS = 5
+
+
 def _read_flight_iframe(driver, pilote: str, trace: str, base_url: str, timeout: int = 20) -> str:
     """
     Charge la page du vol (ex. .../pilotes/<pilote>/<trace>) puis lit le contenu de
-    l'iframe #popupIframe DANS le contexte de la page (comme le fait un navigateur).
+    l'iframe #popupIframe DANS le contexte de la page (comme le fait un navigateur) : c'est la
+    page de Syride qui ouvre elle-même la fiche et exécute son widget Turnstile. Si la page
+    parente affiche un défi Turnstile, on attend que l'humain le valide (wait_for_turnstile).
     Retourne le HTML de l'iframe.
     Lève DailyLimitError (limite quotidienne) ou RateLimitError (trop de fiches consultées).
     """
     driver.get(f"{base_url}{pilote}/{trace}")
     wait_for_cloudflare(driver)
+    gate_waits = 0
     try:
-        WebDriverWait(driver, timeout).until(
-            lambda d: d.find_elements(By.ID, "popupIframe")
-        )
-        driver.switch_to.frame(driver.find_element(By.ID, "popupIframe"))
-        try:
-            # Attendre soit le contenu de la fiche, soit un message de limite
-            WebDriverWait(driver, timeout).until(
-                lambda d: d.find_elements(By.CLASS_NAME, "fv-metrics")    # fiche actuelle
-                or d.find_elements(By.CLASS_NAME, "volTexte")             # ancienne fiche
-                or detect_limit(_page_text(d))
-            )
-        except TimeoutException:
-            raise RuntimeError(
-                f"contenu de la fiche introuvable (texte reçu : {_page_text(driver)[:150]!r})"
-            )
+        while True:
+            try:
+                WebDriverWait(driver, timeout).until(
+                    lambda d: d.find_elements(By.ID, "popupIframe")
+                )
+                driver.switch_to.frame(driver.find_element(By.ID, "popupIframe"))
+                # Attendre soit le contenu de la fiche, soit un message de limite
+                WebDriverWait(driver, timeout).until(
+                    lambda d: d.find_elements(By.CLASS_NAME, "fv-metrics")    # fiche actuelle
+                    or d.find_elements(By.CLASS_NAME, "volTexte")             # ancienne fiche
+                    or detect_limit(_page_text(d))
+                )
+                break
+            except TimeoutException:
+                received = _page_text(driver)[:150]
+                if gate_waits < MAX_TURNSTILE_WAITS and _parent_has_turnstile_gate(driver):
+                    gate_waits += 1
+                    wait_for_turnstile(driver)
+                    continue
+                raise RuntimeError(f"contenu de la fiche introuvable (texte reçu : {received!r})")
         text = _page_text(driver)
         limit = detect_limit(text)
         if limit == "daily":
@@ -342,10 +393,15 @@ def read_flight_sheet(
     rate_limit_waits=(120, 120, 300),
 ):
     """
-    Lit la fiche d'UN vol et retourne (sheet, links, nb_limites_rencontrees) :
+    Lit la fiche d'UN vol et retourne (sheet, links, track, html, nb_limites_rencontrees) :
       - sheet : dict des champs de FLIGHT_SHEET_FIELDS (adresse_zip = lien GPX signé) ;
-      - links : {"gpx": url|None, "igc": url|None}, liens signés à durée de vie courte
-        (à utiliser tout de suite).
+      - links : {"gpx": url|None, "igc": url|None, "kml": url|None}, liens signés à durée de
+        vie courte (à utiliser tout de suite) ;
+      - track : trace `fv-config` validée (parse_fv_config) ou None ;
+      - html  : HTML brut de la fiche (à enregistrer tout de suite avec save_sheet_raw).
+
+    La fiche n'est obtenue QUE par la navigation Chrome vers la page du vol (la page de Syride
+    ouvre elle-même la fiche) : jamais d'appel direct à ficheVol.php ni à l'autorisation.
 
     Si Syride affiche « Trop de fiches de vol consultées », attend (rate_limit_waits, en
     secondes) puis réessaie. Si la limite persiste après toutes les attentes, lève
@@ -372,7 +428,7 @@ def read_flight_sheet(
             )
             time.sleep(wait)
 
-    sheet, links = parse_flight_sheet(html)
+    sheet, links, track = parse_flight_sheet_full(html)
 
     if sheet["adresse_zip"] is None:
         print(f"\n[Trace {trace}] Fiche lue mais aucun lien de téléchargement trouvé "
@@ -387,7 +443,7 @@ def read_flight_sheet(
                 print(f"Impossible de sauvegarder le HTML de debug : {e_dbg}")
             _debug_saved = True
 
-    return sheet, links, n_rate_limits
+    return sheet, links, track, html, n_rate_limits
 
 
 # ------------------------ Téléchargement et enregistrement ------------------------

@@ -819,7 +819,7 @@ def _update_duplicates(conn, pilot):
 
 
 def reconcile_pilot(conn: sqlite3.Connection, main_path: str, pilot: str, list_items: list,
-                    today=None, complete: bool = True) -> dict:
+                    today=None, complete: bool = True, dry_run: bool = False) -> dict:
     """
     Compare la liste d'un pilote sur Syride (`list_items`, au format de get_nav_infos_bs) au
     contenu du disque et met à jour les JSON et l'index. Pas de réseau.
@@ -846,6 +846,10 @@ def reconcile_pilot(conn: sqlite3.Connection, main_path: str, pilot: str, list_i
         `is_syride` seulement) -> aucune marque « absent » ;
       - doublons probables -> colonne duplicate_of (voir find_duplicates).
 
+    dry_run : simulation en lecture seule. Le rapport est calculé exactement comme d'habitude,
+    mais aucun JSON n'est écrit et la base de `conn` n'est pas modifiée (le calcul se fait sur
+    une copie en mémoire de la base).
+
     Aucun JSON n'est réécrit quand rien ne change. Les jetons éphémères de la liste
     (flight_token, expires, token) ne sont jamais écrits.
 
@@ -853,12 +857,28 @@ def reconcile_pilot(conn: sqlite3.Connection, main_path: str, pilot: str, list_i
     "duplicates": [(a, b)], "guard_triggered", "absent_skipped" (pas de marque « absent » :
     garde-fou ou liste incomplète), "unreadable"}.
     """
-    from syride_scraper import save_flight_data   # import tardif : syride_scraper charge Selenium
-
     today_str = _today_str(today)
     pilot_dir = os.path.join(main_path, pilot)
     report = {"new": [], "modified": [], "absent": [], "reappeared": [], "duplicates": [],
               "guard_triggered": False, "absent_skipped": False, "unreadable": []}
+
+    real_conn = conn
+    if dry_run:   # travail sur une copie en mémoire : la vraie base n'est pas touchée
+        conn.commit()
+        conn = sqlite3.connect(":memory:")
+        real_conn.backup(conn)
+    try:
+        return _reconcile(conn, main_path, pilot, items_in=list_items, today_str=today_str,
+                          complete=complete, dry_run=dry_run, report=report)
+    finally:
+        if dry_run:
+            conn.close()
+
+
+def _reconcile(conn, main_path, pilot, items_in, today_str, complete, dry_run, report):
+    from syride_scraper import save_flight_data   # import tardif : syride_scraper charge Selenium
+
+    pilot_dir = os.path.join(main_path, pilot)
 
     sync_pilot(conn, main_path, pilot)   # la base reflète le disque avant de comparer
     known = {num: (is_syride, stored_hash, status) for num, is_syride, stored_hash, status in
@@ -866,7 +886,7 @@ def reconcile_pilot(conn: sqlite3.Connection, main_path: str, pilot: str, list_i
                           (pilot,))}
 
     items = {}
-    for item in list_items:
+    for item in items_in:
         num = str(item.get("num_activite", ""))
         if num.isdigit() and num not in items:
             items[num] = item
@@ -881,6 +901,8 @@ def reconcile_pilot(conn: sqlite3.Connection, main_path: str, pilot: str, list_i
         return os.path.join(pilot_dir, "traces", num, f"{num}.json")
 
     def write(data):
+        if dry_run:
+            return
         save_flight_data(main_repertoire=pilot_dir, flight_data=data, quiet=True)
 
     # --- vols de la liste : nouveaux, modifiés, revenus
@@ -950,7 +972,8 @@ def reconcile_pilot(conn: sqlite3.Connection, main_path: str, pilot: str, list_i
                 report["absent"].append(num)
 
     # --- index : relire les JSON modifiés, puis dates de liste, empreintes, doublons
-    sync_pilot(conn, main_path, pilot)
+    if not dry_run:   # en simulation aucun JSON n'a changé : rien à relire
+        sync_pilot(conn, main_path, pilot)
     for num, item in items.items():
         if num in report["unreadable"]:
             continue
