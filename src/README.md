@@ -33,7 +33,7 @@ Le scraping se lance depuis le dossier des scripts :
 python main.py                      # les 3 phases + génération du pkl
 python main.py --scrape 0           # saute la phase 1 : complète les vols déjà sur le disque
 python main.py --dry-run 1          # simulation : la liste est lue, rien n'est écrit, ni Chrome ni pkl
-python main.py --max-sheets 45      # s'arrête après 45 fiches (Syride limite le nombre par jour)
+python main.py --max-sheets 45      # s'arrête après 45 fiches (défaut 40 : Syride en limite le nombre par jour ; 0 = sans plafond)
 python main.py --files gpx,igc      # fichiers téléchargés pour tous les pilotes de l'exécution (défaut : auto)
 python main.py --fill-igc 1         # complète aussi l'IGC des vols qui ont déjà leur GPX (1 fiche par vol)
 python main.py --backfill-raw 0     # ne consacre pas de fiche au rattrapage des fiches brutes
@@ -73,7 +73,8 @@ fichier n'est téléchargé. `--files` remplace ce réglage pour l'exécution ; 
 IGC manquants des profils qui en demandent.
 
 **Rattrapage des fiches brutes.** Les vols déjà présents sur le disque n'ont pas de fiche brute : elles
-sont rattrapées au fil des lancements (`--max-sheets` fixe le nombre par exécution). Tant qu'un vol n'a
+sont rattrapées au fil des lancements, après les vols nouveaux ou incomplets, dans la limite de
+`--max-sheets` (40 fiches par lancement par défaut, `MAX_SHEETS_PAR_LANCEMENT`). Tant qu'un vol n'a
 pas sa fiche, ses statistiques viennent de son GPX (puis du JSON). `--backfill-raw 0` désactive ce
 rattrapage pour un lancement.
 

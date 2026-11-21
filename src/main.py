@@ -20,8 +20,8 @@ Modes :
   python main.py                    les 3 phases
   python main.py --scrape 0         saute la phase 1 : on complète seulement les vols déjà
                                     présents sur le disque
-  python main.py --max-sheets 45    s'arrête après 45 fiches consultées (Syride limite le
-                                    nombre de fiches par jour)
+  python main.py --max-sheets 45    s'arrête après 45 fiches consultées (défaut : 40, car
+                                    Syride limite le nombre de fiches par jour ; 0 = sans plafond)
   python main.py --files auto|none|gpx|gpx,igc
                                     fichiers téléchargés : auto (défaut) = profils de
                                     FICHIERS_PAR_PILOTE ; sinon la valeur s'applique à tous
@@ -115,9 +115,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--max-sheets",
         type=int,
-        default=0,
-        help="Nombre maximum de fiches de vol consultées pendant l'exécution "
-        "(0 = pas de plafond ; le script s'arrête de toute façon si Syride bloque).",
+        default=None,
+        help="Nombre maximum de fiches de vol consultées pendant l'exécution (défaut : "
+        "params_scrap_syride.MAX_SHEETS_PAR_LANCEMENT, 40 ; 0 = pas de plafond). Les vols nouveaux "
+        "ou incomplets passent d'abord, puis le rattrapage des fiches brutes ; arrêt plus tôt si "
+        "Syride bloque.",
     )
     parser.add_argument(
         "--pkl",
@@ -243,12 +245,17 @@ def main(argv=None):
         elif excluded:
             print("--fill-igc sans effet pour (pas d'IGC dans leur profil) : " + ", ".join(excluded))
 
+    # Plafond de fiches par lancement : 40 par défaut (Syride en autorise ~50 par jour)
+    max_sheets = args.max_sheets
+    if max_sheets is None:
+        max_sheets = getattr(params, "MAX_SHEETS_PAR_LANCEMENT", 0) or 0
+
     # Scraping / complétion : une seule fenêtre pour tous les pilotes
     result = process_pilots(
         path=main_path,
         pilots=pilotes,
         do_scrape=bool(args.scrape),
-        max_sheets=args.max_sheets if args.max_sheets > 0 else None,
+        max_sheets=max_sheets if max_sheets > 0 else None,
         fill_igc=fill_igc,
         db_path=args.db,
         dry_run=bool(args.dry_run),
