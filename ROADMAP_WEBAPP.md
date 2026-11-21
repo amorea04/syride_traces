@@ -127,7 +127,7 @@ Le rapport est bien plus abouti que la webapp Dash. Il sert de **référence fon
   - années distinguées aussi par des tirets ou hachures, jamais par la couleur seule.
 - AA, `prefers-reduced-motion`, mobile 375 px.
 
-**Refusés explicitement par Adrien** (14/11/2026, `ameliorations_rapport.md`, `outils/BRIEF_COMMUN.md`) :
+**Refusés explicitement par Adrien** (14/11/2026, `ameliorations_rapport.md`, `docs/archive/rapport/BRIEF_COMMUN.md`) :
 - badges, médailles, confettis ;
 - scène de ciel (nuages, parapente animé), thème « Ciel » ;
 - **profil radar** ;
@@ -775,14 +775,14 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 - **5C.3 Accès au Bilan depuis la page pilote.** Dans l'en-tête de la page pilote, bouton principal « Voir le bilan {dernière année} » et menu des autres années. Les cartes par année restent. Le texte des cartes devient explicite : « Bilan 2025 → ».
 
 **Filtres**
-- **5C.4 Plusieurs années dans le filtre.** Le menu « Année… » devient un choix multiple : on coche 2025 et 2023, par exemple. La décision de phase 3 (« années non contiguës non reprises », `PARITE_DASH.md` #12) est annulée (D19).
+- **5C.4 Plusieurs années dans le filtre.** Le menu « Année… » devient un choix multiple : on coche 2025 et 2023, par exemple. La décision de phase 3 (« années non contiguës non reprises », `docs/archive/web/PARITE_DASH.md` #12) est annulée (D19).
   - Nouvelle dimension `years: number[]` dans `Filters` (`lib/filters.ts`), à côté de la période Du / Au. Un vol passe s'il est dans l'une des années cochées **et** dans la période, si elle est renseignée.
   - Choisir des années vide la période. Choisir une période ne touche pas aux années, mais l'intersection vide est signalée par l'état vide existant.
   - Paramètre d'URL `annees=2025,2023`, compteurs en cascade, ligne « Vue filtrée » (`filterSummary`) : « 2023 et 2025 ».
   - Un clic sur une barre d'année de `StatChart` coche cette seule année.
   - La variation des KPI (« vs période précédente ») est masquée quand des années non contiguës sont cochées, et comparée à l'année précédente pour une seule année.
   - Les raccourcis « Cette année » et « 12 derniers mois » restent des périodes.
-  - Mettre à jour `PARITE_DASH.md` #12 (statut « présente »), les tests de `filters.ts`, `filterSummary.ts` et `useFiltersUrlSync`, ainsi que l'e2e `filtres.spec.ts`.
+  - Mettre à jour `docs/archive/web/PARITE_DASH.md` #12 (statut « présente »), les tests de `filters.ts`, `filterSummary.ts` et `useFiltersUrlSync`, ainsi que l'e2e `filtres.spec.ts`.
   - Le Bilan continue d'ignorer ce filtre ; sa mention des filtres ignorés le cite.
 - **5C.5 « Ses sites face à face » sans seuil.** La page pilote prend **tous** les sites du pilote, et non plus ceux d'au moins 10 vols (`MIN_SITE_FLIGHTS_PILOT` passe à 1 pour cet usage ; le seuil de la fiche vol et de la page site ne change pas). Le nombre de vols de chaque site est affiché à côté de son nom. Une note « peu de vols » en gris signale un site de moins de 3 vols, car sa moyenne est fragile. Il faut au moins 2 sites, sinon le message actuel s'affiche.
 
@@ -910,7 +910,7 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 | D15 | Fiche vol | Ajout de **« Ce site face aux autres »** : les vols du site comparés aux autres sites (durée, distance, plafond, vitesse, vario, vols, pilotes, part des disciplines), même langage visuel que « Ce vol face aux moyennes ». Agrégat réutilisé sur la page site. | §5.3, §5.5 |
 | D17 | Comparaison de sites par pilote ou groupe | **Oui** : « Ce site face aux autres » existe aussi pour un pilote (bascule « Tous / Ce pilote » sur la fiche vol, section « Ses sites face à face » sur la page pilote), et la page Comparer reçoit un **mode « Sites »** (2 à 4 sites côte à côte, calculés sur la sélection de pilotes des filtres globaux). Un seul module TS d'agrégats par site, réutilisé partout. | §5.3, §5.4, §5.5, §5.6 |
 | D16 | Projection de fin d'année et objectif personnel dans le Bilan (T31) | **Retirés** | §5.4 bis point 8 et 5B.8 supprimés |
-| D18 | Écarts de la recette croisée 5B.11 | **Corrigés à la source** (19/11/2026) : (1) un site vide (chaîne vide, 3 vols) n'est plus compté comme un site dans le rapport Python et les insights ; (2) les durées sont exportées avec plus de précision, pour retrouver les minutes exactes du rapport ; (3) `meta.json` porte la vraie date de mise à jour des données, et la date du dernier vol est affichée à part | 5B.11, `web/RECETTE_5B11.md` |
+| D18 | Écarts de la recette croisée 5B.11 | **Corrigés à la source** (19/11/2026) : (1) un site vide (chaîne vide, 3 vols) n'est plus compté comme un site dans le rapport Python et les insights ; (2) les durées sont exportées avec plus de précision, pour retrouver les minutes exactes du rapport ; (3) `meta.json` porte la vraie date de mise à jour des données, et la date du dernier vol est affichée à part | 5B.11, `docs/archive/web/RECETTE_5B11.md` |
 | D19 | Sélection de plusieurs années non contiguës | **Oui** (recette du 19/11/2026), ce qui annule la décision de phase 3 | 5C.4 |
 | D20 | Seuil de 10 vols dans « Ses sites face à face » (page pilote) | **Supprimé** : tous les sites du pilote | 5C.5 |
 | D21 | Budget des données initiales (244 Ko gzip mesurés le 20/11/2026, toutes les colonnes servent) | **Relevé à 250 Ko gzip** (20/11/2026), sans passer au format en colonnes. À revoir quand le fichier approchera la limite (≈ +25 Ko par an) | 6.2 |
@@ -942,7 +942,7 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 - [x] 1.1 Module schéma et validation (`src/web_export/schema.py`)
 - [x] 1.2 `flights.json` colonnaire, sans sentinelles, tests pytest : 9 587 vols, 1 écarté (date 1901)
 - [x] 1.3 `sites.json` : clé vide corrigée, 435 sites, dont 16 sans coordonnées (`lat` et `lon` à null)
-- [x] 1.5 Audit de cohérence des statistiques (`src/web_export/AUDIT_PHASE1.md`) ; aucune coordonnée par vol dans l'export (vérifié)
+- [x] 1.5 Audit de cohérence des statistiques (`docs/archive/web_export/AUDIT_PHASE1.md`) ; aucune coordonnée par vol dans l'export (vérifié)
 - [x] 1.5 bis Le rapport HTML est importable sans effet de bord. `insights.py` réutilise `ReportBuilder` : 150 fichiers. Le test d'identité avec le rapport HTML passe (AdrienM et j2f 2025). Les rapports HTML sont identiques octet par octet avant et après les 2 retouches de `src/rapport/`.
 - [x] 1.6 `meta.json` et hashes de contenu, purge des anciens fichiers
 - [x] 1.7 CLI `export_web.py` (`--only`, `--pilot`, `--full`, `--out`, `--pkl`)
@@ -980,7 +980,7 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 - [x] 3.6 Carte des sites MapLibre (clusters, popup avec pilotes, heatmap ; cadrage sur 90 % des vols, quantiles pondérés)
 - [x] 3.7 États vides et robustesse (e2e : filtre sans vol, aucune erreur)
 - [x] 3.8 Tests e2e du tableau de bord (`web/e2e/tableau-de-bord.spec.ts`, 7 scénarios ; 565 tests unitaires, 13 e2e au vert)
-- [x] 3.9 Revue de parité avec l'app Dash (`web/PARITE_DASH.md`) : 94 fonctions, 37 présentes, 40 remplacées, 13 corrigées, 3 abandonnées, 1 reportée (crédit « Créée par » : page À propos seulement, tâche 5.5). Années non contiguës : non reprises (décision d'Adrien)
+- [x] 3.9 Revue de parité avec l'app Dash (`docs/archive/web/PARITE_DASH.md`) : 94 fonctions, 37 présentes, 40 remplacées, 13 corrigées, 3 abandonnées, 1 reportée (crédit « Créée par » : page À propos seulement, tâche 5.5). Années non contiguës : non reprises (décision d'Adrien)
 - [x] PR relue (`/code-review medium`, 10 constats corrigés) et fusionnée (PR #4) · **`/clear`**
 
 ### Phase 4 : Vols
@@ -1016,7 +1016,7 @@ Recette en main propre d'Adrien du 19/11/2026, sur toutes les pages livrées en 
 - ~~5B.8 Projection de fin d'année et jauge d'objectif~~ (retiré, D16)
 - [x] 5B.9 Actions : copier le lien, copier le résumé, CSV
 - [x] 5B.10 Données et limites (couverture année et carrière), glossaire
-- [x] 5B.11 Recette croisée (`web/RECETTE_5B11.md`) : AdrienM, j2f et JJvole 2025, 9 vues ; phrases identiques, écarts corrigés à la source (D18 : sites vides, durées à 4 décimales, `meta.data_refreshed_at`)
+- [x] 5B.11 Recette croisée (`docs/archive/web/RECETTE_5B11.md`) : AdrienM, j2f et JJvole 2025, 9 vues ; phrases identiques, écarts corrigés à la source (D18 : sites vides, durées à 4 décimales, `meta.data_refreshed_at`)
 - [x] 5B.12 Tests e2e du Bilan (`bilan.spec.ts`, `bilan-details.spec.ts`, 17 scénarios ; l'« export PNG » est remplacé par l'export CSV, le récap PNG restant en phase 8) ; 810 tests unitaires, 67 e2e et 62 pytest au vert
 - [x] Relecture `/code-review medium` : 10 constats, 9 corrigés ; reporté en phase 6 : les KPI de l'année sont recalculés par plusieurs sections (à mutualiser dans le contexte du Bilan)
 - [x] Grande recette d'Adrien (19/11/2026) : retours consignés en phase 5C

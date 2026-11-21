@@ -46,7 +46,7 @@ Branche de travail prévue : `scraping/migration-fv` (une seule branche, un comm
 
 ## 1. La distribution : les experts et leurs rôles
 
-Chaque expert est un agent. Le **maître d'œuvre** écrit un brief par lot (`src/migration/BRIEF_LOT_<X>.md`),
+Chaque expert est un agent. Le **maître d'œuvre** écrit un brief par lot (`src/migration/BRIEF_LOT_<X>.md`, archivés depuis dans `docs/archive/migration/`),
 lance les agents, relit, intègre et committe. **Les agents ne committent pas, ne poussent pas et ne changent
 pas de branche.**
 
@@ -366,7 +366,7 @@ dans `requirements-export.txt` aujourd'hui, il faut l'ajouter (version épinglé
 
 ## 7. Conduite des agents (mode opératoire de l'Architecte)
 
-1. Un brief par lot (`src/migration/BRIEF_LOT_<X>.md`) : contexte, fichiers autorisés, fichiers interdits, critères de fin,
+1. Un brief par lot (`src/migration/BRIEF_LOT_<X>.md`, archivés depuis dans `docs/archive/migration/`) : contexte, fichiers autorisés, fichiers interdits, critères de fin,
    commandes de vérification. Les agents lisent ce plan et leur brief, rien d'autre n'est supposé connu.
 2. Exécution avec le modèle indiqué au §1 ; lots B et C en parallèle (fichiers disjoints), les autres en séquence.
 3. Revue de l'Avocat du diable sur le diff du lot ; corrections par l'agent du lot ; commit par l'Architecte :

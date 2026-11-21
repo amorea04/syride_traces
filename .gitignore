@@ -19,6 +19,7 @@
 !/web/
 !/.githooks/
 !/.github/
+!/docs/
 
 # --- Webapp : dépendances, builds et données générées ---------------
 # Les données réelles vont du Mac vers Cloudflare (wrangler), jamais sur GitHub.
