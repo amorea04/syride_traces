@@ -548,6 +548,21 @@ def parse_new_flight_sheet(soup: BeautifulSoup) -> dict:
     return sheet
 
 
+def parse_fv_config(html: str):
+    """
+    Trace de la fiche : contenu JSON de `<script id="fv-config">` (points, times, terrain,
+    extrema, ...), ou None si le bloc est absent ou illisible. Aucune validation ici.
+    """
+    try:
+        tag = BeautifulSoup(html, "html.parser").find("script", id="fv-config")
+        if tag is None:
+            return None
+        config = json.loads(tag.string or tag.get_text())
+    except Exception:
+        return None
+    return config if isinstance(config, dict) else None
+
+
 def parse_flight_sheet(html: str):
     """
     Extrait les statistiques et les liens de téléchargement d'une fiche de vol.

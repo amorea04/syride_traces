@@ -123,6 +123,10 @@ NUMERIC_STATS = [
     "gain",
     "vario_max",
     "g_max",
+    # Colonnes optionnelles issues de la trace fv-config (vides sans fiche brute)
+    "vario_min",
+    "hauteur_sol_max",
+    "heure_plafond",
 ]
 
 

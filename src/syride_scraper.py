@@ -10,6 +10,8 @@ Points d'attention :
   - Syride limite le nombre de fiches consultées (par minute, puis par jour).
 """
 
+import glob
+import gzip
 import json
 import os
 import re
@@ -17,6 +19,7 @@ import shutil
 import time
 import traceback
 import zipfile
+from datetime import datetime
 
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import TimeoutException
@@ -473,7 +476,7 @@ def download_trace_via_browser(
         raise ValueError(f"Type de fichier téléchargé inattendu pour la trace {nav} : {downloaded_file}")
 
 
-def save_flight_data(main_repertoire: str, flight_data: dict):
+def save_flight_data(main_repertoire: str, flight_data: dict, quiet: bool = False):
     num_act = flight_data["num_activite"]
     os.makedirs(main_repertoire + "/traces/" + f"{num_act}", exist_ok=True)
     file_name = main_repertoire + "/traces/" + f"{num_act}/" + f"{num_act}.json"
@@ -485,7 +488,69 @@ def save_flight_data(main_repertoire: str, flight_data: dict):
         fp.flush()
         os.fsync(fp.fileno())
     os.replace(tmp_name, file_name)
-    print(f"Données de vol {num_act} sauvegardées", flush=True)
+    if not quiet:
+        print(f"Données de vol {num_act} sauvegardées", flush=True)
+
+
+def _write_gzip_atomic(path: str, text: str) -> None:
+    """Écrit `text` compressé (gzip niveau 6) via un fichier temporaire puis renommage."""
+    tmp_path = path + ".tmp"
+    with gzip.open(tmp_path, "wb", compresslevel=6) as fp:
+        fp.write(text.encode("utf-8"))
+    with open(tmp_path, "rb") as fp:
+        os.fsync(fp.fileno())
+    os.replace(tmp_path, path)
+
+
+def save_sheet_raw(main_repertoire: str, num: str, html: str) -> str:
+    """
+    Enregistre la fiche brute d'un vol : <main_repertoire>/traces/<num>/<num>.sheet.html.gz
+    (contient la trace `fv-config`). Retourne le chemin du fichier.
+    """
+    folder = os.path.join(main_repertoire, "traces", str(num))
+    os.makedirs(folder, exist_ok=True)
+    path = os.path.join(folder, f"{num}.sheet.html.gz")
+    _write_gzip_atomic(path, html)
+    return path
+
+
+def load_sheet_raw(folder: str, num: str):
+    """
+    Relit la fiche brute d'un vol depuis son dossier (<num>.sheet.html.gz, ou <num>.sheet.html
+    non compressé). Retourne le HTML, ou None si absente ou illisible.
+    """
+    gz_path = os.path.join(folder, f"{num}.sheet.html.gz")
+    plain_path = os.path.join(folder, f"{num}.sheet.html")
+    try:
+        if os.path.exists(gz_path):
+            with gzip.open(gz_path, "rb") as fp:
+                return fp.read().decode("utf-8")
+        if os.path.exists(plain_path):
+            with open(plain_path, "r", encoding="utf-8") as fp:
+                return fp.read()
+    except (OSError, EOFError, UnicodeDecodeError):
+        return None
+    return None
+
+
+def save_list_snapshot(main_repertoire: str, html: str, keep: int = 5, now=None) -> str:
+    """
+    Enregistre l'instantané de la liste d'un pilote : <main_repertoire>/_raw/
+    activites_<AAAAMMJJ-HHMMSS>.html.gz. Ne garde que les `keep` plus récents.
+    Retourne le chemin écrit. (`now` : datetime, pour les tests.)
+    """
+    raw_dir = os.path.join(main_repertoire, "_raw")
+    os.makedirs(raw_dir, exist_ok=True)
+    stamp = (now or datetime.now()).strftime("%Y%m%d-%H%M%S")
+    path = os.path.join(raw_dir, f"activites_{stamp}.html.gz")
+    _write_gzip_atomic(path, html)
+    snapshots = sorted(glob.glob(os.path.join(raw_dir, "activites_*.html.gz")))
+    for old in snapshots[:-max(keep, 1)]:
+        try:
+            os.remove(old)
+        except OSError:
+            pass
+    return path
 
 
 def initiate_search(main_repertoire: str):
