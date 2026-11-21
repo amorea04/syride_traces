@@ -10,7 +10,7 @@ Le dernier caractère perdu ne peut pas être deviné : la réparation passe don
 de correspondances que TU valides.
 
 Étape 1 - lister les valeurs présentes et générer le fichier de correspondances :
-    python src/fix_truncated_names.py --scan
+    uv run python src/fix_truncated_names.py --scan
 
 Étape 2 - ouvrir name_corrections.json (dans le dossier des traces) et, pour chaque valeur
     tronquée, écrire le nom complet dans "remplacer_par". Une valeur laissée vide n'est pas
@@ -18,7 +18,7 @@ de correspondances que TU valides.
     avec un caractère de plus) : à vérifier, elle peut être fausse (ex. « Boxer » / « Boxer2 »).
 
 Étape 3 - appliquer :
-    python src/fix_truncated_names.py --apply
+    uv run python src/fix_truncated_names.py --apply
 
 Avant toute modification, chaque JSON modifié est sauvegardé dans _backup_json_noms/.
 Le script est répétable : relancer --apply ne change plus rien une fois les noms corrigés.

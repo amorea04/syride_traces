@@ -26,7 +26,8 @@ jobs:
       - run: uv sync --locked --no-default-groups --group dev
       - name: pytest (comme make test-py)
         working-directory: src
-        run: uv run python -m pytest web_export/tests scraping_tests -q -p no:cacheprovider -p no:dash
+        # --no-sync : garder l'environnement minimal (base + dev) installé ci-dessus
+        run: uv run --no-sync python -m pytest web_export/tests scraping_tests -q -p no:cacheprovider -p no:dash
 
   web:
     name: Tests web

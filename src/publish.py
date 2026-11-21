@@ -1,7 +1,7 @@
 """
 Publication de la webapp sur Cloudflare Pages (ROADMAP_WEBAPP.md §8 phase 7, §9.2).
 
-Usage : python src/publish.py [--dry-run] [--force-export] [--skip-install] [--skip-smoke]
+Usage : uv run python src/publish.py [--dry-run] [--force-export] [--skip-install] [--skip-smoke]
                               [--skip-links] [--project-name NOM]
 
 Étapes (arrêt net à la première erreur, code retour 0/1) :

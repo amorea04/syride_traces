@@ -3,7 +3,7 @@
 Anonymisation de captures Syride pour en faire des fixtures de test.
 
 Usage :
-    python src/migration/anonymize_fixture.py <entrée.html> <sortie.html> --kind list|sheet
+    uv run python src/migration/anonymize_fixture.py <entrée.html> <sortie.html> --kind list|sheet
         [--max-points 200] [--max-flights 5] [--name PSEUDO ...] [--site NOM ...]
 
   --kind list   réponse de /ajax/pilotes/activites.php (liste de vols d'un pilote)

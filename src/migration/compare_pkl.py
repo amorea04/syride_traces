@@ -1,7 +1,7 @@
 """
 Compare deux pkl produits sur les mêmes données (recette A/B, scène 11 du plan de migration).
 
-    python src/migration/compare_pkl.py --a pkl_A.pkl --b pkl_B.pkl [--pilot AdrienM]
+    uv run python src/migration/compare_pkl.py --a pkl_A.pkl --b pkl_B.pkl [--pilot AdrienM]
 
 A = ancien code, B = nouveau code. Le script (lecture seule, sans réseau) vérifie :
 

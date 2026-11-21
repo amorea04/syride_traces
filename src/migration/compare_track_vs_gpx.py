@@ -1,7 +1,7 @@
 """
 Compare les statistiques tirées de la trace `fv-config` d'une fiche brute à celles du GPX du même vol.
 
-    python src/migration/compare_track_vs_gpx.py --pilot AdrienM [--limit 50] [--path <main_path>]
+    uv run python src/migration/compare_track_vs_gpx.py --pilot AdrienM [--limit 50] [--path <main_path>]
 
 Pour chaque vol ayant à la fois `<num>.sheet.html.gz` (ou `<num>.sheet.html`) et `<num>.gpx`
 dans `<path>/<pilote>/traces/<num>/`, affiche un tableau et un bilan des écarts.

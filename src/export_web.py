@@ -3,7 +3,7 @@ Export des données de la webapp (ROADMAP_WEBAPP.md §4) : meta.json, flights.<h
 sites.<hash>.json, insights/<pilote>-<année>.<hash>.json. Chaque fichier est validé contre
 src/web_export/schema.json avant écriture.
 
-Usage : python src/export_web.py [--only flights|sites|insights] [--pilot X] [--full] [--out DIR] [--pkl PATH]
+Usage : uv run python src/export_web.py [--only flights|sites|insights] [--pilot X] [--full] [--out DIR] [--pkl PATH]
 """
 
 import argparse

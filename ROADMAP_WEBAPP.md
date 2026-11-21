@@ -163,7 +163,7 @@ Le rapport est bien plus abouti que la webapp Dash. Il sert de **référence fon
 | O2 | **Rapide** | Premier affichage < 1,5 s en 4G ; changement de filtre < 100 ms ; Lighthouse Performance ≥ 90 |
 | O3 | **Beau et sobre** | Style éditorial et professionnel, sans gadgets (cf. préférences des rapports HTML) ; mode clair et sombre ; mobile d'abord |
 | O4 | **Plus riche** | Activité collective, liste des vols, fiche de vol (chiffres et contexte, trace sur Syride), pages pilote et site, évolution temporelle, comparaison, records |
-| O5 | **Mise à jour en 1 commande** | `make publish` (ou `python src/publish.py`) exporte, construit et déploie |
+| O5 | **Mise à jour en 1 commande** | `make publish` (ou `uv run python src/publish.py`) exporte, construit et déploie |
 | O6 | **Maintenable** | Code typé, testé, CI verte, dépendances épinglées, README de déploiement |
 
 ### 2.2 Hors périmètre de la v1
@@ -659,7 +659,7 @@ Peut tourner **en parallèle** de la phase 2.1 (scaffold).
   - `src/web_export/insights.py` produit `insights/<pilote>-<année>.json` (§4.5) pour chaque couple (pilote, année) et chaque discipline : persona, écart, jalons, records battus, équivalences, nouveaux sites et voiles, zones, portée, textes.
   - **Test** : pour 2 pilotes, les textes et valeurs du JSON sont identiques à ceux du rapport HTML généré (`check_reports.py` peut servir de base).
 - **1.6** `meta.json` avec hashes de contenu, et purge des anciens fichiers hashés.
-- **1.7** CLI : `python src/export_web.py [--only flights|sites|insights] [--pilot X] [--full]`.
+- **1.7** CLI : `uv run python src/export_web.py [--only flights|sites|insights] [--pilot X] [--full]`.
 - **1.8** Fixtures synthétiques anonymisées : 3 pilotes fictifs et 50 vols. Elles sont générées par un script (`make fixtures`) et servent à la CI.
 - **Sortie** : `web/public/data/` généré en moins de 30 s, tests pytest verts, taille totale mesurée et notée ici.
 

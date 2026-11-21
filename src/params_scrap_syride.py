@@ -92,7 +92,7 @@ syride_password = os.getenv("SYRIDE_PASSWORD", "")
 #   SYRIDE_ACCOUNTS=parapente,paramoteur                     <- noms des comptes supplémentaires
 #   SYRIDE_EMAIL_PARAPENTE=...  SYRIDE_PASSWORD_PARAPENTE=...
 #   SYRIDE_EMAIL_PARAMOTEUR=... SYRIDE_PASSWORD_PARAMOTEUR=...
-# Utilisation : python main.py --accounts parapente | parapente,paramoteur | all
+# Utilisation : uv run python main.py --accounts parapente | parapente,paramoteur | all
 # {nom du compte: (email, mot de passe)}, dans l'ordre : default d'abord, puis la liste.
 syride_accounts = {}
 if syride_email:
