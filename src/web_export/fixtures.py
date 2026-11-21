@@ -95,7 +95,12 @@ def synthetic_flights_df(n_flights: int = 50, seed: int = 0) -> pd.DataFrame:
         "duree_vol": flight_time - pd.to_timedelta(1, unit="s"),
         "vario_max": np.round(rng.uniform(1, 6, size=n), 1),
         "g_max": np.round(rng.uniform(1, 2.5, size=n), 1),
+        # Colonnes de la trace fv-config, vides tant que la fiche brute manque (presque tous les vols réels)
+        "vario_min": NAN,
+        "hauteur_sol_max": NAN,
+        "heure_plafond": NAN,
         "source_stats": [["gpx", "fiche"][int(rng.rand() < 0.15)] for _ in range(n)],
+        "syride_status": "present",
         "incomplet": False,
         "longitude": mean_lon + rng.uniform(-0.05, 0.05, size=n),
         "latitude": mean_lat + rng.uniform(-0.05, 0.05, size=n),
@@ -109,8 +114,10 @@ def synthetic_flights_df(n_flights: int = 50, seed: int = 0) -> pd.DataFrame:
         "mean_latitude": mean_lat,
         "date_update": pd.Timestamp("2026-01-01 00:00:00"),
     })
-    for col in ("heure", "voile", "instrument", "site", "types"):
-        df[col] = df[col].astype(object)
+    # Types de pandas 3, comme le pkl : texte en "str", heures (datetime.time) en object
+    for col in ("voile", "instrument", "site", "types"):
+        df[col] = df[col].astype("str")
+    df["heure"] = df["heure"].astype(object)
     df["mean_latitude"] = df["mean_latitude"].astype("float64")
     _edge_cases(df)
     return df
