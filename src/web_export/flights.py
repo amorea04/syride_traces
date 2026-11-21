@@ -90,10 +90,11 @@ def build_flights(df: pd.DataFrame) -> Tuple[dict, dict]:
     dictionary = {
         "pilot": pilots,
         "activity": ACTIVITIES,
-        "site": _sorted_unique(filter(None, kept["site"].map(clean_text))),
-        "wing": _sorted_unique(filter(None, kept["voile"].map(clean_unknown))),
-        "instrument": _sorted_unique(filter(None, kept["instrument"].map(clean_unknown))),
-        "mode": _mode_dict([m for m in kept["types"].map(mode_of) if m]),
+        # Compréhensions et non Series.map : pandas 3 convertirait les None renvoyés en NaN (dtype str)
+        "site": _sorted_unique(filter(None, [clean_text(v) for v in kept["site"]])),
+        "wing": _sorted_unique(filter(None, [clean_unknown(v) for v in kept["voile"]])),
+        "instrument": _sorted_unique(filter(None, [clean_unknown(v) for v in kept["instrument"]])),
+        "mode": _mode_dict([m for m in (mode_of(v) for v in kept["types"]) if m]),
         "source": SOURCES,
     }
     idx = {name: _index(dictionary[name]) for name in ("pilot", "activity", "site", "wing", "instrument", "mode", "source")}

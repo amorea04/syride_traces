@@ -256,7 +256,7 @@ def week_hour_matrix(d: pd.DataFrame) -> dict:
     counts = [[0] * 24 for _ in range(7)]
     minutes = [[0.0] * 24 for _ in range(7)]
     missing = 0
-    for day, hour, m in zip(d["date"].dt.dayofweek, d["heure_decolage"], d["duree_vol_minutes"]):
+    for day, hour, m in zip(d["date"].dt.day_of_week, d["heure_decolage"], d["duree_vol_minutes"]):
         if hour == hour and 0 <= int(hour) < 24:      # hour == hour : exclut NaN
             counts[int(day)][int(hour)] += 1
             minutes[int(day)][int(hour)] += float(m)
@@ -577,7 +577,7 @@ def compute_indicators(d: pd.DataFrame) -> dict:
         site_text = ", ".join(f"{name} ({n})" for name, n in sites.items())
         wing_text = ", ".join(f"{name} ({n})" for name, n in wings.items())
         monthly_details[int(month_number) - 1] = f"Sites : {site_text or '—'} · Voiles : {wing_text or '—'}"
-    weekday = _distribution(d, d["date"].dt.dayofweek, 7)
+    weekday = _distribution(d, d["date"].dt.day_of_week, 7)
     hours = _distribution(d, d["heure_decolage"], 24)
 
     daily = {}
@@ -955,7 +955,7 @@ def _persona_metrics(s: pd.DataFrame, ctx: dict) -> dict:
     return {
         "n": n,
         "hour_median": float(hours.median()) if len(hours) >= n * STORY_MIN_COVER and len(hours) else None,
-        "weekend": float((s["date"].dt.dayofweek >= 5).mean()),
+        "weekend": float((s["date"].dt.day_of_week >= 5).mean()),
         "top_site": str(site_counts.index[0]) if len(site_counts) else "",
         "top_site_share": float(site_counts.iloc[0] / n) if len(site_counts) else 0.0,
         "n_sites": int(site_counts.size), "n_new_sites": ctx["n_new_sites"],
