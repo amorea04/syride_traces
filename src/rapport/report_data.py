@@ -59,6 +59,9 @@ DURATION_BIN_LABELS = ("< 15 min", "15–30 min", "30 min–1 h", "1–2 h", "> 
 # (clé de la médiane, colonne) ; le nombre de vols mesurés vient de `_measured` comme partout ailleurs
 MEDIAN_COLUMNS = (("plafond", "plafond"), ("vitesse_max", "vitesse_max"), ("distance", "distance"))
 SOURCE_KEYS = ("gpx", "fiche", "aucune")   # origine des statistiques d'un vol (colonne `source_stats`)
+# « trace » (lot D : statistiques calculées sur la trace de la fiche brute fv-config) est publiée comme « gpx »,
+# définie comme « calculées sur la trace ». Une 4e source distincte pourra venir avec le lot H.
+SOURCE_ALIASES = {"trace": "gpx"}
 
 
 # ============================================================================
@@ -548,7 +551,7 @@ def _coverage(d: pd.DataFrame, sites: Optional[List[dict]] = None) -> dict:
     measured = {key: _measured(d, column) for key, column in MEASURE_COLUMNS}
     sources = None
     if "source_stats" in d.columns:
-        counts = d["source_stats"].astype(str).str.strip().str.lower().value_counts()
+        counts = d["source_stats"].astype(str).str.strip().str.lower().replace(SOURCE_ALIASES).value_counts()
         sources = {k: int(counts.get(k, 0)) for k in SOURCE_KEYS}
         sources["aucune"] += n - sum(sources.values())      # valeur absente ou inconnue : pas de statistiques connues
     updated = None

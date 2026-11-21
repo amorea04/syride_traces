@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from rapport.report_data import MODE_ORDER, mode_of
+from rapport.report_data import MODE_ORDER, SOURCE_ALIASES, mode_of
 from web_export.common import SCHEMA_VERSION, flight_key, pilot_slugs
 
 MIN_DATE = pd.Timestamp("1980-01-01")      # en dessous : date sentinelle (1901), vol écarté
@@ -127,7 +127,7 @@ def _row(rec: dict, idx: Dict[str, Dict[str, int]]) -> list:
     activity = rec["type_vol"]
     if activity not in idx["activity"]:
         raise ValueError("discipline inconnue {!r} (pilote {!r}, vol {})".format(activity, pilot, num))
-    source = rec["source_stats"]
+    source = SOURCE_ALIASES.get(rec["source_stats"], rec["source_stats"])
     if source not in idx["source"]:
         raise ValueError("source de stats inconnue {!r} (pilote {!r}, vol {})".format(source, pilot, num))
     mode = mode_of(rec["types"]) or None
