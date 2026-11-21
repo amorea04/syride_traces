@@ -93,7 +93,7 @@ Copies intactes pour rejouer : `flights.db.orig`, `sites_coordinates.json.orig`,
 
 | Réf. | Contenu | Déjà établi (porte IV, `PORTE_IV.md`) | À remplir |
 |---|---|---|---|
-| R1 | Lancement réel complet (`python src/main.py`) : bilans, connexion, profil Chrome, orphelins | Phase 1 conforme (AdrienM 504 / 0 nouveau / 20 modifiés / 2 absents ; j2f 1059 / 1059 modifiés / 0 absent ; 0 doublon), phase 2 : 6 fiches brutes, une fenêtre, pkl de 1564 vols, relance immédiate idempotente | Lancement sur toutes les données réelles (~1 800 JSON réécrits, ~27 absents annoncés) |
+| R1 | Lancement réel complet (`python src/main.py`) : bilans, connexion, profil Chrome, orphelins | Phase 1 conforme (AdrienM 504 / 0 nouveau / 20 modifiés / 2 absents ; j2f 1059 / 1059 modifiés / 0 absent ; 0 doublon), phase 2 : 6 fiches brutes, une fenêtre, pkl de 1564 vols, relance immédiate idempotente | **coché en partie** (21/11/2026, `main` à 4752e89 + complément par la liste, venv py39, sauvegardes `*.avant_R1_20261121-2055`). Phase 1 (HTTP, 12 pilotes à scraper) : 1 687 vols modifiés, **727 nouveaux** (dont 633 anciens vols 2016-2022 de yanis jamais atteints par le défilement), **27 absents** (Thomas16 12, chami 7, AdrienM 2, DavidParatrucs79 2, yanis 2, ToriVsUke 1, LiLi06 1), 0 réapparu, 6 doublons probables (yanis, `_rapport_doublons.txt`). **2 441 JSON écrits** = 1 687 + 727 + 27, conforme. Phase 2 : connexion confirmée (P10), une fenêtre Chrome (P30), aucun Turnstile, **limite quotidienne atteinte dès la 1re fiche** (quota consommé par les essais du jour) : 1 fiche consultée, 0 fiche brute, arrêt propre (P13), 6 430 vols annoncés à compléter. Phase 3 : index à jour, aucun orphelin signalé (P23), bilans affichés (P26). pkl : **10 229 vols, 23 pilotes** (9 585 avant, 0 perdu, 644 gagnés), 40 colonnes (+4 optionnelles) ; `syride_status` : 6 364 `present`, 26 `absent` (le 27e, AdrienM 2844756, a un plafond de 0 et est écarté par le filtre des vols trop bas, comme avant), 3 839 `unknown` = exactement les 11 pilotes non scrapés. 698 vols `incomplet`, **tous complétés par la liste** (plafond, distance, durée). **Non vérifié : téléchargement GPX + IGC d'AdrienM** (quota épuisé ; 506 GPX / 436 IGC inchangés) : à refaire un autre jour |
 | R2 | `--scrape 0` | Copie porte IV, AdrienM + j2f, `--scrape 0 --backfill-raw 0 --pkl 0` : phase 1 ignorée, « Rien à compléter », 0 fiche consultée | coché |
 | R3 | `--dry-run 1` (liste lue, rien écrit) | Copie porte IV : listes lues par HTTP (504 / 1059, 0 changement), « rapport non écrit », 1545 vols listés comme à compléter, 0 fiche consultée, aucun fichier modifié | coché |
 | R4 | Turnstile validé à la main | Aucun Turnstile apparu pendant l'essai | À faire quand un défi apparaît (diagnostic `_debug_turnstile_*.html`) |
@@ -116,5 +116,11 @@ Copies intactes pour rejouer : `flights.db.orig`, `sites_coordinates.json.orig`,
 7. **Vitesse max** : la valeur calculée depuis la trace diffère de celle de Syride de 7,9 % en médiane (jusqu'à
    17,8 %, 6 vols sur 20 au-delà de 10 %). Sans effet sur le pkl tant que la fiche donne une valeur (P20), mais la
    vitesse max calculée n'est pas fiable comme valeur de remplacement.
-8. **Copie de recette** : `recette_ab/` (2,9 Go) peut être supprimée après la recette ; `pkl_A.pkl`, `pkl_B.pkl` et
-   `flights.db.orig` permettent de rejouer la comparaison.
+8. ~~Copie de recette~~ : `recette_ab/` et `porte4_copie/` supprimées le 21/11/2026 avec le worktree et la branche
+   `scraping/migration-fv` (fusionnés).
+9. **Complément par la page liste** (21/11/2026, après la recette A/B) : un vol sans fiche lue ni trace prend
+   `plafond`, `distance_activite` et `duree_vol` dans les champs de liste `altitude_max`, `distance`, `flight_time`
+   (`flights_db.fill_from_list`), identiques à la fiche sur les vols qui ont les deux (335/336, 9 706/9 707,
+   9 258/9 259). La fiche reste prioritaire ; `incomplet` et `source_stats` gardent leur sens (vitesses, gain, vario
+   et g restent inconnus). 4 tests dans `test_reconcile.py` (285 verts). Effet en R1 : 698 vols incomplets, tous
+   avec plafond, distance et durée ; ils passent désormais le filtre des vols trop bas comme les autres.

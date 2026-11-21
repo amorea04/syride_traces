@@ -295,3 +295,44 @@ def test_ligne_indexee_avant_la_colonne_passe_a_present(tmp_path, conn):
     assert status(conn, 1) == "present"
     assert os.path.getmtime(json_path(tmp_path, 1)) == mtime
     assert "syride_status" not in read(tmp_path, 1)
+
+
+def test_vol_sans_fiche_complete_par_la_liste(tmp_path, conn):
+    # Vol incomplet : plafond, distance_activite et duree_vol viennent de la page liste ;
+    # incomplet et source_stats restent ceux d'un vol sans fiche.
+    make_flight(tmp_path, 1, altitude_max="629")
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    df, _ = flights_db.load_pilot_frames(conn, PILOT)
+    row = df.iloc[0]
+    assert row["plafond"] == "629"
+    assert row["distance_activite"] == "10"
+    assert row["duree_vol"] == "00:09:59"
+    assert bool(row["incomplet"]) is True
+    assert row["source_stats"] == "aucune"
+    assert row["vitesse_max"] is None and row["gain"] is None
+    assert "altitude_max" not in df.columns
+
+
+def test_fiche_prioritaire_sur_la_liste(tmp_path, conn):
+    make_flight(tmp_path, 1, altitude_max="999", plafond="300", distance_activite="12",
+                duree_vol="00:10:00")
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    df, _ = flights_db.load_pilot_frames(conn, PILOT)
+    row = df.iloc[0]
+    assert (row["plafond"], row["distance_activite"], row["duree_vol"]) == ("300", "12", "00:10:00")
+    assert bool(row["incomplet"]) is False
+
+
+def test_liste_sans_altitude_reste_sans_plafond(tmp_path, conn):
+    make_flight(tmp_path, 1)
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    df, _ = flights_db.load_pilot_frames(conn, PILOT)
+    assert df.iloc[0]["plafond"] is None
+    assert df.iloc[0]["distance_activite"] == "10"
+
+
+def test_vol_non_syride_sans_stats_toujours_ecarte(tmp_path, conn):
+    make_flight(tmp_path, 1, is_syride=False, altitude_max="629")
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    df, _ = flights_db.load_pilot_frames(conn, PILOT)
+    assert df.empty

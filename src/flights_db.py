@@ -511,6 +511,28 @@ def _missing(value) -> bool:
     return value is None or str(value).strip() in ("", "None", "nan")
 
 
+LIST_FALLBACK = (("plafond", "altitude_max"), ("distance_activite", "distance"),
+                 ("duree_vol", "flight_time"))
+
+
+def fill_from_list(data: dict, altitude_max) -> bool:
+    """
+    Vol sans fiche lue ni trace : comble plafond, distance_activite et duree_vol avec les
+    valeurs de la page liste (altitude_max, distance, flight_time), identiques à celles de la
+    fiche sur les vols qui ont les deux (mesuré sur 9 793 JSON le 21/11/2026). Ne remplace
+    jamais une valeur présente : la fiche reste prioritaire dès qu'elle est lue.
+    `incomplet` et `source_stats` ne changent pas (vitesses, gain, vario et g restent inconnus).
+    Retourne True si au moins un champ a été comblé.
+    """
+    source = dict(data, altitude_max=altitude_max)
+    filled = False
+    for field, list_field in LIST_FALLBACK:
+        if _missing(data.get(field)) and not _missing(source.get(list_field)):
+            data[field] = source[list_field]
+            filled = True
+    return filled
+
+
 def _to_float(value):
     try:
         return None if _missing(value) else float(str(value).replace(",", "."))
@@ -589,8 +611,9 @@ def load_pilot_frames(conn: sqlite3.Connection, pilot_folder: str):
 
     Vols Syride « incomplets » (ni fiche lue ni GPX : statistiques inconnues) :
     ils SONT inclus, avec la colonne `incomplet` = True. Ils ont déjà le site, la date/heure,
-    la durée et la voile (page liste) ; leurs statistiques de fiche (plafond, vitesses,
-    distance, gain, vario, g) restent vides (0 après le pipeline = « inconnu »).
+    la durée et la voile (page liste) ; plafond, distance_activite et duree_vol sont comblés
+    depuis la page liste (fill_from_list) ; les autres statistiques de fiche (vitesses, gain,
+    vario, g) restent vides (inconnues).
     Rien n'est stocké dans le pkl à ce sujet : à chaque génération, le pkl est reconstruit
     depuis les JSON ; dès que la fiche (et/ou le GPX) est récupérée, le vol repasse
     automatiquement en `incomplet` = False avec toutes ses informations.
@@ -616,10 +639,11 @@ def load_pilot_frames(conn: sqlite3.Connection, pilot_folder: str):
 
     data_list, coords = [], []
     incomplete = 0
-    n_trace = n_gpx = 0
+    n_trace = n_gpx = n_list = 0
     for (num, data_json, is_syride, coords_done, lon, lat, stats_json, syride_status,
          source, gpx_json) in rows:
         data = json.loads(data_json)
+        list_altitude_max = data.get("altitude_max")
         # Clés de la page liste (ou de la réconciliation) absentes de l'ancien format du pkl :
         # conservées dans le JSON, volontairement absentes du pkl (seules les colonnes validées
         # `vario_min`, `hauteur_sol_max`, `heure_plafond`, `syride_status` s'y ajoutent).
@@ -641,6 +665,8 @@ def load_pilot_frames(conn: sqlite3.Connection, pilot_folder: str):
             continue
         data["incomplet"] = is_incomplete
         incomplete += is_incomplete
+        if is_incomplete:
+            n_list += fill_from_list(data, list_altitude_max)
 
         data_list.append(data)
         if coords_done:
@@ -651,6 +677,7 @@ def load_pilot_frames(conn: sqlite3.Connection, pilot_folder: str):
     if incomplete:
         print(f"  {incomplete} vol(s) Syride incomplet(s) (ni fiche ni GPX) : inclus dans le pkl, "
               f"taggés incomplet.")
+        print(f"    dont {n_list} complété(s) par la page liste (plafond, distance, durée).")
 
     df_data = pd.DataFrame(data_list)
     # Garantit les colonnes de la fiche même si AUCUN vol du pilote n'a encore sa fiche
