@@ -16,6 +16,10 @@
 # Refonte webapp (ROADMAP_WEBAPP.md)
 !/ROADMAP_WEBAPP.md
 !/Makefile
+# Environnement Python (uv) : .venv/ reste ignoré
+!/pyproject.toml
+!/uv.lock
+!/.python-version
 !/web/
 !/.githooks/
 !/.github/

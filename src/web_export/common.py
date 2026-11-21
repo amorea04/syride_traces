@@ -1,6 +1,6 @@
 """
 Outils partagés de l'export web (ROADMAP_WEBAPP.md §4) : slug de pilote, clé de vol,
-écriture JSON compacte avec hash de contenu. Python 3.8, bibliothèque standard uniquement.
+écriture JSON compacte avec hash de contenu. Bibliothèque standard uniquement.
 
 Ce module fixe l'interface commune aux lots de la phase 1 (vols, sites, insights, meta) :
 ne pas en changer les signatures sans mettre à jour tous les appelants.

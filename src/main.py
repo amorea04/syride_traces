@@ -17,35 +17,35 @@ Déroulement en 3 phases :
   3. mise à jour de la base SQLite, puis génération du pkl
 
 Modes :
-  python main.py                    les 3 phases
-  python main.py --scrape 0         saute la phase 1 : on complète seulement les vols déjà
-                                    présents sur le disque
-  python main.py --max-sheets 45    s'arrête après 45 fiches consultées (défaut : 40, car
-                                    Syride limite le nombre de fiches par jour ; 0 = sans plafond)
-  python main.py --files auto|none|gpx|gpx,igc
-                                    fichiers téléchargés : auto (défaut) = profils de
-                                    FICHIERS_PAR_PILOTE ; sinon la valeur s'applique à tous
-                                    les pilotes de l'exécution
-  python main.py --fill-igc 1       complète aussi l'IGC des vols qui ont déjà leur GPX, pour
-                                    les seuls pilotes dont les fichiers incluent igc
-                                    (attention : une fiche consultée par vol)
-  python main.py --backfill-raw 0   ne repasse pas par les vols à qui il ne manque que la
-                                    fiche brute (1 par défaut : rattrapage progressif)
-  python main.py --reparse 1        remplace les phases 1 et 2 par la réanalyse hors ligne des
-                                    fiches brutes (ni réseau, ni Chrome), puis phase 3 et pkl
-  python main.py --regen-sites 1    recrée entièrement le dictionnaire des coordonnées des sites
-  python main.py --publish 1        après le pkl, publie la webapp (src/publish.py : export, build,
-                                    contrôles, déploiement Cloudflare Pages) ; fonctionne aussi
-                                    avec --pkl 0 (le pkl existant est alors publié) ; ignoré en
-                                    --dry-run
-  python main.py --db <chemin>      base SQLite (défaut : <chemin des données>/flights.db) ;
-                                    avec une valeur personnalisée, exige --pkl 0 ou --dry-run 1
-  python main.py --dry-run 1        SIMULATION : la phase 1 lit les listes sur Syride mais
-                                    n'écrit rien ; la phase 2 liste ce qui serait fait, sans
-                                    ouvrir Chrome, sans fiche, sans téléchargement, sans pkl
-                                    (sans --db, l'index est lu sur une copie temporaire de la base : rien n'est modifié ;
-                                    avec --db, ce fichier est mis à jour : utiliser une copie)
-  --scroll                          obsolète (la liste n'est plus lue par défilement), sans effet
+  uv run python main.py                    les 3 phases
+  uv run python main.py --scrape 0         saute la phase 1 : on complète seulement les vols déjà
+                                           présents sur le disque
+  uv run python main.py --max-sheets 45    s'arrête après 45 fiches consultées (défaut : 40, car
+                                           Syride limite le nombre de fiches par jour ; 0 = sans plafond)
+  uv run python main.py --files auto|none|gpx|gpx,igc
+                                           fichiers téléchargés : auto (défaut) = profils de
+                                           FICHIERS_PAR_PILOTE ; sinon la valeur s'applique à tous
+                                           les pilotes de l'exécution
+  uv run python main.py --fill-igc 1       complète aussi l'IGC des vols qui ont déjà leur GPX, pour
+                                           les seuls pilotes dont les fichiers incluent igc
+                                           (attention : une fiche consultée par vol)
+  uv run python main.py --backfill-raw 0   ne repasse pas par les vols à qui il ne manque que la
+                                           fiche brute (1 par défaut : rattrapage progressif)
+  uv run python main.py --reparse 1        remplace les phases 1 et 2 par la réanalyse hors ligne des
+                                           fiches brutes (ni réseau, ni Chrome), puis phase 3 et pkl
+  uv run python main.py --regen-sites 1    recrée entièrement le dictionnaire des coordonnées des sites
+  uv run python main.py --publish 1        après le pkl, publie la webapp (src/publish.py : export, build,
+                                           contrôles, déploiement Cloudflare Pages) ; fonctionne aussi
+                                           avec --pkl 0 (le pkl existant est alors publié) ; ignoré en
+                                           --dry-run
+  uv run python main.py --db <chemin>      base SQLite (défaut : <chemin des données>/flights.db) ;
+                                           avec une valeur personnalisée, exige --pkl 0 ou --dry-run 1
+  uv run python main.py --dry-run 1        SIMULATION : la phase 1 lit les listes sur Syride mais
+                                           n'écrit rien ; la phase 2 liste ce qui serait fait, sans
+                                           ouvrir Chrome, sans fiche, sans téléchargement, sans pkl
+                                           (sans --db, l'index est lu sur une copie temporaire de la base : rien n'est modifié ;
+                                           avec --db, ce fichier est mis à jour : utiliser une copie)
+  --scroll                                 obsolète (la liste n'est plus lue par défilement), sans effet
 """
 
 # Imports

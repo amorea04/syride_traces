@@ -195,3 +195,11 @@ def test_identite_avec_le_rapport_html(real_df, pilot):
             num = m["flight"].rsplit("-", 1)[1]
             assert "{}{}/{}".format(rd.SYRIDE_PILOT_URL, pilot, num) in raw_page
 
+
+
+def test_coverage_counts_trace_as_gpx():
+    """Un vol source_stats « trace » compte dans les statistiques mesurées (gpx), pas dans « aucune »."""
+    import pandas as pd
+    from rapport.report_data import _coverage
+    d = pd.DataFrame({"source_stats": ["gpx", "trace", "fiche", "aucune"]})
+    assert _coverage(d)["sources"] == {"gpx": 2, "fiche": 1, "aucune": 1}

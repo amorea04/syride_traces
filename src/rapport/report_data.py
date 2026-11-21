@@ -1,7 +1,7 @@
 """
 Calcul des indicateurs d'un rapport de vol : un pilote, une année, et jusqu'à deux années de
 comparaison. Aucune mise en forme ici : les fonctions retournent des dictionnaires, que le
-rapport HTML (report_html.py) met en page. Compatible Python 3.9.
+rapport HTML (report_html.py) met en page.
 
 Entrée : le DataFrame du pkl (global_flights_data.pkl). Colonnes utilisées :
     pilote, date, heure, type_vol, site, voile, instrument, duree_vol_minutes,
@@ -59,6 +59,9 @@ DURATION_BIN_LABELS = ("< 15 min", "15–30 min", "30 min–1 h", "1–2 h", "> 
 # (clé de la médiane, colonne) ; le nombre de vols mesurés vient de `_measured` comme partout ailleurs
 MEDIAN_COLUMNS = (("plafond", "plafond"), ("vitesse_max", "vitesse_max"), ("distance", "distance"))
 SOURCE_KEYS = ("gpx", "fiche", "aucune")   # origine des statistiques d'un vol (colonne `source_stats`)
+# « trace » (lot D : statistiques calculées sur la trace de la fiche brute fv-config) est publiée comme « gpx »,
+# définie comme « calculées sur la trace ». Une 4e source distincte pourra venir avec le lot H.
+SOURCE_ALIASES = {"trace": "gpx"}
 
 
 # ============================================================================
@@ -256,7 +259,7 @@ def week_hour_matrix(d: pd.DataFrame) -> dict:
     counts = [[0] * 24 for _ in range(7)]
     minutes = [[0.0] * 24 for _ in range(7)]
     missing = 0
-    for day, hour, m in zip(d["date"].dt.dayofweek, d["heure_decolage"], d["duree_vol_minutes"]):
+    for day, hour, m in zip(d["date"].dt.day_of_week, d["heure_decolage"], d["duree_vol_minutes"]):
         if hour == hour and 0 <= int(hour) < 24:      # hour == hour : exclut NaN
             counts[int(day)][int(hour)] += 1
             minutes[int(day)][int(hour)] += float(m)
@@ -548,7 +551,7 @@ def _coverage(d: pd.DataFrame, sites: Optional[List[dict]] = None) -> dict:
     measured = {key: _measured(d, column) for key, column in MEASURE_COLUMNS}
     sources = None
     if "source_stats" in d.columns:
-        counts = d["source_stats"].astype(str).str.strip().str.lower().value_counts()
+        counts = d["source_stats"].astype(str).str.strip().str.lower().replace(SOURCE_ALIASES).value_counts()
         sources = {k: int(counts.get(k, 0)) for k in SOURCE_KEYS}
         sources["aucune"] += n - sum(sources.values())      # valeur absente ou inconnue : pas de statistiques connues
     updated = None
@@ -577,7 +580,7 @@ def compute_indicators(d: pd.DataFrame) -> dict:
         site_text = ", ".join(f"{name} ({n})" for name, n in sites.items())
         wing_text = ", ".join(f"{name} ({n})" for name, n in wings.items())
         monthly_details[int(month_number) - 1] = f"Sites : {site_text or '—'} · Voiles : {wing_text or '—'}"
-    weekday = _distribution(d, d["date"].dt.dayofweek, 7)
+    weekday = _distribution(d, d["date"].dt.day_of_week, 7)
     hours = _distribution(d, d["heure_decolage"], 24)
 
     daily = {}
@@ -955,7 +958,7 @@ def _persona_metrics(s: pd.DataFrame, ctx: dict) -> dict:
     return {
         "n": n,
         "hour_median": float(hours.median()) if len(hours) >= n * STORY_MIN_COVER and len(hours) else None,
-        "weekend": float((s["date"].dt.dayofweek >= 5).mean()),
+        "weekend": float((s["date"].dt.day_of_week >= 5).mean()),
         "top_site": str(site_counts.index[0]) if len(site_counts) else "",
         "top_site_share": float(site_counts.iloc[0] / n) if len(site_counts) else 0.0,
         "n_sites": int(site_counts.size), "n_new_sites": ctx["n_new_sites"],

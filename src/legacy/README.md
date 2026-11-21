@@ -9,9 +9,10 @@ les valeurs de référence du test de non-régression des statistiques TypeScrip
 Elle lit le vrai `global_flights_data.pkl` (chemin dans `params_scrap_syride.py`). Depuis la racine du dépôt :
 
 ```bash
-pip install -r src/legacy/requirements-legacy.txt
-PYTHONPATH=src python src/legacy/app.py
+PYTHONPATH=src uv run --with-requirements src/legacy/requirements-legacy.txt python src/legacy/app.py
 ```
 
-`PYTHONPATH=src` permet à `app.py` de retrouver `params_scrap_syride`. `app_functions.py` annote `list[str]`
-(Python 3.9+) : sous Python 3.8, `app.py` ne s'importe pas tel quel.
+`--with-requirements` ajoute dash le temps de l'exécution, sans toucher à `.venv/`. Application archivée :
+non vérifiée sous Python 3.14 (dash 2.0.0 et plotly 5.4.0 risquent de ne pas s'y installer).
+
+`PYTHONPATH=src` permet à `app.py` de retrouver `params_scrap_syride`.

@@ -1,6 +1,6 @@
 """
 Validation des fichiers exportés contre `schema.json` (JSON Schema 2020-12, ROADMAP_WEBAPP.md §4).
-Python 3.8, jsonschema 4.17.
+jsonschema.
 """
 
 import json

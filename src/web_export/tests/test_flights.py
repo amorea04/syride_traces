@@ -182,3 +182,14 @@ def test_textual_nan_is_null_but_inconnue_is_kept(df):
     for key in ("bravo-test2-1014", "zoe-test-1015"):
         assert recs[key]["wing"] is None
     assert recs["alpha-test-1016"]["instrument"] is None
+
+
+def test_trace_source_is_exported_as_gpx(df):
+    """Statistiques calculées sur la trace de la fiche brute (source_stats « trace », lot D) : publiées comme « gpx »."""
+    traced = df.copy()
+    i = traced.index[traced["source_stats"] == "fiche"][0]
+    traced.loc[i, "source_stats"] = "trace"
+    sources = [r["source"] for r in decode(build_flights(traced)[0])]
+    before = [r["source"] for r in decode(build_flights(df)[0])]
+    assert "trace" not in sources
+    assert sources.count("gpx") == before.count("gpx") + 1

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from rapport.report_data import MODE_ORDER, mode_of
+from rapport.report_data import MODE_ORDER, SOURCE_ALIASES, mode_of
 from web_export.common import SCHEMA_VERSION, flight_key, pilot_slugs
 
 MIN_DATE = pd.Timestamp("1980-01-01")      # en dessous : date sentinelle (1901), vol écarté
@@ -90,10 +90,11 @@ def build_flights(df: pd.DataFrame) -> Tuple[dict, dict]:
     dictionary = {
         "pilot": pilots,
         "activity": ACTIVITIES,
-        "site": _sorted_unique(filter(None, kept["site"].map(clean_text))),
-        "wing": _sorted_unique(filter(None, kept["voile"].map(clean_unknown))),
-        "instrument": _sorted_unique(filter(None, kept["instrument"].map(clean_unknown))),
-        "mode": _mode_dict([m for m in kept["types"].map(mode_of) if m]),
+        # Compréhensions et non Series.map : pandas 3 convertirait les None renvoyés en NaN (dtype str)
+        "site": _sorted_unique(filter(None, [clean_text(v) for v in kept["site"]])),
+        "wing": _sorted_unique(filter(None, [clean_unknown(v) for v in kept["voile"]])),
+        "instrument": _sorted_unique(filter(None, [clean_unknown(v) for v in kept["instrument"]])),
+        "mode": _mode_dict([m for m in (mode_of(v) for v in kept["types"]) if m]),
         "source": SOURCES,
     }
     idx = {name: _index(dictionary[name]) for name in ("pilot", "activity", "site", "wing", "instrument", "mode", "source")}
@@ -126,7 +127,7 @@ def _row(rec: dict, idx: Dict[str, Dict[str, int]]) -> list:
     activity = rec["type_vol"]
     if activity not in idx["activity"]:
         raise ValueError("discipline inconnue {!r} (pilote {!r}, vol {})".format(activity, pilot, num))
-    source = rec["source_stats"]
+    source = SOURCE_ALIASES.get(rec["source_stats"], rec["source_stats"])
     if source not in idx["source"]:
         raise ValueError("source de stats inconnue {!r} (pilote {!r}, vol {})".format(source, pilot, num))
     mode = mode_of(rec["types"]) or None

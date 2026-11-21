@@ -16,18 +16,18 @@ concurrency:
 jobs:
   python:
     name: Tests Python
-    runs-on: ubuntu-22.04   # Python 3.8 n'est plus fourni sur ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # Python 3.14 (fichier .python-version) et dépendances figées par uv.lock
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.8"
-          cache: pip
-          cache-dependency-path: src/requirements-export.txt
-      - run: pip install -r src/requirements-export.txt
+          enable-cache: true
+      - run: uv sync --locked --no-default-groups --group dev
       - name: pytest (comme make test-py)
         working-directory: src
-        run: python -m pytest web_export/tests scraping_tests -q -p no:cacheprovider -p no:dash
+        # --no-sync : garder l'environnement minimal (base + dev) installé ci-dessus
+        run: uv run --no-sync python -m pytest web_export/tests scraping_tests -q -p no:cacheprovider -p no:dash
 
   web:
     name: Tests web

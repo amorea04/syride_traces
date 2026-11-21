@@ -23,12 +23,13 @@ Cloudflare au déploiement. La `.gitignore` est en liste blanche et un hook refu
 
 ```bash
 git config core.hooksPath .githooks                # garde-fou anti-données
-pip install -r src/requirements-scraping.txt       # scraping et pkl
-pip install -r src/requirements-export.txt         # export web, rapport HTML, tests
+uv sync                                            # Python 3.14 et toutes les dépendances dans .venv/ (= make env)
 cd web && npm ci && npx playwright install chromium && npx wrangler login
 ```
 
-Python 3.8 (environnement anaconda), Node 22. `wrangler login` ouvre le navigateur pour se connecter au compte
+Python 3.14 géré par [uv](https://docs.astral.sh/uv/) (`pyproject.toml`, versions figées dans `uv.lock`), Node 22.
+uv télécharge lui-même Python 3.14 : rien d'autre à installer. Tout se lance par `make …` ou `uv run python …`
+(le `python` du terminal n'est pas celui du projet). `wrangler login` ouvre le navigateur pour se connecter au compte
 Cloudflare ; aucun moyen de paiement n'est nécessaire, n'en enregistrer aucun.
 
 ## Publier
@@ -36,10 +37,10 @@ Cloudflare ; aucun moyen de paiement n'est nécessaire, n'en enregistrer aucun.
 ```bash
 make publish            # export incrémental, build, smoke test, contrôle D12, liens Syride, déploiement
 make publish-dry        # tout sauf le déploiement
-cd src && python main.py --publish 1   # scraping, pkl puis publication en une commande
+cd src && uv run python main.py --publish 1   # scraping, pkl puis publication en une commande
 ```
 
-Options de `python src/publish.py` : `--dry-run`, `--force-export` (l'export est sauté si `meta.json` est plus récent que
+Options de `uv run python src/publish.py` : `--dry-run`, `--force-export` (l'export est sauté si `meta.json` est plus récent que
 le pkl), `--skip-install` (sans `npm ci`), `--skip-smoke`, `--skip-links` (hors ligne), `--project-name`.
 
 ## Développer

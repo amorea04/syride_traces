@@ -3,7 +3,7 @@ Diagnostic : ouvre la page d'un vol Syride dans Chrome (même profil que main.py
 donc connexion/Cloudflare déjà gérés) et enregistre ce qu'elle contient réellement.
 
 Usage (depuis le dossier des scripts, comme main.py) :
-    python src/debug_flight_page.py --pilot AdrienM --trace 3766574
+    uv run python src/debug_flight_page.py --pilot AdrienM --trace 3766574
 
 Résultat : un dossier _debug_flight_<trace>/ dans main_path contenant
     - summary.txt   : résumé (iframes, liens, cookies [noms seulement])
