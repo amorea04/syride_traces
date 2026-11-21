@@ -1,5 +1,20 @@
 """
-Accès à Syride avec Selenium : connexion, page d'un pilote, fiche de vol, téléchargements.
+Accès à Syride : liste des vols par HTTP, session Chrome (Selenium), fiche de vol, téléchargements,
+stockage de la fiche brute.
+
+  - Liste (sans Chrome ni connexion) : `HttpTransport` et `fetch_pilot_list` lisent
+    `/ajax/pilotes/activites.php` (tout l'historique d'un pilote en une requête, pagination de
+    secours) ; le HTML est analysé par syride_parsing.
+  - Session : `login_to_syride` (session du profil Chrome, sinon identifiants du `.env`),
+    `wait_for_cloudflare` et `wait_for_turnstile` : le défi est validé PAR L'HUMAIN dans la
+    fenêtre, jamais contourné (attente de 15 minutes au plus).
+  - Fiche : `read_flight_sheet` navigue vers la page du vol ; la page de Syride ouvre elle-même la
+    fiche (autorisation d'affichage, Turnstile). Le HTML complet, qui contient la trace `fv-config`,
+    est ensuite enregistré tel quel (`save_sheet_raw`, `<num>.sheet.html.gz`, écriture atomique).
+  - Fichiers : `download_trace_via_browser` (GPX / IGC), pour les seuls pilotes dont le profil
+    le prévoit (params_scrap_syride.FICHIERS_PAR_PILOTE).
+  - Stockage : `save_flight_data` (JSON atomique), `save_list_snapshot` (5 derniers instantanés de la
+    liste dans `<pilote>/_raw/`), `load_sheet_raw`.
 
 Le parsing du HTML est dans syride_parsing.py ; l'enchaînement des étapes (3 phases,
 Cloudflare, limites) est dans browser_session.py.
@@ -7,7 +22,8 @@ Cloudflare, limites) est dans browser_session.py.
 Points d'attention :
   - les liens de téléchargement (GPX / IGC) sont signés et expirent vite : à utiliser
     immédiatement après la lecture de la fiche ;
-  - Syride limite le nombre de fiches consultées (par minute, puis par jour).
+  - Syride limite le nombre de fiches consultées (par minute, puis par jour) et les téléchargements ;
+  - rien n'est jamais supprimé.
 """
 
 import glob

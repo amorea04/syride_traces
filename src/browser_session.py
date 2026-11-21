@@ -618,6 +618,15 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
                     pending_downloads += 1
                     continue
 
+                # Budget --max-sheets épuisé : arrêt avant d'afficher la ligne du vol suivant et
+                # avant la pause (le message d'arrêt et le bilan viennent de l'exception).
+                if budget.max is not None and budget.used >= budget.max:
+                    blocked = _blocked_reason(SheetBudgetReached(), budget)
+                    pending = len(queue) - i
+                    print(f"\n{blocked}\nArrêt de la consultation des fiches : "
+                          f"{pending} vol(s) restent à compléter.", flush=True)
+                    break
+
                 counts = results.setdefault(pilot, [0, 0, 0, 0])
                 mode = " [infos seules : téléchargements bloqués]" if downloads_blocked else ""
                 print(f"[{i+1}/{len(queue)}] {pilot} / trace {nav}  ({_tasks_label(item)}){mode}",
