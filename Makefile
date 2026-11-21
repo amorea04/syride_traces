@@ -1,7 +1,12 @@
 # Raccourcis de la refonte webapp (ROADMAP_WEBAPP.md)
-PYTHON ?= python
+# Python 3.14 de l'environnement uv (.venv/), installé par `make env`
+PYTHON ?= uv run python
 
-.PHONY: export fixtures expected-stats test-py publish publish-dry
+.PHONY: env export fixtures expected-stats test-py publish publish-dry
+
+# Environnement Python : crée ou met à jour .venv/ (Python 3.14, tous les groupes de pyproject.toml)
+env:
+	uv sync
 
 # Données réelles -> web/public/data/ (ignoré par Git)
 export:

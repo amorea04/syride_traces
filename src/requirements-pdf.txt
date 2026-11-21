@@ -1,8 +1,0 @@
-# Rapport PDF annuel (report_functions.py). Aujourd'hui cassé (il lit des colonnes que le pkl ne produit plus) :
-# ces dépendances ne servent qu'à lui, d'où ce fichier à part.
-# matplotlib, seaborn, plotly, kaleido : épinglés d'après `pip freeze` de Python 3.8.16 ; fpdf2 n'y est pas installé.
--r requirements-export.txt
-fpdf2
-matplotlib==3.4.3
-seaborn==0.11.2
-kaleido==1.4.0     # export des figures plotly en image

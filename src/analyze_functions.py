@@ -13,7 +13,6 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 import pandas as pd
-from fastkml import kml
 
 
 # Détail de chaque étape du pipeline (durée, taille) : SYRIDE_DEBUG=1 pour l'afficher
@@ -79,28 +78,16 @@ def get_first_coordinates(kml_file_path: str) -> list:
             print(f"Erreur lors de la lecture du fichier GPX {kml_file_path}: {e}")
         return [0.0, 0.0]
 
-    # Ouverture du fichier KML et lecture du contenu
+    # KML : premier point du premier <Placemark> qui a des <coordinates> ("lon,lat[,alt]" séparés par des blancs)
     try:
-        with open(kml_file_path, "rb") as kml_file:
-            kml_document = kml_file.read()
-            k = kml.KML()
-            k.from_string(kml_document)
-
-            coords = None
-            for feature0 in k.features():
-                for feature in feature0.features():
-                    if isinstance(feature, kml.Placemark):
-                        geometry = feature.geometry
-                        if geometry and hasattr(geometry, 'coords'):
-                            coords = list(geometry.coords)
-                            break
-                if coords:
-                    break
-
-            if coords and len(coords) > 0:
-                longitude = coords[0][0]
-                latitude = coords[0][1]
-                return [longitude, latitude]
+        root = ET.parse(kml_file_path).getroot()
+        for placemark in root.iter():
+            if not placemark.tag.endswith("Placemark"):
+                continue
+            for elem in placemark.iter():
+                if elem.tag.endswith("coordinates") and elem.text and elem.text.split():
+                    first = elem.text.split()[0].split(",")
+                    return [float(first[0]), float(first[1])]
     except Exception as e:
         print(f"Erreur lors de la lecture du fichier KML {kml_file_path}: {e}")
 

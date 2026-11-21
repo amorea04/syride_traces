@@ -20,7 +20,7 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "gen:types": "node scripts/gen-types.mjs",
-    "gen:expected": "python scripts/expected_stats.py"
+    "gen:expected": "uv run python scripts/expected_stats.py"
   },
   "dependencies": {
     "@mantine/core": "8.3.18",

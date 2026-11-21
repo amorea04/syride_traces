@@ -1,0 +1,29 @@
+# Environnement Python unique du projet (Python 3.14, géré par uv).
+# Installation : `uv sync` (crée .venv/, installe Python 3.14 si besoin et tous les groupes).
+# Lancement : `uv run python …` ou les cibles du Makefile.
+[project]
+name = "syride-traces"
+version = "0.0.0"
+requires-python = ">=3.14"
+# Base : export web, publish.py, expected_stats.py, parsing des fiches Syride, tests.
+dependencies = [
+    "pandas",
+    "numpy",
+    "jsonschema",
+    "python-dotenv",       # params_scrap_syride.py (lecture du .env)
+    "plotly",              # plotly.express, importé par legacy/app_functions.py (expected_stats.py)
+    "beautifulsoup4",      # syride_parsing.py
+]
+
+[dependency-groups]
+dev = ["pytest"]
+# Scraping Syride (main.py, browser_session.py, syride_scraper.py).
+# setuptools : fournit `distutils`, retiré de Python 3.12+ mais importé par undetected-chromedriver.
+scraping = ["selenium", "undetected-chromedriver", "setuptools"]
+# Rapport PDF annuel (report_functions.py, aujourd'hui cassé : installable seulement).
+pdf = ["matplotlib", "seaborn", "fpdf2", "kaleido"]
+notebooks = ["notebook", "ipykernel"]
+
+[tool.uv]
+package = false
+default-groups = "all"
