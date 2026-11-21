@@ -40,7 +40,7 @@ import numpy as np
 import pandas as pd
 
 SPEED_MEDIAN = 5    # points
-STATS_VERSION = 3   # à incrémenter si le calcul change : les stats en cache sont recalculées
+STATS_VERSION = 4   # à incrémenter si le calcul change : les stats en cache sont recalculées
 MIN_POINTS = 10
 
 # Champs fournis par compute_gpx_stats
@@ -188,6 +188,16 @@ def compute_track_stats(track):
     base = stats_from_series(t, arr[:, 2], cumulative_distance_km(arr[:, 0], arr[:, 1]))
     if base is None:
         return None
+
+    # La trace fv-config est rééchantillonnée à 1 point/s : quand l'instrument ne donne une
+    # position que toutes les ~2 s, la position est répétée (jusqu'à ~40 % des points). Les
+    # vitesses point à point alternent alors entre 0 et le double de la vraie vitesse, et la
+    # médiane glissante surestime la vitesse max (porte IV : 122 km/h au lieu de 68). On la
+    # calcule donc sur les seules positions nouvelles, comme pour le GPX.
+    moved = np.r_[True, (np.diff(arr[:, 0]) != 0) | (np.diff(arr[:, 1]) != 0)]
+    if not moved.all():
+        vmax = _robust_max_speed(t[moved], cumulative_distance_km(arr[moved, 0], arr[moved, 1]))
+        base["vitesse_max"] = int(round(vmax)) if vmax is not None else None
 
     extrema = track.get("extrema")
     vario_max = _extremum_value(extrema, "up")

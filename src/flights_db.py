@@ -975,10 +975,13 @@ def _reconcile(conn, main_path, pilot, items_in, today_str, complete, dry_run, r
     # --- index : relire les JSON modifiés, puis dates de liste, empreintes, doublons
     if not dry_run:   # en simulation aucun JSON n'a changé : rien à relire
         sync_pilot(conn, main_path, pilot)
+    # Vu dans la liste = présent sur Syride. Les lignes indexées avant l'ajout de la colonne
+    # (défaut « unknown ») dont le JSON n'a pas été réécrit passent ainsi à « present » (porte IV).
     for num, item in items.items():
         if num in report["unreadable"]:
             continue
-        conn.execute("UPDATE flights SET last_seen_list=?, list_hash=? WHERE pilot=? AND num=?",
+        conn.execute("UPDATE flights SET last_seen_list=?, list_hash=?, syride_status='present' "
+                     "WHERE pilot=? AND num=?",
                      (today_str, list_hash(item), pilot, num))
     report["duplicates"] = _update_duplicates(conn, pilot)
     conn.commit()

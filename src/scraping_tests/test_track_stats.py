@@ -34,7 +34,7 @@ def make_track(n=N, with_terrain=True, with_extrema=True):
 
 
 def test_stats_version():
-    assert STATS_VERSION == 3
+    assert STATS_VERSION == 4
 
 
 def test_gpx_non_regression(tmp_path):
@@ -128,3 +128,11 @@ def test_aller_retour_gpx(tmp_path):
     assert from_gpx["plafond"] == from_track["plafond"]
     assert from_gpx["gain"] == from_track["gain"]
     assert abs(from_gpx["vitesse_max"] - from_track["vitesse_max"]) <= 1
+
+
+def test_positions_repetees_vitesse_max():
+    """Position répétée un point sur deux (fix GPS toutes les 2 s) : vitesse max non doublée."""
+    track = make_track(with_extrema=False)
+    for k in range(1, N, 2):
+        track["points"][k][0], track["points"][k][1] = track["points"][k - 1][0], track["points"][k - 1][1]
+    assert compute_track_stats(track)["vitesse_max"] == 54

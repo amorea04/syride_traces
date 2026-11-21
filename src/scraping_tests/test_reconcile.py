@@ -282,3 +282,16 @@ def test_donnees_de_fiche_intactes_et_pkl(tmp_path, conn):
     assert df.iloc[0]["voile"] == "Autre" and df.iloc[0]["plafond"] == "300"
     assert df.iloc[0]["syride_status"] == "present"
     assert "historique_liste" not in df.columns
+
+
+def test_ligne_indexee_avant_la_colonne_passe_a_present(tmp_path, conn):
+    # flights.db antérieur à la migration : colonne ajoutée avec le défaut « unknown », JSON
+    # inchangé donc jamais relu. Vu dans la liste complète -> « present » sans réécrire le JSON.
+    make_flight(tmp_path, 1)
+    flights_db.sync_pilot(conn, str(tmp_path), PILOT)
+    conn.execute("UPDATE flights SET syride_status='unknown' WHERE pilot=?", (PILOT,))
+    mtime = os.path.getmtime(json_path(tmp_path, 1))
+    reconcile(conn, tmp_path, [item(1)])
+    assert status(conn, 1) == "present"
+    assert os.path.getmtime(json_path(tmp_path, 1)) == mtime
+    assert "syride_status" not in read(tmp_path, 1)
