@@ -30,17 +30,17 @@ Voir aussi le `README.md` à la racine du dépôt.
 Le scraping se lance depuis le dossier des scripts :
 
 ```bash
-python main.py                      # les 3 phases + génération du pkl
-python main.py --scrape 0           # saute la phase 1 : complète les vols déjà sur le disque
-python main.py --dry-run 1          # simulation : la liste est lue, rien n'est écrit, ni Chrome ni pkl
-python main.py --max-sheets 45      # s'arrête après 45 fiches (défaut 40 : Syride en limite le nombre par jour ; 0 = sans plafond)
-python main.py --files gpx,igc      # fichiers téléchargés pour tous les pilotes de l'exécution (défaut : auto)
-python main.py --fill-igc 1         # complète aussi l'IGC des vols qui ont déjà leur GPX (1 fiche par vol)
-python main.py --backfill-raw 0     # ne consacre pas de fiche au rattrapage des fiches brutes
-python main.py --reparse 1          # réanalyse hors ligne des fiches brutes (ni réseau ni Chrome), puis pkl
-python main.py --pilots AdrienM,j2f # pilotes précis (sinon : params.pilots)
-python main.py --pkl 0              # sans regénérer le pkl
-python main.py --publish 1          # scraping, pkl, puis publication de la webapp
+uv run python main.py                      # les 3 phases + génération du pkl
+uv run python main.py --scrape 0           # saute la phase 1 : complète les vols déjà sur le disque
+uv run python main.py --dry-run 1          # simulation : la liste est lue, rien n'est écrit, ni Chrome ni pkl
+uv run python main.py --max-sheets 45      # s'arrête après 45 fiches (défaut 40 : Syride en limite le nombre par jour ; 0 = sans plafond)
+uv run python main.py --files gpx,igc      # fichiers téléchargés pour tous les pilotes de l'exécution (défaut : auto)
+uv run python main.py --fill-igc 1         # complète aussi l'IGC des vols qui ont déjà leur GPX (1 fiche par vol)
+uv run python main.py --backfill-raw 0     # ne consacre pas de fiche au rattrapage des fiches brutes
+uv run python main.py --reparse 1          # réanalyse hors ligne des fiches brutes (ni réseau ni Chrome), puis pkl
+uv run python main.py --pilots AdrienM,j2f # pilotes précis (sinon : params.pilots)
+uv run python main.py --pkl 0              # sans regénérer le pkl
+uv run python main.py --publish 1          # scraping, pkl, puis publication de la webapp
 ```
 
 `--scroll` est accepté mais n'a plus d'effet (la liste n'est plus lue par défilement).
@@ -125,9 +125,9 @@ L'ancienne extraction coupait la dernière lettre des voiles/instruments sans pa
 (`Evolutio`). Pour réparer les anciens JSON :
 
 ```bash
-python fix_truncated_names.py --scan     # liste les valeurs, écrit name_corrections.json
+uv run python fix_truncated_names.py --scan     # liste les valeurs, écrit name_corrections.json
 # renseigner "remplacer_par" dans name_corrections.json
-python fix_truncated_names.py --apply    # applique, avec sauvegarde dans _backup_json_noms/
+uv run python fix_truncated_names.py --apply    # applique, avec sauvegarde dans _backup_json_noms/
 ```
 
 ## Rapport PDF

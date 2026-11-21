@@ -6,7 +6,7 @@ fonctions Python (src/legacy/app_functions.py et src/rapport/report_data.py, imp
 sélections, et écrit `web/tests/fixtures/expected_stats.json`, que `web/tests/stats.regression.test.ts` compare aux
 fonctions de `web/src/lib/` avec une tolérance de 1e-6.
 
-Lancement (Python 3.8, aucun paquet à installer) : `make expected-stats` ou `npm run gen:expected` dans web/.
+Lancement (environnement uv du dépôt) : `make expected-stats` ou `npm run gen:expected` dans web/.
 
 Deux accrocs de l'existant, contournés sans toucher aux fichiers de src/ :
   * `legacy/app_functions.py` annote `list[str]` (Python 3.9+) : on le charge avec `from __future__ import annotations`
@@ -49,7 +49,7 @@ DENSE_CASES = (0, 1, 4, 6)   # le jeu dense ne garde que quelques sélections (t
 
 
 def load_app_functions():
-    """Charge src/legacy/app_functions.py tel quel, avec des annotations paresseuses (Python 3.8)."""
+    """Charge src/legacy/app_functions.py tel quel, avec des annotations paresseuses (héritage de Python 3.8, inoffensif)."""
     path = SRC / "legacy" / "app_functions.py"
     source = "from __future__ import annotations\n" + path.read_text(encoding="utf-8")
     module = types.ModuleType("app_functions")

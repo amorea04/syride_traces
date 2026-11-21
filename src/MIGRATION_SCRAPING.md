@@ -64,8 +64,8 @@ pas de branche.**
 
 Contraintes communes à tous les briefs :
 
-- Python local `/Users/Adrien/opt/anaconda3/bin/python` (**3.8.16**) : pas de `list[str]`, `X | None`, `match`.
-  Dépendances épinglées dans `src/requirements-scraping.txt` ; **aucune dépendance nouvelle** sans accord de l'Architecte.
+- Python **3.14** géré par uv (`uv run python …`, migration du 21/11/2026 ; auparavant Anaconda 3.8.16).
+  Dépendances dans `pyproject.toml` (groupe `scraping`), figées dans `uv.lock` ; **aucune dépendance nouvelle** sans accord de l'Architecte.
 - Messages, commentaires et docstrings en français, sobres.
 - **Aucune donnée réelle commitée** : dossiers pilotes, fiches, traces, `flights.db`, pkl. Le hook `.githooks/pre-commit`
   et le `.gitignore` en liste blanche restent la barrière. Les fixtures de test sont **synthétiques ou anonymisées**

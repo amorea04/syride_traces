@@ -1,6 +1,6 @@
 """
 Rapport HTML « Ton année de vol » : un seul fichier autonome (CSS, JavaScript et graphiques
-intégrés, aucune requête externe), à ouvrir dans un navigateur. Compatible Python 3.9.
+intégrés, aucune requête externe), à ouvrir dans un navigateur.
 
 Utilisation :
     import report_html

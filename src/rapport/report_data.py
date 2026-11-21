@@ -1,7 +1,7 @@
 """
 Calcul des indicateurs d'un rapport de vol : un pilote, une année, et jusqu'à deux années de
 comparaison. Aucune mise en forme ici : les fonctions retournent des dictionnaires, que le
-rapport HTML (report_html.py) met en page. Compatible Python 3.9.
+rapport HTML (report_html.py) met en page.
 
 Entrée : le DataFrame du pkl (global_flights_data.pkl). Colonnes utilisées :
     pilote, date, heure, type_vol, site, voile, instrument, duree_vol_minutes,

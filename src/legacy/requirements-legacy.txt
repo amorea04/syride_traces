@@ -1,6 +1,6 @@
 # Ancienne application Dash (app.py). Environnement local de référence : dash 2.0.0, plotly 5.4.0.
 # dash-mantine-components et dash-iconify ne sont pas installés ici : non épinglés.
--r ../requirements-export.txt
+# Le reste (pandas, numpy…) vient de l'environnement uv du dépôt (pyproject.toml).
 dash==2.0.0
 dash-mantine-components   # le code utilise dmc.Header / dmc.Navbar (série 0.12.x) : à vérifier si tu mets à jour
 dash-iconify

@@ -15,7 +15,6 @@ A = ancien code, B = nouveau code. Le script (lecture seule, sans réseau) véri
   5. `date_update` est ignorée.
 
 Code de sortie : 0 si tout est conforme, 1 s'il reste des écarts inattendus, 2 en cas d'erreur de lecture.
-Compatible Python 3.8.
 """
 
 import argparse

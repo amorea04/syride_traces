@@ -24,7 +24,7 @@ Ce que fait le script (la structure HTML lue par les parsers est conservée) :
     les activités qui ne sont pas des vols (photos, etc.) sont retirées ;
   - scripts de suivi (Google, Facebook) supprimés.
 
-Python 3.8, bs4 seulement. Aucune lecture du réseau ni de la base : entrée et sortie sont des fichiers.
+bs4 seulement. Aucune lecture du réseau ni de la base : entrée et sortie sont des fichiers.
 Les captures brutes ne doivent JAMAIS être commitées ; seule la sortie de ce script peut l'être,
 après vérification à la main (grep des pseudos, sites et coordonnées réels).
 """
