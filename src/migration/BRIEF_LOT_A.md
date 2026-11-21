@@ -55,14 +55,14 @@ aucune information personnelle).
    aux 8 questions, exemples **anonymisés et courts**.
 2. `src/migration/anonymize_fixture.py` (Python 3.8, sans dépendance nouvelle ; bs4 autorisé) :
    `python src/migration/anonymize_fixture.py <entrée.html> <sortie.html> --kind list|sheet [--max-points 200] [--max-flights 5]`.
-   Remplace : pseudo/noms de pilote → `PiloteTest`, noms de site → `SiteTest<n>`, coordonnées décalées d'un vecteur fixe
-   (+1,234° lat, +2,345° lon) partout (points, distance, extrema, liens, cartes), jetons/clés/hash → `x` de même longueur,
+   Remplace : pseudo/noms de pilote → `PiloteTest`, noms de site → `SiteTest<n>`, coordonnées décalées d'un vecteur aléatoire non enregistré
+   partout (points, distance, extrema, liens, cartes), jetons/clés/hash → `x` de même longueur,
    identifiants de rider → `99999`, avatars/photos → chemins neutres ; tronque `points`/`times`/`terrain` ; supprime scripts
    de suivi (Google, Facebook). Doit garder la structure HTML que les parsers lisent.
 3. `src/scraping_tests/fixtures/` : `activites_sample.html` (5 vols, dont 1 non Syride si trouvable), `sheet_recent.html`,
    `sheet_old.html` (si une ancienne fiche a été obtenue), générés par le script. Vérifie à la main (grep) qu'aucun nom réel
    (AdrienM, Daytona est OK car c'est un modèle de voile, mais pas les noms de sites réels), aucune coordonnée réelle
-   (46.14…, -0.33…) ni aucun jeton ne subsiste.
+   ni aucun jeton ne subsiste.
 
 ## Compte rendu final (ton dernier message)
 
