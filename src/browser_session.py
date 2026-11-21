@@ -35,12 +35,12 @@ Cloudflare ou Turnstile (voir syride_scraper), profil Chrome persistant (_chrome
 
 import os
 import random
+import sqlite3
 import shutil
 import tempfile
 import time
 import traceback
 
-import undetected_chromedriver as uc
 
 import flights_db
 import params_scrap_syride as params
@@ -81,6 +81,12 @@ class _Budget:
 # ------------------------ Driver ------------------------
 
 
+def _import_uc():
+    """Import paresseux : --dry-run et --reparse n'ont pas besoin de Chrome."""
+    import undetected_chromedriver as uc
+    return uc
+
+
 def _installed_chrome_major():
     """
     Version majeure du Chrome installé (ex. 157), ou None si introuvable.
@@ -91,7 +97,7 @@ def _installed_chrome_major():
     import subprocess
 
     try:
-        binary = uc.find_chrome_executable()
+        binary = _import_uc().find_chrome_executable()
         if not binary:
             return None
         out = subprocess.run([binary, "--version"], capture_output=True, text=True,
@@ -107,6 +113,7 @@ def create_driver(download_dir: str, profile_dir: str, private: bool = False):
     Lance Chrome. private=True : fenêtre de navigation privée (--incognito) ; profile_dir doit
     alors être un dossier temporaire jetable (aucun cookie ni session conservés).
     """
+    uc = _import_uc()
     options = uc.ChromeOptions()
     if private:
         options.add_argument("--incognito")
@@ -174,6 +181,14 @@ def sync_pilot_list(conn, transport, path: str, pilot: str, dry_run: bool = Fals
             raise
         # idRider en cache devenu invalide (compte recréé ?) : on le relit sur la page
         html, parsed = scraper.fetch_pilot_list(transport, pilot, None)
+    else:
+        known = conn.execute("SELECT COUNT(*) FROM flights WHERE pilot=? AND is_syride=1",
+                             (pilot,)).fetchone()[0]
+        if id_rider is not None and not parsed["flights"] and known:
+            # liste vide alors que la base connaît des vols : idRider en cache peut-être faux
+            html2, parsed2 = scraper.fetch_pilot_list(transport, pilot, None)
+            if parsed2["flights"]:
+                html, parsed = html2, parsed2
 
     if not dry_run:
         if parsed["id_rider"] != id_rider:
@@ -328,11 +343,23 @@ def process_flight(driver, download_dir, path, pilot, nav, data_nav, budget,
 
 def _blocked_reason(exc, budget) -> str:
     """Message expliquant pourquoi la consultation des fiches est arrêtée."""
+    if isinstance(exc, scraper.TurnstileTimeoutError):
+        return ("Défi Turnstile non validé dans le délai maximal : consultation des fiches "
+                "arrêtée (relance et valide le défi dans la fenêtre Chrome).")
     if isinstance(exc, scraper.DailyLimitError):
         return "Limite QUOTIDIENNE de fiches de Syride atteinte."
     if isinstance(exc, SheetBudgetReached):
         return f"Nombre maximum de fiches atteint ({budget.max})."
     return "La limite par minute de Syride persiste malgré les pauses."
+
+
+def _igc_note(fill_igc: bool, files) -> str:
+    """Précision du bilan « sans IGC » selon le profil de fichiers du pilote."""
+    if "igc" not in files:
+        return " (profil sans IGC : non téléchargés)"
+    if fill_igc:
+        return ""
+    return " (récupérés à la visite de la fiche ; sans --fill-igc, pas de visite pour eux seuls)"
 
 
 def _tasks_label(item) -> str:
@@ -386,8 +413,9 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
                à chaque lancement). Le profil persistant _chrome_profile n'est pas utilisé.
     dry_run  : simulation. Aucune page Chrome n'est ouverte, aucune fiche consultée, aucun
                fichier téléchargé ; la phase 1 (liste par HTTP) lit Syride mais n'écrit rien ;
-               le script affiche seulement ce qu'il ferait. (L'index SQLite `db_path` est
-               tout de même mis à jour : pointer `db_path` vers une copie pour un essai.)
+               le script affiche seulement ce qu'il ferait. Sans `db_path`, l'index SQLite
+               est lu sur une COPIE temporaire de la vraie base (supprimée à la fin) ; avec un
+               `db_path` explicite, ce fichier est mis à jour : fournir une copie.
     scroll   : OBSOLÈTE, ignoré (la liste n'est plus lue par défilement de page).
     files_by_pilot : {pilote: ("gpx", "igc")} = fichiers téléchargés par pilote (profils,
                voir params_scrap_syride.FICHIERS_PAR_PILOTE) ; un pilote absent n'a pas de
@@ -405,6 +433,21 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
               "downloads_blocked": True si la limite quotidienne de téléchargement a été atteinte,
               "pending_downloads": nombre de vols dont il reste des fichiers à télécharger}.
     """
+    tmp_db_dir = None
+    if dry_run and not db_path:
+        # Simulation sans --db : on travaille sur une COPIE temporaire de la vraie base, qui
+        # n'est jamais modifiée (connect migre le schéma, sync_all recalcule des statistiques).
+        real_db = os.path.join(path, flights_db.DB_NAME)
+        tmp_db_dir = tempfile.mkdtemp(prefix="syride_dryrun_")
+        db_path = os.path.join(tmp_db_dir, flights_db.DB_NAME)
+        if os.path.exists(real_db):
+            src = sqlite3.connect(f"file:{real_db}?mode=ro", uri=True)
+            dst = sqlite3.connect(db_path)
+            try:
+                src.backup(dst)
+            finally:
+                dst.close()
+                src.close()
     db_path = db_path or os.path.join(path, flights_db.DB_NAME)
     if not dry_run:
         os.makedirs(path, exist_ok=True)
@@ -422,6 +465,7 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
         profile_dir = os.path.abspath(os.path.join(path, "_chrome_profile"))
 
     ctx = {"driver": None, "logged_in": False}
+    scraper.set_turnstile_debug_dir(None if dry_run else path)   # capture du premier défi (R4)
 
     def get_driver():
         if ctx["driver"] is None:
@@ -513,7 +557,7 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
             st = flights_db.summary(conn, path, pilot)
             print(f"{pilot} : {st['total']} dossier(s) de vol lu(s), {st['syride']} vol(s) Syride | "
                   f"sans GPX : {st['no_gpx']} | sans infos de fiche : {st['no_sheet']} | "
-                  f"sans IGC : {st['no_igc']}{'' if fill_igc else ' (non traités sans --fill-igc)'} | "
+                  f"sans IGC : {st['no_igc']}{_igc_note(fill_igc, files_by_pilot.get(pilot) or ())} | "
                   f"sans fiche brute : {st['no_raw']} | "
                   f"sans lien, ignorés : {st['no_link']}")
             if st["orphans"]:
@@ -537,7 +581,7 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
                   + ", ".join(f"{p} ({n})" for p, n in per_pilot.items()))
             kinds = {"info+files": 0, "info": 0, "files": 0, "raw": 0}
             for item in queue:
-                kinds[flights_db.flight_kind(item)] += 1
+                kinds[flights_db.flight_kind(item, fill_igc)] += 1
             print(f"  dont : {kinds['info+files']} avec JSON incomplet + fichiers manquants | "
                   f"{kinds['info']} avec JSON incomplet seulement | "
                   f"{kinds['files']} avec fichiers manquants seulement (JSON complet) | "
@@ -548,7 +592,8 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
                 for item in queue:
                     print(f"  {item['pilot']} / trace {item['num']}  ({_tasks_label(item)})")
                 print("\nMode simulation (--dry-run) : aucune fiche consultée, aucun fichier "
-                      "téléchargé.")
+                      "téléchargé. Les vols nouveaux de la phase 1 n'apparaissent pas ici "
+                      "(leurs JSON ne sont pas écrits en simulation).")
                 pending = len(queue)
 
             driver = None if dry_run else get_driver()
@@ -588,7 +633,8 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
                         need_info=item["need_info"], allow_download=not downloads_blocked,
                         need_raw=item["need_raw"], files=files_by_pilot.get(pilot) or (),
                     )
-                except (scraper.DailyLimitError, scraper.RateLimitError, SheetBudgetReached) as e_block:
+                except (scraper.DailyLimitError, scraper.RateLimitError, scraper.TurnstileTimeoutError,
+                        SheetBudgetReached) as e_block:
                     blocked = _blocked_reason(e_block, budget)
                     pending = len(queue) - i
                     print(f"\n{blocked}\nArrêt de la consultation des fiches : "
@@ -657,6 +703,8 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
             if private and profile_dir:
                 shutil.rmtree(profile_dir, ignore_errors=True)  # profil temporaire jetable
             conn.close()
+            if tmp_db_dir:
+                shutil.rmtree(tmp_db_dir, ignore_errors=True)
 
     if blocked:
         print("\n" + sep)

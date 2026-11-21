@@ -98,7 +98,7 @@ Toute ligne doit être cochée par le Contrôleur avant la bascule. « Test » =
 | P14 | Limite de téléchargement : on continue en « informations seules » | `DownloadLimitError` | Identique (ne concerne plus que les profils à fichiers) | test unitaire |
 | P15 | Lien expiré : relecture de la fiche pour un lien neuf (GPX) | `_download_one` | Identique | test unitaire (simulé) |
 | P16 | Vol sans lien GPX → `no_link`, plus retenté | `mark_no_link` | Devient « fiche sans trace » (`fv-config` absent ou vide) ; même effet | test unitaire |
-| P17 | Écriture atomique des JSON ; rien n'est supprimé ; dossiers vides nettoyés | `save_flight_data`, `initiate_search` | Identique, étendu aux fichiers bruts | test unitaire |
+| P17 | Écriture atomique des JSON ; rien n'est supprimé ; dossiers vides nettoyés | `save_flight_data`, `initiate_search` | Écriture atomique étendue aux fichiers bruts ; rien n'est supprimé (seuls les instantanés `_raw` au-delà de 5 sont élagués) ; le nettoyage des dossiers vides n'a plus lieu (la phase 1 ne passe plus par `initiate_search`), sans conséquence car la liste recrée le JSON manquant | test unitaire |
 | P18 | Index `flights.db` reconstructible ; ne relit que les JSON modifiés | `flights_db.sync_pilot` | Identique ; nouvelles colonnes par migration `ALTER TABLE` comme aujourd'hui | test unitaire |
 | P19 | Coordonnées de départ calculées une fois (GPX, sinon KML) | `_update_derived` | Ordre : `fv-config`, puis GPX, puis KML | test unitaire |
 | P20 | Statistiques depuis la trace, prioritaires sur la fiche (sauf `vitesse_max`) ; `source_stats` | `apply_gpx_stats` | Même règle, source `trace` (fv-config) ou `gpx` ; **STATS_VERSION** incrémentée | A/B (acte IV) |
@@ -384,7 +384,11 @@ dans `requirements-export.txt` aujourd'hui, il faut l'ajouter (version épinglé
    ils sont ajoutés au pkl en colonnes optionnelles pendant la migration (lot C/D), puis un **plan dédié** (lot H)
    prévoit leur affichage. L'affichage lui-même est hors de cette migration.
 4. **Profils à fichiers : AdrienM seul** (GPX + IGC), car l'IGC sert dans d'autres applications.
-5. **Branche distincte** `scraping/migration-fv` (worktree `.claude/worktrees/migration-fv`) : `main` reste toujours
+5. **Champs de liste : Syride fait foi** (21/11/2026). À chaque réconciliation, site, voile, type, instrument… prennent la
+   valeur affichée par Syride ; l'ancienne valeur est conservée dans `historique_liste` du JSON (réversible). Premier
+   lancement complet estimé : ~1 800 JSON réécrits une fois (surtout des voiles tronquées « Non renseig »), ~120 vrais
+   changements de site ou de type, 27 vols marqués absents. `uniformisation.json` absorbe déjà la plupart des renommages.
+6. **Branche distincte** `scraping/migration-fv` (worktree `.claude/worktrees/migration-fv`) : `main` reste toujours
    fonctionnel ; fusion dans `main` seulement après la recette complète (lot F) et l'accord explicite d'Adrien.
 
 ### Lot H : plan d'affichage des nouveaux champs (après la bascule)

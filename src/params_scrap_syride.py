@@ -56,7 +56,7 @@ PILOTES = {
 }
 
 # Pilotes dont on télécharge aussi les fichiers Syride (sinon : trace lue dans la fiche).
-# Valeurs possibles par pilote : ("gpx",), ("gpx", "igc"), ("gpx", "igc", "kml").
+# Valeurs possibles par pilote : ("gpx",) ou ("gpx", "igc") (le KML n'est pas téléchargé).
 # La clé est le dossier du pilote. La fiche brute (trace complète `fv-config`) est enregistrée
 # pour TOUS les pilotes ; un pilote absent d'ici n'a aucun téléchargement.
 FICHIERS_PAR_PILOTE = {"AdrienM": ("gpx", "igc")}

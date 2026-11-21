@@ -45,6 +45,10 @@ class DailyLimitError(Exception):
     """Syride a atteint la limite quotidienne de fiches de vol (ex. 50 par jour)."""
 
 
+class TurnstileTimeoutError(Exception):
+    """Le défi Turnstile n'a pas été validé par l'humain dans le délai maximal."""
+
+
 class LinkExpiredError(Exception):
     """Le lien de téléchargement signé a expiré (page « EXPIRED »)."""
 
@@ -55,8 +59,6 @@ class DownloadLimitError(Exception):
     d'autres fichiers pour l'instant. Les fiches, elles, restent consultables.
     """
 
-
-_debug_saved = False
 
 
 # ------------------------ Cloudflare ------------------------
@@ -99,31 +101,109 @@ def wait_for_cloudflare(driver, poll: float = 2.0) -> None:
     print("Vérification validée, reprise.\n", flush=True)
 
 
-def _parent_has_turnstile_gate(driver) -> bool:
-    """Vrai si la page PARENTE (hors iframe) affiche un défi Turnstile à valider."""
+# Délai maximal d'attente de l'humain devant un défi Turnstile (secondes). Au-delà, la
+# consultation des fiches s'arrête proprement (TurnstileTimeoutError).
+TURNSTILE_MAX_WAIT = 15 * 60
+
+_turnstile_debug_dir = None      # dossier des captures de diagnostic (défini par browser_session)
+_turnstile_debug_saved = False   # une seule capture par exécution
+
+
+def set_turnstile_debug_dir(path) -> None:
+    """Dossier où enregistrer la capture de diagnostic du premier défi Turnstile détecté."""
+    global _turnstile_debug_dir, _turnstile_debug_saved
+    _turnstile_debug_dir = path
+    _turnstile_debug_saved = False
+
+
+def _context_sources(driver) -> dict:
+    """HTML de la page parente et de l'iframe #popupIframe (vide si absent). Contexte restauré."""
+    sources = {"parent": "", "iframe": ""}
     try:
         driver.switch_to.default_content()
-        return is_turnstile_gate(driver.page_source)
+        sources["parent"] = driver.page_source or ""
+        frames = driver.find_elements(By.ID, "popupIframe")
+        if frames:
+            driver.switch_to.frame(frames[0])
+            sources["iframe"] = driver.page_source or ""
+    except Exception:
+        pass
+    finally:
+        try:
+            driver.switch_to.default_content()
+        except Exception:
+            pass
+    return sources
+
+
+def _has_turnstile_gate(driver) -> bool:
+    """Vrai si un défi Turnstile est affiché dans la page parente OU dans l'iframe #popupIframe."""
+    sources = _context_sources(driver)
+    return is_turnstile_gate(sources["parent"]) or is_turnstile_gate(sources["iframe"])
+
+
+def _sheet_displayed(driver) -> bool:
+    """Vrai si l'iframe #popupIframe affiche la fiche (.fv-metrics ou .volTexte). Contexte restauré."""
+    try:
+        driver.switch_to.default_content()
+        frames = driver.find_elements(By.ID, "popupIframe")
+        if not frames:
+            return False
+        driver.switch_to.frame(frames[0])
+        return bool(driver.find_elements(By.CLASS_NAME, "fv-metrics")
+                    or driver.find_elements(By.CLASS_NAME, "volTexte"))
     except Exception:
         return False
+    finally:
+        try:
+            driver.switch_to.default_content()
+        except Exception:
+            pass
 
 
-def wait_for_turnstile(driver, poll: float = 2.0) -> None:
+def _save_turnstile_debug(driver) -> None:
+    """Enregistre (une fois par exécution) le HTML de la page parente et de l'iframe, pour
+    comprendre la vraie structure du défi (recette R4). Hors dépôt : dans le dossier des données."""
+    global _turnstile_debug_saved
+    if _turnstile_debug_saved or not _turnstile_debug_dir:
+        return
+    _turnstile_debug_saved = True
+    sources = _context_sources(driver)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = os.path.join(_turnstile_debug_dir, f"_debug_turnstile_{stamp}.html")
+    try:
+        os.makedirs(_turnstile_debug_dir, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fp:
+            fp.write("<!-- PAGE PARENTE -->\n" + sources["parent"]
+                     + "\n\n<!-- IFRAME #popupIframe -->\n" + sources["iframe"])
+        print(f"Capture de diagnostic du défi enregistrée : {path}", flush=True)
+    except Exception as e_dbg:
+        print(f"Impossible d'enregistrer la capture du défi : {e_dbg}", flush=True)
+
+
+def wait_for_turnstile(driver, poll: float = 2.0, max_wait: float = None) -> None:
     """
-    Bloque tant que la page du vol affiche un défi Turnstile : c'est à l'HUMAIN de le valider
-    dans la fenêtre Chrome. Le code ne résout, ne contourne et ne simule jamais ce défi.
+    Bloque tant que la page du vol affiche un défi Turnstile (page parente ou iframe) : c'est à
+    l'HUMAIN de le valider dans la fenêtre Chrome. Le code ne résout, ne contourne et ne simule
+    jamais ce défi. Sort dès que la fiche est affichée ou que le défi n'est plus visible ; lève
+    TurnstileTimeoutError après max_wait secondes (défaut : TURNSTILE_MAX_WAIT).
     """
-    if not _parent_has_turnstile_gate(driver):
+    max_wait = TURNSTILE_MAX_WAIT if max_wait is None else max_wait
+    if _sheet_displayed(driver) or not _has_turnstile_gate(driver):
         return
 
     print("\n" + "!" * 60)
     print("Vérification Turnstile de Syride détectée sur la page du vol.")
     print("Valide-la dans la fenêtre Chrome : le script reprendra seul.")
     print("!" * 60, flush=True)
+    _save_turnstile_debug(driver)
 
     waited = 0.0
     next_reminder = 60.0
-    while _parent_has_turnstile_gate(driver):
+    while not _sheet_displayed(driver) and _has_turnstile_gate(driver):
+        if waited >= max_wait:
+            raise TurnstileTimeoutError(
+                f"défi Turnstile non validé après {int(waited // 60)} min")
         time.sleep(poll)
         waited += poll
         if waited >= next_reminder:
@@ -369,7 +449,7 @@ def _read_flight_iframe(driver, pilote: str, trace: str, base_url: str, timeout:
                 break
             except TimeoutException:
                 received = _page_text(driver)[:150]
-                if gate_waits < MAX_TURNSTILE_WAITS and _parent_has_turnstile_gate(driver):
+                if gate_waits < MAX_TURNSTILE_WAITS and _has_turnstile_gate(driver):
                     gate_waits += 1
                     wait_for_turnstile(driver)
                     continue
@@ -407,7 +487,6 @@ def read_flight_sheet(
     secondes) puis réessaie. Si la limite persiste après toutes les attentes, lève
     RateLimitError. Si la limite QUOTIDIENNE est atteinte, lève DailyLimitError tout de suite.
     """
-    global _debug_saved
     n_rate_limits = 0
     html = None
 
@@ -433,15 +512,6 @@ def read_flight_sheet(
     if sheet["adresse_zip"] is None:
         print(f"\n[Trace {trace}] Fiche lue mais aucun lien de téléchargement trouvé "
               f"({len(html)} caractères).", flush=True)
-        if not _debug_saved:
-            debug_path = f"_debug_iframe_{trace}.html"
-            try:
-                with open(debug_path, "w", encoding="utf-8") as fp:
-                    fp.write(html)
-                print(f"HTML sauvegardé dans {os.path.abspath(debug_path)}", flush=True)
-            except Exception as e_dbg:
-                print(f"Impossible de sauvegarder le HTML de debug : {e_dbg}")
-            _debug_saved = True
 
     return sheet, links, track, html, n_rate_limits
 

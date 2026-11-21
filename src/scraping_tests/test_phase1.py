@@ -267,3 +267,13 @@ def test_process_pilots_phase1_sans_chrome(tmp_path, sample_html, monkeypatch, c
     assert result["failed_pilots"] == [] and result["sheets_used"] == 0
     assert "doublon(s) probable(s), voir" in out and (tmp_path / "_rapport_doublons.txt").exists()
     assert f"{PILOT} : 5 vols sur Syride, 5 nouveaux" in out
+
+
+def test_id_rider_en_cache_invalide_est_relu_si_liste_vide(tmp_path, conn, sample_html):
+    """Liste vide alors que la base connaît des vols : l idRider en cache est relu sur la page."""
+    browser_session.sync_pilot_list(conn, FakeTransport(lists=[sample_html]), str(tmp_path), PILOT)
+    flights_db.set_id_rider(conn, PILOT, "9999")          # cache devenu faux
+    transport = FakeTransport(lists=[END_MARKER, sample_html])
+    result = browser_session.sync_pilot_list(conn, transport, str(tmp_path), PILOT)
+    assert result["listed"] == 5
+    assert flights_db.get_id_rider(conn, PILOT) == "4242"

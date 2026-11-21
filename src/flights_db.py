@@ -446,10 +446,11 @@ def get_global_queue(conn: sqlite3.Connection, pilots: list, fill_igc: bool = Fa
     return queue
 
 
-def flight_kind(item: dict) -> str:
-    """Classe un vol pour le bilan de la file : info, files, info+files, ou raw (rattrapage seul)."""
+def flight_kind(item: dict, fill_igc: bool = True) -> str:
+    """Classe un vol pour le bilan de la file : info, files, info+files, ou raw (rattrapage seul).
+    Sans fill_igc, un IGC manquant n'est pas un travail à part (comme dans get_global_queue)."""
     has_info_work = item["need_info"]
-    has_file_work = item["need_gpx"] or item["need_igc"]
+    has_file_work = item["need_gpx"] or (item["need_igc"] and fill_igc)
     if has_info_work and has_file_work:
         return "info+files"
     if has_info_work:

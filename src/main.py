@@ -43,7 +43,8 @@ Modes :
   python main.py --dry-run 1        SIMULATION : la phase 1 lit les listes sur Syride mais
                                     n'écrit rien ; la phase 2 liste ce qui serait fait, sans
                                     ouvrir Chrome, sans fiche, sans téléchargement, sans pkl
-                                    (l'index SQLite --db est mis à jour : utiliser une copie)
+                                    (sans --db, l'index est lu sur une copie temporaire de la base : rien n'est modifié ;
+                                    avec --db, ce fichier est mis à jour : utiliser une copie)
   --scroll                          obsolète (la liste n'est plus lue par défilement), sans effet
 """
 
@@ -232,11 +233,15 @@ def main(argv=None):
             dict_filenames[p.lower()] = p
 
     fill_igc = bool(args.fill_igc)
-    if fill_igc and not any("igc" in files
-                            for files in effective_files(pilotes, args.files_override).values()):
-        print("--fill-igc ignoré : aucun pilote de cette exécution n'a l'IGC dans ses fichiers "
-              "(voir --files et FICHIERS_PAR_PILOTE).")
-        fill_igc = False
+    if fill_igc:
+        run_files = effective_files(pilotes, args.files_override)
+        excluded = [p for p, files in run_files.items() if "igc" not in files]
+        if len(excluded) == len(run_files):
+            print("--fill-igc ignoré : aucun pilote de cette exécution n'a l'IGC dans ses fichiers "
+                  "(voir --files et FICHIERS_PAR_PILOTE).")
+            fill_igc = False
+        elif excluded:
+            print("--fill-igc sans effet pour (pas d'IGC dans leur profil) : " + ", ".join(excluded))
 
     # Scraping / complétion : une seule fenêtre pour tous les pilotes
     result = process_pilots(

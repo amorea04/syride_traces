@@ -307,7 +307,7 @@ def test_wait_for_turnstile_rappel_toutes_les_60_secondes(monkeypatch, capsys):
     scraper.wait_for_turnstile(driver, poll=2.0)
     out = capsys.readouterr().out
     assert "toujours en attente" not in out              # 10 attentes de 2 s : 20 s seulement
-    driver2 = GateDriver(validate_after=40)
+    driver2 = GateDriver(validate_after=4)
     monkeypatch.setattr(scraper.time, "sleep", driver2.human_sleep)
     scraper.wait_for_turnstile(driver2, poll=30.0)
     assert "toujours en attente (60 s)" in capsys.readouterr().out
@@ -342,3 +342,160 @@ def test_aucune_adresse_de_fiche_ni_d_autorisation_dans_le_code():
         code = (src / name).read_text(encoding="utf-8")
         assert "method=\"POST\"" not in code and ".post(" not in code and "data=" not in code.split(
             "def get_text")[-1].split("def ")[0], name
+
+
+# ------------------------ Turnstile : iframe, sortie sur la fiche, délai, capture ------------------------
+
+
+class FrameDriver:
+    """Fausse page à deux contextes (parent / iframe #popupIframe) dont le contenu évolue à chaque
+    « attente humaine » : `script` = liste d'états (parent_html, iframe_html, fiche_affichée)."""
+
+    def __init__(self, script):
+        self.script, self.step = list(script), 0
+        self.in_frame = False
+        self.title = ""
+        self.switch_to = types.SimpleNamespace(default_content=self._default, frame=self._frame)
+
+    @property
+    def state(self):
+        return self.script[min(self.step, len(self.script) - 1)]
+
+    def _default(self):
+        self.in_frame = False
+
+    def _frame(self, element):
+        self.in_frame = True
+
+    @property
+    def page_source(self):
+        return self.state[1] if self.in_frame else self.state[0]
+
+    def find_elements(self, by, name):
+        if by == "id" and name == "popupIframe":
+            return [object()]
+        if self.in_frame and by == "cls" and name == "fv-metrics" and self.state[2]:
+            return [object()]
+        return []
+
+    def sleep(self, seconds):
+        self.step += 1
+
+
+CHALLENGE = '<div class="cf-turnstile"></div>'
+PLAIN = "<html><body>rien</body></html>"
+DONE_WIDGET = '<div class="cf-turnstile">Succès</div>'   # le widget reste dans le DOM après validation
+
+
+def test_wait_for_turnstile_sort_des_que_la_fiche_est_affichee_meme_si_le_widget_reste(monkeypatch, fake_selenium):
+    driver = FrameDriver([(CHALLENGE, PLAIN, False), (DONE_WIDGET, "<p>x</p>", True)])
+    monkeypatch.setattr(scraper.time, "sleep", driver.sleep)
+    scraper.wait_for_turnstile(driver, poll=2.0, max_wait=600)
+    assert driver.step >= 1 and driver.in_frame is False
+
+
+def test_wait_for_turnstile_defi_dans_l_iframe(monkeypatch, fake_selenium, capsys):
+    driver = FrameDriver([(PLAIN, CHALLENGE, False), (PLAIN, CHALLENGE, False), (PLAIN, PLAIN, False)])
+    monkeypatch.setattr(scraper.time, "sleep", driver.sleep)
+    scraper.wait_for_turnstile(driver, poll=2.0, max_wait=600)
+    assert "Turnstile" in capsys.readouterr().out and driver.step >= 2 and driver.in_frame is False
+
+
+def test_wait_for_turnstile_delai_maximal_leve_une_erreur_claire(monkeypatch, fake_selenium):
+    driver = FrameDriver([(CHALLENGE, PLAIN, False)])
+    monkeypatch.setattr(scraper.time, "sleep", driver.sleep)
+    with pytest.raises(scraper.TurnstileTimeoutError, match="non validé"):
+        scraper.wait_for_turnstile(driver, poll=30.0, max_wait=120)
+    assert driver.in_frame is False
+
+
+def test_capture_de_diagnostic_une_seule_fois_par_execution(tmp_path, monkeypatch, fake_selenium):
+    scraper.set_turnstile_debug_dir(str(tmp_path / "donnees"))
+    for _ in range(2):
+        driver = FrameDriver([(CHALLENGE, "<p>iframe</p>", False), (PLAIN, PLAIN, False)])
+        monkeypatch.setattr(scraper.time, "sleep", driver.sleep)
+        scraper.wait_for_turnstile(driver, poll=2.0, max_wait=600)
+    files = list((tmp_path / "donnees").glob("_debug_turnstile_*.html"))
+    assert len(files) == 1
+    text = files[0].read_text(encoding="utf-8")
+    assert "cf-turnstile" in text and "<p>iframe</p>" in text
+    scraper.set_turnstile_debug_dir(None)
+
+
+def test_phase_2_s_arrete_proprement_sur_delai_turnstile(tmp_path, monkeypatch, sheet_recent, capsys):
+    reads = []
+
+    def read(driver, pilote, trace, *a, **k):
+        reads.append(trace)
+        raise scraper.TurnstileTimeoutError("défi Turnstile non validé après 15 min")
+
+    monkeypatch.setattr(scraper, "read_flight_sheet", read)
+    monkeypatch.setattr(browser_session.time, "sleep", lambda s: None)
+    monkeypatch.setattr(browser_session, "create_driver", lambda **kw: FakeDriver())
+    monkeypatch.setattr(browser_session, "open_site_and_login", lambda driver: True)
+    make_flight(tmp_path, "10")
+    make_flight(tmp_path, "11")
+    result = browser_session.process_pilots(path=str(tmp_path), pilots=[PILOT], do_scrape=False,
+                                            files_by_pilot={})
+    assert len(reads) == 1                       # aucune autre fiche consommée
+    assert "Turnstile" in result["stopped"] and result["pending"] == 2
+
+
+# ------------------------ --dry-run sans --db : copie temporaire ------------------------
+
+
+def test_dry_run_sans_db_ne_touche_pas_a_la_vraie_base(tmp_path, monkeypatch):
+    import hashlib
+    import tempfile
+
+    data, tmpdir = tmp_path / "donnees", tmp_path / "tmp"
+    data.mkdir()
+    tmpdir.mkdir()
+    make_flight(data, NUM)
+    real = data / flights_db.DB_NAME
+    c = flights_db.connect(str(real))
+    c.close()
+    digest = hashlib.sha256(real.read_bytes()).hexdigest()
+    mtime = real.stat().st_mtime_ns
+    monkeypatch.setattr(tempfile, "tempdir", str(tmpdir))
+    monkeypatch.setattr(browser_session, "create_driver", lambda **kw: pytest.fail("Chrome"))
+    before = sorted(p.name for p in data.rglob("*"))
+
+    browser_session.process_pilots(path=str(data), pilots=[PILOT], do_scrape=False, dry_run=True,
+                                   files_by_pilot={})
+
+    assert hashlib.sha256(real.read_bytes()).hexdigest() == digest
+    assert real.stat().st_mtime_ns == mtime
+    assert sorted(p.name for p in data.rglob("*")) == before
+    assert list(tmpdir.iterdir()) == []          # copie temporaire supprimée
+
+
+def test_dry_run_sans_base_existante_n_en_cree_pas(tmp_path, monkeypatch):
+    import tempfile
+
+    tmpdir = tmp_path / "tmp"
+    tmpdir.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(tmpdir))
+    data = tmp_path / "donnees"
+    data.mkdir()
+    make_flight(data, NUM)
+    browser_session.process_pilots(path=str(data), pilots=[PILOT], do_scrape=False, dry_run=True,
+                                   files_by_pilot={})
+    assert not (data / flights_db.DB_NAME).exists() and list(tmpdir.iterdir()) == []
+
+
+# ------------------------ Bilan : libellé « sans IGC » et file ------------------------
+
+
+def test_libelle_sans_igc_selon_le_profil():
+    note = browser_session._igc_note
+    assert note(False, ("gpx",)) == " (profil sans IGC : non téléchargés)"
+    assert note(True, ("gpx",)) == " (profil sans IGC : non téléchargés)"
+    assert note(True, ("gpx", "igc")) == ""
+    assert "récupérés à la visite de la fiche" in note(False, ("gpx", "igc"))
+
+
+def test_flight_kind_ignore_l_igc_sans_fill_igc():
+    item = {"need_info": False, "need_gpx": False, "need_igc": True, "need_raw": True}
+    assert flights_db.flight_kind(item, fill_igc=False) == "raw"
+    assert flights_db.flight_kind(item, fill_igc=True) == "files"
