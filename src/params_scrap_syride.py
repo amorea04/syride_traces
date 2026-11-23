@@ -32,7 +32,7 @@ PILOTES = {
     "amo": ("AdrienM", True),
     "j2f": ("j2f", True),
     "thomas": ("Thomas16", True),
-    "Philippe": ("Au_Phil_du_vent", False),
+    "Philippe": ("Au_Phil_du_vent", True),
     "David": ("DavidParatrucs79", True),
     "Alban": ("ToriVsUke", True),
     "florent": ("Florent_Essar", True),

@@ -1,8 +1,9 @@
 {
   "": {
-    "latitude": 46.16480000000001,
-    "longitude": -0.014299999999999998,
-    "n_files": 3
+    "latitude": 46.174925,
+    "longitude": 0.146875,
+    "n_available": 2,
+    "n_files": 2
   },
   "Accous-500": {
     "latitude": 42.978957066666666,
@@ -159,6 +160,12 @@
     "longitude": 2.420271,
     "n_files": 14
   },
+  "Aïn Ifni": {
+    "latitude": 29.363317,
+    "longitude": -10.17065,
+    "n_available": 1,
+    "n_files": 1
+  },
   "Baigura": {
     "latitude": 43.292061,
     "longitude": -1.2918556666666667,
@@ -213,6 +220,12 @@
     "latitude": 45.689870000000006,
     "longitude": 0.16691233333333333,
     "n_files": 3
+  },
+  "Beaumont": {
+    "latitude": 44.384483333333336,
+    "longitude": 5.68535,
+    "n_available": 1,
+    "n_files": 1
   },
   "Benijo": {
     "latitude": 28.573483500000002,
@@ -394,15 +407,22 @@
     "longitude": 4.154051,
     "n_files": 1
   },
+  "Charvet": {
+    "latitude": 45.5515,
+    "longitude": 6.092083333333333,
+    "n_available": 1,
+    "n_files": 1
+  },
   "Chavagnac": {
     "latitude": 45.86611675,
     "longitude": 0.419339625,
     "n_files": 8
   },
   "Chazelles Le Luquet": {
-    "latitude": 45.64343074999999,
-    "longitude": 0.3313528,
-    "n_files": 20
+    "latitude": 45.64344595238095,
+    "longitude": 0.3313621904761905,
+    "n_available": 21,
+    "n_files": 21
   },
   "Cheminer La Clapouse": {
     "latitude": 44.3356915,
@@ -510,9 +530,10 @@
     "n_files": 2
   },
   "Col Des Prés": {
-    "latitude": 45.583804533333335,
-    "longitude": 6.053838799999999,
-    "n_files": 15
+    "latitude": 45.583798,
+    "longitude": 6.053852,
+    "n_available": 16,
+    "n_files": 16
   },
   "Col Des Ruillans": {
     "latitude": 45.009717,
@@ -532,6 +553,12 @@
   "Col Du Midi": {
     "latitude": 45.868017,
     "longitude": 6.880033,
+    "n_files": 1
+  },
+  "Col Du Mont": {
+    "latitude": 45.524316666666664,
+    "longitude": 6.068783333333333,
+    "n_available": 1,
     "n_files": 1
   },
   "Col Du Noyer": {
@@ -625,9 +652,10 @@
     "n_files": 4
   },
   "Croix De Tormery": {
-    "latitude": 45.5174665,
-    "longitude": 6.031158,
-    "n_files": 2
+    "latitude": 45.517461,
+    "longitude": 6.031166444444445,
+    "n_available": 3,
+    "n_files": 3
   },
   "Crète Sous La Croix": {
     "latitude": 45.6127085,
@@ -785,9 +813,10 @@
     "n_files": 2
   },
   "Fort De La Platte": {
-    "latitude": 45.637167,
-    "longitude": 6.7451,
-    "n_files": 1
+    "latitude": 45.63721683333333,
+    "longitude": 6.745025,
+    "n_available": 2,
+    "n_files": 2
   },
   "Fribaud - Les Pommes": {
     "latitude": 45.729998,
@@ -855,9 +884,16 @@
     "n_files": 1
   },
   "Granier": {
-    "latitude": 45.466825,
-    "longitude": 5.9277999999999995,
-    "n_files": 2
+    "latitude": 45.4669,
+    "longitude": 5.924767,
+    "n_available": 1,
+    "n_files": 1
+  },
+  "Granier Est - L'Entonnoir": {
+    "latitude": 45.46675,
+    "longitude": 5.930833,
+    "n_available": 1,
+    "n_files": 1
   },
   "Gretel": {
     "latitude": 44.643292,
@@ -979,6 +1015,12 @@
     "longitude": -16.694471999999998,
     "n_files": 3
   },
+  "La Petite Chal - Les Arcs": {
+    "latitude": 45.57221666666667,
+    "longitude": 6.767016666666667,
+    "n_available": 1,
+    "n_files": 1
+  },
   "La Peyrouse Connex": {
     "latitude": 44.9915585,
     "longitude": 5.724683499999999,
@@ -1070,9 +1112,10 @@
     "n_files": 8
   },
   "Le Colombier - Bauges": {
-    "latitude": 45.644061333333326,
-    "longitude": 6.118355333333334,
-    "n_files": 3
+    "latitude": 45.64417933333333,
+    "longitude": 6.118412333333334,
+    "n_available": 4,
+    "n_files": 4
   },
   "Le Cuchon D'Ancelle": {
     "latitude": 44.63512766666667,
@@ -1127,6 +1170,12 @@
   "Le Palastre": {
     "latitude": 44.694883,
     "longitude": 6.207917,
+    "n_files": 1
+  },
+  "Le Pas St Martin": {
+    "latitude": 45.02276666666667,
+    "longitude": 5.465116666666667,
+    "n_available": 1,
     "n_files": 1
   },
   "Le Perrier": {
@@ -1434,6 +1483,12 @@
     "longitude": -16.75535,
     "n_files": 2
   },
+  "Montagne Du Linceuil": {
+    "latitude": 44.31283333333333,
+    "longitude": 5.245966666666667,
+    "n_available": 1,
+    "n_files": 1
+  },
   "Montaud": {
     "latitude": 45.245018,
     "longitude": 5.574294,
@@ -1675,14 +1730,16 @@
     "n_files": 25
   },
   "Pointe De La Galopaz": {
-    "latitude": 45.568177833333344,
-    "longitude": 6.06912925,
-    "n_files": 12
+    "latitude": 45.56825005128206,
+    "longitude": 6.069224435897436,
+    "n_available": 13,
+    "n_files": 13
   },
   "Pointe De La Sauge": {
-    "latitude": 45.55060424999999,
-    "longitude": 6.057697875000001,
-    "n_files": 8
+    "latitude": 45.55074451851852,
+    "longitude": 6.057551814814815,
+    "n_available": 9,
+    "n_files": 9
   },
   "Pointe Fine": {
     "latitude": 44.437,
@@ -1874,6 +1931,12 @@
     "longitude": 6.878817,
     "n_files": 1
   },
+  "Sainte Jalle - Soubeyrand": {
+    "latitude": 44.375887500000005,
+    "longitude": 5.333354166666667,
+    "n_available": 4,
+    "n_files": 4
+  },
   "Sainte Victoire": {
     "latitude": 43.6521795,
     "longitude": 5.528233500000001,
@@ -1910,9 +1973,10 @@
     "n_files": 16
   },
   "Secondigne-Sur-Belle 03": {
-    "latitude": 46.144934166666665,
-    "longitude": -0.3379277222222222,
-    "n_files": 18
+    "latitude": 46.144913947368416,
+    "longitude": -0.33786047368421057,
+    "n_available": 19,
+    "n_files": 19
   },
   "Semnoz": {
     "latitude": 45.8050791875,
@@ -1920,9 +1984,16 @@
     "n_files": 16
   },
   "Serpaton": {
-    "latitude": 44.912938999999994,
-    "longitude": 5.592361333333334,
-    "n_files": 3
+    "latitude": 44.91290425,
+    "longitude": 5.5921585,
+    "n_available": 4,
+    "n_files": 4
+  },
+  "Sid Ifni": {
+    "latitude": 29.409117,
+    "longitude": -10.1324,
+    "n_available": 1,
+    "n_files": 1
   },
   "Sidi Ifni": {
     "latitude": 29.386217,
@@ -1956,7 +2027,8 @@
   },
   "Soubise": {
     "latitude": 45.96148878571429,
-    "longitude": -1.0053441428571428,
+    "longitude": -1.005344142857143,
+    "n_available": 15,
     "n_files": 14
   },
   "Soulac Nord": {
@@ -2030,14 +2102,16 @@
     "n_files": 1
   },
   "Séderon-Mévouillon : Bergies Nord": {
-    "latitude": 44.203721782608696,
-    "longitude": 5.510607217391305,
-    "n_files": 23
+    "latitude": 44.203706986111115,
+    "longitude": 5.510610388888888,
+    "n_available": 24,
+    "n_files": 24
   },
   "Séderon-Mévouillon : Bergies Sud": {
-    "latitude": 44.202777250000004,
-    "longitude": 5.510898,
-    "n_files": 8
+    "latitude": 44.202789,
+    "longitude": 5.510840777777777,
+    "n_available": 9,
+    "n_files": 9
   },
   "Séderon-Mévouillon : Buc": {
     "latitude": 44.21358481818181,
@@ -2195,9 +2269,10 @@
     "n_files": 2
   },
   "Vallandry": {
-    "latitude": 45.5598085,
-    "longitude": 6.766469333333333,
-    "n_files": 6
+    "latitude": 45.5597810952381,
+    "longitude": 6.766485619047619,
+    "n_available": 7,
+    "n_files": 7
   },
   "Vallandry- Le Grizzly": {
     "latitude": 45.5482634,
