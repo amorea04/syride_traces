@@ -29,8 +29,9 @@ Rien n'est jamais supprimé. Gestion des limites de Syride (stratégie « dégra
 
 Le lancement suivant complète ce qui manque.
 
-Autres points : une seule fenêtre Chrome, pause automatique en cas de vérification
-Cloudflare ou Turnstile (voir syride_scraper), profil Chrome persistant (_chrome_profile).
+Autres points : une seule fenêtre Chrome à la fois (connectée pour les vols à fichiers, puis
+sans connexion pour les autres fiches), pause automatique en cas de vérification
+Cloudflare ou Turnstile (voir syride_scraper), profil Chrome persistant (_chrome_profile) pour la fenêtre connectée.
 """
 
 import os
@@ -151,8 +152,8 @@ def open_site_and_login(driver) -> bool:
     if not logged_in:
         print("\n" + "!" * 60)
         print("Connexion à Syride NON confirmée.")
-        print("Les fiches de vol ne seront pas consultées : sans connexion, Syride peut ne pas")
-        print("proposer les liens GPX et les vols seraient marqués à tort « sans lien ».")
+        print("Les fiches seront lues sans connexion (informations seules) et les téléchargements")
+        print("de fichiers reportés au prochain lancement. Vérifie SYRIDE_EMAIL / SYRIDE_PASSWORD.")
         print("!" * 60 + "\n", flush=True)
     return logged_in
 
@@ -375,6 +376,16 @@ def _tasks_label(item) -> str:
     return " + ".join(tasks)
 
 
+def is_file_flight(item, files) -> bool:
+    """
+    Vrai si le vol demande la fenêtre connectée : son pilote a un profil de fichiers (`files`,
+    ex. ("gpx", "igc")) et il lui manque au moins un fichier de ce profil. Tous les autres vols
+    se lisent sans connexion (une fiche est la même connectée ou non).
+    """
+    files = files or ()
+    return bool((item["need_gpx"] and "gpx" in files) or (item["need_igc"] and "igc" in files))
+
+
 PILOT_DELAY = 1.0   # pause (s) entre deux listes de pilotes, par politesse envers Syride
 
 
@@ -385,8 +396,13 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
                    backfill_raw: bool = True, files_override=None,
                    transport=None, reparse: bool = False) -> dict:
     """
-    Traite les pilotes en 3 phases, avec UNE seule fenêtre Chrome (ouverte seulement si
-    nécessaire, c'est-à-dire si la file de la phase 2 n'est pas vide) :
+    Traite les pilotes en 3 phases. Chrome n'est ouvert que si la file de la phase 2 n'est
+    pas vide, avec au plus deux fenêtres, UNE à la fois (la première est fermée avant la seconde) :
+    d'abord une fenêtre CONNECTÉE pour les seuls vols à fichiers (pilote avec profil de fichiers à
+    qui il manque un fichier : la connexion ne sert qu'à télécharger), puis une fenêtre SANS
+    connexion (profil temporaire jetable) pour tous les autres vols, où aucun téléchargement n'est
+    jamais tenté. Si la connexion n'est pas confirmée, les vols à fichiers sont lus dans la seconde
+    fenêtre en « informations seules » (fichiers reportés). Budget et arrêts sont communs aux deux.
 
       PHASE 1 (si do_scrape) : liste des vols de TOUS les pilotes lue par HTTP (sans Chrome),
           réconciliée avec le disque : vols nouveaux, modifiés, absents, réapparus. Aucune
@@ -408,9 +424,10 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
                "info"  = compléter seulement les JSON incomplets (aucun téléchargement) ;
                "files" = télécharger seulement les fichiers des vols dont le JSON est complet.
     fill_igc : inclut aussi les vols qui ont déjà leur GPX mais pas d'IGC (une fiche par vol).
-    private  : lance Chrome en navigation privée, avec un profil temporaire supprimé à la fin :
-               pas de cookies ni de session conservés (reconnexion et éventuel défi Cloudflare
-               à chaque lancement). Le profil persistant _chrome_profile n'est pas utilisé.
+    private  : lance la fenêtre connectée en navigation privée, avec un profil temporaire supprimé
+               à la fin : pas de cookies ni de session conservés (reconnexion et éventuel défi
+               Cloudflare à chaque lancement). Le profil persistant _chrome_profile n'est pas
+               utilisé. (La fenêtre sans connexion est toujours privée.)
     dry_run  : simulation. Aucune page Chrome n'est ouverte, aucune fiche consultée, aucun
                fichier téléchargé ; la phase 1 (liste par HTTP) lit Syride mais n'écrit rien ;
                le script affiche seulement ce qu'il ferait. Sans `db_path`, l'index SQLite
@@ -464,16 +481,30 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
     else:
         profile_dir = os.path.abspath(os.path.join(path, "_chrome_profile"))
 
-    ctx = {"driver": None, "logged_in": False}
+    ctx = {"driver": None, "tmp_profiles": []}
     scraper.set_turnstile_debug_dir(None if dry_run else path)   # capture du premier défi (R4)
 
-    def get_driver():
-        if ctx["driver"] is None:
-            os.makedirs(download_dir, exist_ok=True)
-            ctx["driver"] = create_driver(download_dir=download_dir, profile_dir=profile_dir,
-                                         private=private)
-            ctx["logged_in"] = open_site_and_login(ctx["driver"])
-        return ctx["driver"]
+    def open_window(connected):
+        """Ouvre UNE fenêtre. connected=True : profil habituel + connexion ; sinon fenêtre privée à
+        profil temporaire, sans jamais appeler open_site_and_login. Retourne la connexion (bool)."""
+        os.makedirs(download_dir, exist_ok=True)
+        if connected:
+            profile, priv = profile_dir, private
+        else:
+            profile, priv = tempfile.mkdtemp(prefix="syride_anonyme_"), True
+            ctx["tmp_profiles"].append(profile)
+        ctx["driver"] = create_driver(download_dir=download_dir, profile_dir=profile, private=priv)
+        logged = open_site_and_login(ctx["driver"]) if connected else False
+        ctx["driver"].implicitly_wait(0)   # attentes explicites utilisées pour lire les fiches
+        return logged
+
+    def close_window():
+        if ctx["driver"] is not None:
+            try:
+                ctx["driver"].quit()
+            except Exception:
+                pass
+            ctx["driver"] = None
 
     def sync_all():
         print("Mise à jour de l'index des vols (lecture des dossiers)...", flush=True)
@@ -596,96 +627,152 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
                       "(leurs JSON ne sont pas écrits en simulation).")
                 pending = len(queue)
 
-            driver = None if dry_run else get_driver()
-            if driver is not None:
-                driver.implicitly_wait(0)  # attentes explicites utilisées pour lire les fiches
-                if not ctx["logged_in"]:
-                    blocked = ("Connexion à Syride non confirmée : aucune fiche consultée "
-                               "(vérifie SYRIDE_EMAIL / SYRIDE_PASSWORD dans .env).")
-                    pending = len(queue)
-                    driver = None
+            connected_items = [(k, it) for k, it in enumerate(queue)
+                               if is_file_flight(it, files_by_pilot.get(it["pilot"]))]
+            plain_items = [(k, it) for k, it in enumerate(queue)
+                           if not is_file_flight(it, files_by_pilot.get(it["pilot"]))]
+
+            if dry_run:
+                for item in queue:
+                    window = ("connectée" if is_file_flight(item, files_by_pilot.get(item["pilot"]))
+                              else "sans connexion")
+                    print(f"  {item['pilot']} / trace {item['num']}  ({_tasks_label(item)})  "
+                          f"[fenêtre {window}]")
+                print("\nMode simulation (--dry-run) : aucune fiche consultée, aucun fichier "
+                      "téléchargé. Les vols nouveaux de la phase 1 n'apparaissent pas ici "
+                      "(leurs JSON ne sont pas écrits en simulation).")
+                pending = len(queue)
+                connected_items = plain_items = []
 
             results = {}   # pilote -> [ok, échecs, sans lien, infos seules]
-            delay_scale = 1.0
-            n_sheet_calls = 0
-            for i, item in enumerate([] if driver is None else queue):
-                pilot, nav, data_nav = item["pilot"], item["num"], item["data"]
+            loop = {"delay_scale": 1.0, "n_sheet_calls": 0, "processed": 0, "stop": False}
 
-                # Téléchargements bloqués pour la journée : un vol à qui il ne manque que des
-                # fichiers n'apporte rien (la fiche ne ferait que consommer le quota de fiches).
-                if downloads_blocked and not item["need_info"] and not (
-                        item["need_raw"] and backfill_raw):
-                    pending_downloads += 1
-                    continue
+            def run_pass(driver, items, connected, reason=None, reason_ids=()):
+                """Traite `items` [(rang dans la file, vol)] dans la fenêtre `driver`. Sans connexion
+                (connected=False), AUCUN téléchargement n'est tenté (allow_download=False)."""
+                nonlocal blocked, pending, downloads_blocked, pending_downloads
+                for i, item in items:
+                    pilot, nav, data_nav = item["pilot"], item["num"], item["data"]
 
-                # Budget --max-sheets épuisé : arrêt avant d'afficher la ligne du vol suivant et
-                # avant la pause (le message d'arrêt et le bilan viennent de l'exception).
-                if budget.max is not None and budget.used >= budget.max:
-                    blocked = _blocked_reason(SheetBudgetReached(), budget)
-                    pending = len(queue) - i
-                    print(f"\n{blocked}\nArrêt de la consultation des fiches : "
-                          f"{pending} vol(s) restent à compléter.", flush=True)
-                    break
+                    # Téléchargements bloqués pour la journée, ou fenêtre sans connexion : un vol à
+                    # qui il ne manque que des fichiers n'apporte rien (la fiche ne ferait que
+                    # consommer le quota de fiches).
+                    if (downloads_blocked or not connected) and not item["need_info"] and not (
+                            item["need_raw"] and backfill_raw):
+                        pending_downloads += 1
+                        loop["processed"] += 1
+                        continue
 
-                counts = results.setdefault(pilot, [0, 0, 0, 0])
-                mode = " [infos seules : téléchargements bloqués]" if downloads_blocked else ""
-                print(f"[{i+1}/{len(queue)}] {pilot} / trace {nav}  ({_tasks_label(item)}){mode}",
-                      flush=True)
-                if n_sheet_calls > 0:
-                    time.sleep(random.uniform(*SHEET_DELAY) * delay_scale)
-                n_sheet_calls += 1
+                    # Budget --max-sheets épuisé : arrêt avant d'afficher la ligne du vol suivant
+                    # et avant la pause (le message d'arrêt et le bilan viennent de l'exception).
+                    if budget.max is not None and budget.used >= budget.max:
+                        blocked = _blocked_reason(SheetBudgetReached(), budget)
+                        pending = len(queue) - loop["processed"]
+                        print(f"\n{blocked}\nArrêt de la consultation des fiches : "
+                              f"{pending} vol(s) restent à compléter.", flush=True)
+                        loop["stop"] = True
+                        return
 
+                    if driver[0] is None:   # fenêtre ouverte seulement quand une fiche est à lire
+                        print("\nOuverture de la fenêtre sans connexion (fiches seules, aucun "
+                              "téléchargement).", flush=True)
+                        open_window(False)
+                        driver[0] = ctx["driver"]
+
+                    counts = results.setdefault(pilot, [0, 0, 0, 0])
+                    if reason and i in reason_ids:
+                        mode = f" [infos seules : {reason}]"
+                    elif downloads_blocked:
+                        mode = " [infos seules : téléchargements bloqués]"
+                    else:
+                        mode = ""
+                    print(f"[{i+1}/{len(queue)}] {pilot} / trace {nav}  ({_tasks_label(item)}){mode}",
+                          flush=True)
+                    if loop["n_sheet_calls"] > 0:
+                        time.sleep(random.uniform(*SHEET_DELAY) * loop["delay_scale"])
+                    loop["n_sheet_calls"] += 1
+
+                    try:
+                        status, n_limits = process_flight(
+                            driver[0], download_dir, path, pilot, nav, data_nav, budget,
+                            need_gpx=item["need_gpx"], need_igc=item["need_igc"],
+                            need_info=item["need_info"],
+                            allow_download=connected and not downloads_blocked,
+                            need_raw=item["need_raw"], files=files_by_pilot.get(pilot) or (),
+                        )
+                    except (scraper.DailyLimitError, scraper.RateLimitError,
+                            scraper.TurnstileTimeoutError, SheetBudgetReached) as e_block:
+                        blocked = _blocked_reason(e_block, budget)
+                        pending = len(queue) - loop["processed"]
+                        print(f"\n{blocked}\nArrêt de la consultation des fiches : "
+                              f"{pending} vol(s) restent à compléter.", flush=True)
+                        loop["stop"] = True
+                        return
+                    except Exception:
+                        print("", "\n", traceback.format_exc())
+                        print(f"Trace {nav} non complétée (informations conservées).")
+                        counts[1] += 1
+                        loop["processed"] += 1
+                        continue
+                    loop["processed"] += 1
+
+                    if n_limits > 0:
+                        loop["delay_scale"] = min(loop["delay_scale"] * 1.5, MAX_DELAY_SCALE)
+                        print(f"  Rythme ralenti (x{loop['delay_scale']:.1f}).", flush=True)
+
+                    if status == "ok":
+                        counts[0] += 1
+                    elif status == "nolink":
+                        counts[2] += 1
+                        flights_db.mark_no_link(conn, pilot, nav)
+                    elif status == "download_blocked":
+                        counts[3] += 1
+                        pending_downloads += 1
+                        if not downloads_blocked:
+                            downloads_blocked = True
+                            print("\n" + "-" * 60
+                                  + "\nLimite de téléchargement atteinte : plus aucun fichier "
+                                    "ne sera téléchargé pour cette exécution.\nOn continue de parcourir les fiches "
+                                    "pour compléter les JSON (informations seules)."
+                                  + "\n" + "-" * 60, flush=True)
+                    elif status == "info_only":
+                        counts[3] += 1
+                        pending_downloads += 1
+                    else:
+                        counts[1] += 1
+
+            # ---- Passe 1 : fenêtre CONNECTÉE, vols à fichiers (en premier : ils sont peu nombreux)
+            switched, switch_reason = [], None
+            if connected_items:
+                print(f"\nFenêtre connectée : {len(connected_items)} vol(s) à fichiers.", flush=True)
                 try:
-                    status, n_limits = process_flight(
-                        driver, download_dir, path, pilot, nav, data_nav, budget,
-                        need_gpx=item["need_gpx"], need_igc=item["need_igc"],
-                        need_info=item["need_info"], allow_download=not downloads_blocked,
-                        need_raw=item["need_raw"], files=files_by_pilot.get(pilot) or (),
-                    )
-                except (scraper.DailyLimitError, scraper.RateLimitError, scraper.TurnstileTimeoutError,
-                        SheetBudgetReached) as e_block:
-                    blocked = _blocked_reason(e_block, budget)
-                    pending = len(queue) - i
-                    print(f"\n{blocked}\nArrêt de la consultation des fiches : "
-                          f"{pending} vol(s) restent à compléter.", flush=True)
-                    break
-                except Exception:
-                    print("", "\n", traceback.format_exc())
-                    print(f"Trace {nav} non complétée (informations conservées).")
-                    counts[1] += 1
-                    continue
+                    logged_in = open_window(True)
+                    if logged_in:
+                        run_pass([ctx["driver"]], connected_items, True)
+                    else:
+                        switched = connected_items
+                        switch_reason = "connexion non confirmée"
+                        print("Connexion à Syride non confirmée : les fiches des vols à fichiers sont "
+                              "lues sans connexion (informations seules), téléchargements reportés. "
+                              "Vérifie SYRIDE_EMAIL / SYRIDE_PASSWORD dans .env.", flush=True)
+                finally:
+                    close_window()   # une seule fenêtre à la fois
 
-                if n_limits > 0:
-                    delay_scale = min(delay_scale * 1.5, MAX_DELAY_SCALE)
-                    print(f"  Rythme ralenti (x{delay_scale:.1f}).", flush=True)
-
-                if status == "ok":
-                    counts[0] += 1
-                elif status == "nolink":
-                    counts[2] += 1
-                    flights_db.mark_no_link(conn, pilot, nav)
-                elif status == "download_blocked":
-                    counts[3] += 1
-                    pending_downloads += 1
-                    if not downloads_blocked:
-                        downloads_blocked = True
-                        print("\n" + "-" * 60
-                              + "\nLimite de téléchargement atteinte : plus aucun fichier "
-                                "ne sera téléchargé pour cette exécution.\nOn continue de parcourir les fiches "
-                                "pour compléter les JSON (informations seules)."
-                              + "\n" + "-" * 60, flush=True)
-                elif status == "info_only":
-                    counts[3] += 1
-                    pending_downloads += 1
-                else:
-                    counts[1] += 1
+            # ---- Passe 2 : fenêtre SANS connexion (jamais de connexion, jamais de téléchargement)
+            if not loop["stop"] and (plain_items or switched):
+                holder = [None]
+                try:
+                    run_pass(holder, sorted(plain_items + switched, key=lambda t: t[0]), False,
+                             reason=switch_reason, reason_ids={k for k, _ in switched})
+                finally:
+                    close_window()
 
             if results:
                 print("\nBilan de la phase 2 :")
                 for pilot, (ok, failed, nolink, info_only) in results.items():
                     extra = f", {info_only} en informations seules (fichiers à télécharger)" if info_only else ""
                     print(f"  {pilot} : {ok} complété(s), {failed} en échec, {nolink} sans lien{extra}")
-            if downloads_blocked:
+            if downloads_blocked or (switched and pending_downloads):
                 print(f"  {pending_downloads} vol(s) attendent encore leurs fichiers (GPX/IGC).")
     finally:
         # ---------------- PHASE 3 ----------------
@@ -703,11 +790,9 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
             else:
                 print("Tous les vols Syride ont leur fiche brute.")
         finally:
-            if ctx["driver"] is not None:
-                try:
-                    ctx["driver"].quit()
-                except Exception:
-                    pass
+            close_window()
+            for tmp in ctx["tmp_profiles"]:
+                shutil.rmtree(tmp, ignore_errors=True)   # profils sans connexion jetables
             shutil.rmtree(download_dir, ignore_errors=True)
             if private and profile_dir:
                 shutil.rmtree(profile_dir, ignore_errors=True)  # profil temporaire jetable

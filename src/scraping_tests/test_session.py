@@ -499,3 +499,178 @@ def test_flight_kind_ignore_l_igc_sans_fill_igc():
     item = {"need_info": False, "need_gpx": False, "need_igc": True, "need_raw": True}
     assert flights_db.flight_kind(item, fill_igc=False) == "raw"
     assert flights_db.flight_kind(item, fill_igc=True) == "files"
+
+
+# ------------------------ Connexion à la demande : deux fenêtres, l'une après l'autre ------------------------
+
+AUTRE = "AutrePilote"
+
+
+class Windows:
+    """Faux Chrome : journal des événements (création, connexion, fermeture, lecture de fiche)."""
+
+    def __init__(self, monkeypatch, session, logged_in=True):
+        self.events = []
+        self.logged_in = logged_in
+        outer = self
+
+        class Driver(FakeDriver):
+            def __init__(self, n):
+                self.n = n
+
+            def quit(self):
+                outer.events.append(("quit", self.n))
+
+        def create(**kw):
+            n = sum(1 for e in outer.events if e[0] == "create") + 1
+            outer.events.append(("create", n, kw["private"], kw["profile_dir"]))
+            return Driver(n)
+
+        def login(driver):
+            outer.events.append(("login", driver.n))
+            return outer.logged_in
+
+        def read(driver, pilote, trace, *args, **kwargs):
+            outer.events.append(("read", driver.n, pilote, trace))
+            return session.read(driver, pilote, trace)
+
+        monkeypatch.setattr(browser_session, "create_driver", create)
+        monkeypatch.setattr(browser_session, "open_site_and_login", login)
+        monkeypatch.setattr(scraper, "read_flight_sheet", read)
+
+    def kinds(self):
+        return [e[0] for e in self.events]
+
+    def reads(self):
+        return [(e[1], e[2], e[3]) for e in self.events if e[0] == "read"]
+
+
+def run_session(tmp_path, **kwargs):
+    kwargs.setdefault("files_by_pilot", {PILOT: ("gpx", "igc")})
+    return browser_session.process_pilots(path=str(tmp_path), pilots=[PILOT, AUTRE],
+                                          do_scrape=False, **kwargs)
+
+
+def test_is_file_flight_classement():
+    flight = browser_session.is_file_flight
+    item = {"need_gpx": True, "need_igc": True}
+    assert flight(item, ("gpx", "igc")) and flight(item, ("gpx",)) and flight(item, ("igc",))
+    assert not flight(item, ()) and not flight(item, None)               # pilote sans profil
+    assert not flight({"need_gpx": False, "need_igc": False}, ("gpx", "igc"))
+    assert not flight({"need_gpx": False, "need_igc": True}, ("gpx",))   # IGC voulu mais profil gpx seul
+    assert flight({"need_gpx": False, "need_igc": True}, ("gpx", "igc"))
+    assert not flight({"need_gpx": True, "need_igc": False}, ("igc",))
+
+
+def test_sans_vol_a_fichiers_une_seule_fenetre_sans_connexion(tmp_path, monkeypatch, sheet_recent):
+    session = Session(monkeypatch, sheet_recent)
+    win = Windows(monkeypatch, session)
+    make_flight(tmp_path, "10", pilot=PILOT)
+    make_flight(tmp_path, "11", pilot=AUTRE)
+    result = run_session(tmp_path, files_by_pilot={})
+    assert win.kinds().count("create") == 1 and "login" not in win.kinds()
+    assert win.events[0][2] is True and "_chrome_profile" not in win.events[0][3]   # privée, profil temporaire
+    assert result["sheets_used"] == 2 and result["pending"] == 0
+    assert not Path(win.events[0][3]).exists()                                       # profil supprimé
+
+
+def test_file_mixte_fenetre_connectee_d_abord_puis_sans_connexion(tmp_path, monkeypatch, sheet_recent):
+    session = Session(monkeypatch, sheet_recent)
+    win = Windows(monkeypatch, session)
+    make_flight(tmp_path, "12", pilot=AUTRE)      # plus récent, mais sans fichiers : passe 2
+    make_flight(tmp_path, "10", pilot=PILOT)
+    result = run_session(tmp_path)
+    assert [e[0] for e in win.events] == ["create", "login", "read", "quit", "create", "read", "quit"]
+    first, second = win.events[0], win.events[4]
+    assert first[2] is False and first[3].endswith("_chrome_profile")   # fenêtre connectée, profil habituel
+    assert second[2] is True and "_chrome_profile" not in second[3]     # sans connexion : privée, temporaire
+    assert win.reads() == [(1, PILOT, "10"), (2, AUTRE, "12")]
+    assert session.downloads == ["gpx", "igc"]                          # téléchargés dans la fenêtre connectée
+    assert result["pending"] == 0 and result["pending_downloads"] == 0
+    assert not Path(second[3]).exists()
+
+
+def test_connexion_refusee_fiches_lues_sans_connexion_en_infos_seules(tmp_path, monkeypatch, sheet_recent,
+                                                                      capsys):
+    session = Session(monkeypatch, sheet_recent)
+    win = Windows(monkeypatch, session, logged_in=False)
+    monkeypatch.setattr(flights_db, "mark_no_link",
+                        lambda *a, **k: pytest.fail("mark_no_link ne doit pas être appelé"))
+    make_flight(tmp_path, "10", pilot=PILOT)
+    make_flight(tmp_path, "11", pilot=AUTRE)
+    result = run_session(tmp_path)
+    out = capsys.readouterr().out
+    assert session.downloads == []                                       # aucun téléchargement tenté
+    assert win.kinds().count("login") == 1 and win.kinds().count("create") == 2
+    assert win.kinds().index("quit") < [i for i, k in enumerate(win.kinds()) if k == "create"][1]
+    assert {r[0] for r in win.reads()} == {2}                             # toutes les fiches : fenêtre 2
+    assert sorted(r[1:] for r in win.reads()) == [(AUTRE, "11"), (PILOT, "10")]
+    assert result["stopped"] is None and result["pending"] == 0
+    assert result["pending_downloads"] == 1 and result["sheets_used"] == 2
+    assert "Connexion à Syride non confirmée" in out and "SYRIDE_EMAIL" in out
+    assert (tmp_path / PILOT / "traces" / "10" / "10.sheet.html.gz").exists()
+
+
+def test_connexion_refusee_vol_a_qui_il_ne_manque_que_des_fichiers_non_lu(tmp_path, monkeypatch,
+                                                                          sheet_recent):
+    """Sans connexion, lire la fiche d'un vol à JSON complet n'apporterait rien : pas de fiche
+    consommée, le vol attend ses fichiers."""
+    session = Session(monkeypatch, sheet_recent)
+    win = Windows(monkeypatch, session, logged_in=False)
+    full = parse_flight_sheet_full(sheet_recent)[0]
+    full.pop("adresse_zip", None)
+    make_flight(tmp_path, "10", pilot=PILOT, **full)   # JSON complet : il ne manque que les fichiers
+    make_flight(tmp_path, "11", pilot=AUTRE)
+    result = run_session(tmp_path, backfill_raw=False)
+    assert win.reads() == [(2, AUTRE, "11")] and session.downloads == []
+    assert result["sheets_used"] == 1 and result["pending_downloads"] == 1
+
+
+def test_budget_partage_entre_les_deux_passes(tmp_path, monkeypatch, sheet_recent):
+    session = Session(monkeypatch, sheet_recent)
+    win = Windows(monkeypatch, session)
+    make_flight(tmp_path, "10", pilot=PILOT)
+    for num in ("11", "12", "13"):
+        make_flight(tmp_path, num, pilot=AUTRE)
+    result = run_session(tmp_path, max_sheets=2)
+    assert len(win.reads()) == 2 and win.reads()[0][1:] == (PILOT, "10")   # passe 1 d'abord
+    assert result["sheets_used"] == 2 and result["pending"] == 2
+    assert "Nombre maximum de fiches atteint (2)" in result["stopped"]
+
+
+def test_budget_epuise_apres_la_passe_1_n_ouvre_pas_la_fenetre_2(tmp_path, monkeypatch, sheet_recent):
+    session = Session(monkeypatch, sheet_recent)
+    win = Windows(monkeypatch, session)
+    make_flight(tmp_path, "10", pilot=PILOT)
+    make_flight(tmp_path, "11", pilot=AUTRE)
+    result = run_session(tmp_path, max_sheets=1)
+    assert win.kinds().count("create") == 1 and result["pending"] == 1
+
+
+def test_arret_turnstile_en_passe_1_pas_de_passe_2(tmp_path, monkeypatch, sheet_recent):
+    session = Session(monkeypatch, sheet_recent)
+    win = Windows(monkeypatch, session)
+
+    def read(driver, pilote, trace, *a, **k):
+        win.events.append(("read", driver.n, pilote, trace))
+        raise scraper.TurnstileTimeoutError("défi Turnstile non validé après 15 min")
+
+    monkeypatch.setattr(scraper, "read_flight_sheet", read)
+    make_flight(tmp_path, "10", pilot=PILOT)
+    make_flight(tmp_path, "11", pilot=AUTRE)
+    make_flight(tmp_path, "12", pilot=AUTRE)
+    result = run_session(tmp_path)
+    assert win.kinds() == ["create", "login", "read", "quit"]            # fenêtre fermée, pas de passe 2
+    assert "Turnstile" in result["stopped"] and result["pending"] == 3
+
+
+def test_dry_run_annonce_la_fenetre_prevue(tmp_path, monkeypatch, sheet_recent, capsys):
+    session = Session(monkeypatch, sheet_recent)
+    monkeypatch.setattr(browser_session, "create_driver", lambda **kw: pytest.fail("Chrome"))
+    make_flight(tmp_path, "10", pilot=PILOT)
+    make_flight(tmp_path, "11", pilot=AUTRE)
+    run_session(tmp_path, dry_run=True, db_path=str(tmp_path / "copie.db"))
+    out = capsys.readouterr().out
+    assert f"{PILOT} / trace 10" in out and "[fenêtre connectée]" in out
+    assert f"{AUTRE} / trace 11" in out and "[fenêtre sans connexion]" in out
+    assert session.reads == []

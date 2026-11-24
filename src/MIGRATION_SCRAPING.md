@@ -91,7 +91,7 @@ Toute ligne doit être cochée par le Contrôleur avant la bascule. « Test » =
 | P7 | `--scroll` | `main.py` | **Accepté mais sans effet**, avec un message « obsolète » (aucun script existant ne casse) | test CLI |
 | P8 | Modes `tasks` (`all` / `info` / `files`) et `private` de `process_pilots` | `browser_session` | Conservés ; `tasks=files` ne concerne que les profils à fichiers | test unitaire |
 | P9 | Comptes multiples (`syride_accounts`) | `params_scrap_syride` | Conservés tels quels | relecture |
-| P10 | Connexion : session du profil Chrome, sinon identifiants `.env` ; arrêt de la phase 2 si non confirmée | `login_to_syride` | Identique | R1 |
+| P10 | Connexion : session du profil Chrome, sinon identifiants `.env` ; arrêt de la phase 2 si non confirmée | `login_to_syride` | Identique. *Note du 24/11/2026 : la connexion n'est plus requise pour lire une fiche (capture HAR) ; elle est faite à la demande, dans une première fenêtre réservée aux vols à fichiers ; si elle n'est pas confirmée, ces vols sont lus sans connexion (informations seules) au lieu d'arrêter la phase 2.* | R1 |
 | P11 | Pause sur défi Cloudflare, reprise automatique | `wait_for_cloudflare` | Identique **et** étendue au Turnstile de l'autorisation de fiche | R4 |
 | P12 | Limite « trop de fiches » : attentes 2/2/5 min, ralentissement ×1,5 jusqu'à ×4 | `read_flight_sheet`, `delay_scale` | Identique | test unitaire (détection) |
 | P13 | Limite quotidienne de fiches : arrêt propre de la phase 2 | `DailyLimitError` | Identique | test unitaire |
@@ -111,7 +111,7 @@ Toute ligne doit être cochée par le Contrôleur avant la bascule. « Test » =
 | P27 | `debug_flight_page.py` | outil | Conservé ; ajoute la capture des requêtes réseau | relecture |
 | P28 | `fix_truncated_names.py` | outil ponctuel | Inchangé ; rendu inutile pour l'avenir par la réanalyse (A3) | — |
 | P29 | Format du pkl et sortie de `export_web.py` | `create_global_pkl` | **Identiques** colonne pour colonne ; colonnes nouvelles seulement si l'Architecte les valide avec la webapp | A/B + `make test-py` |
-| P30 | Profil Chrome persistant `_chrome_profile`, une seule fenêtre | `create_driver` | Identique | R1 |
+| P30 | Profil Chrome persistant `_chrome_profile`, une seule fenêtre | `create_driver` | Identique. *Note du 24/11/2026 : toujours une seule fenêtre à la fois, mais jusqu'à deux par exécution, l'une après l'autre : connectée (profil persistant) pour les vols à fichiers, puis sans connexion (profil temporaire jetable) pour les autres fiches.* | R1 |
 
 ---
 

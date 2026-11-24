@@ -26,7 +26,8 @@ def setup_queue(tmp_path, monkeypatch, n):
 
 def run_pilots(tmp_path, **kwargs):
     return browser_session.process_pilots(
-        path=str(tmp_path), pilots=[PILOT], do_scrape=False, files_by_pilot={}, **kwargs)
+        path=str(tmp_path), pilots=[PILOT], do_scrape=False,
+        **{"files_by_pilot": {}, **kwargs})
 
 
 # ------------------------ détection ------------------------
@@ -104,7 +105,7 @@ def test_private_profil_temporaire_supprime(tmp_path, monkeypatch, sheet_recent)
 
     monkeypatch.setattr(browser_session, "create_driver", fake_create)
     make_flight(tmp_path, NUM)
-    run_pilots(tmp_path, private=True)
+    run_pilots(tmp_path, private=True, files_by_pilot={PILOT: ("gpx",)})   # vol à fichiers : fenêtre connectée
     kw = seen[0]
     import os
     assert kw["private"] is True and "syride_private_" in kw["profile_dir"]
@@ -119,7 +120,7 @@ def test_non_private_profil_persistant(tmp_path, monkeypatch, sheet_recent):
     seen = []
     monkeypatch.setattr(browser_session, "create_driver", lambda **kw: seen.append(kw) or FakeDriver())
     make_flight(tmp_path, NUM)
-    run_pilots(tmp_path)
+    run_pilots(tmp_path, files_by_pilot={PILOT: ("gpx",)})   # vol à fichiers : fenêtre connectée
     assert seen[0]["private"] is False and seen[0]["profile_dir"].endswith("_chrome_profile")
 
 

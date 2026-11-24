@@ -213,3 +213,31 @@ Le constat « l'accès est enregistré malgré `turnstile_required` » est un d�
 **Le code de production ne doit jamais s'en servir** : après une réponse `turnstile_required`, on ne tente pas
 `ficheVol.php` ; on passe par la page du vol dans Chrome, où le widget Turnstile de Syride s'exécute normalement et où
 l'humain le valide si besoin (voir `MIGRATION_SCRAPING.md`, scène 9).
+
+## 10. Contrôle du 24/11/2026 : existe-t-il un endpoint JSON pour la fiche ou la trace ?
+
+Capture HAR manuelle avec [reverse-api-engineer](https://github.com/kalil0321/reverse-api-engineer) (mode `manual`,
+navigation humaine, Turnstile validé par l'humain). 3 fiches ouvertes (2 d'AdrienM, 1 d'un autre pilote), 708 requêtes.
+Le HAR contient le cookie de session : il reste hors du dépôt (`~/.reverse-api/runs/har/`).
+
+**Réponse : non.** Aucune requête de données de trace n'est partie pendant la navigation dans la fiche (carte, courbe,
+curseur). La trace est entièrement contenue dans le JSON `fv-config` intégré à `ficheVol.php` (section 6), déjà
+exploité. Le scraper n'a donc pas de meilleure source pour la trace.
+
+Endpoints vus qui ne figuraient pas dans ce contrat :
+
+| Ressource | Méthode | Réponse | Intérêt |
+|---|---|---|---|
+| `/ficheVol.php?idSession=<num>&l=fr&betaAction=companions` | POST (corps vide) | JSON `{"rows":[{id, rider, name, site, time, distance, wing, percent, periods, ticket}]}` | vols partagés avec d'autres pilotes et **% de vol partagé** ; `rows` vide sinon. Chargé à chaque fiche |
+| `/ajax/explorateur/verifier-turnstile.php` | POST `token=<jeton Turnstile>` | JSON `{success, expires, frameSource, frameExpires, frameToken}` | validation du Turnstile ; ne concerne que le navigateur |
+| `/ajax/vols/visualisation-gps.php?idSession=…&l=fr&expires=<ts>&key=<hex>` | lien présent dans la fiche | non appelé pendant la capture | non vérifié |
+
+Changements de comportement observés :
+
+- **Turnstile** : premier `autoriser-affichage` → `turnstile_required` ; après validation humaine
+  (`verifier-turnstile.php`), le même POST répond `{"success":true,"expires":<ts>,"pilot":"<pseudo>"}`. Les deux fiches
+  suivantes de la même session ont été accordées **directement** (`success:true`, sans nouveau Turnstile) : la validation
+  couvre la session pendant un certain temps (durée non mesurée). Le cas « accès accordé malgré `turnstile_required` »
+  (section 4) n'a pas été testé (règle de l'Architecte).
+- **Téléchargements** : `downloadFlightFile.php` (IGC) répond **403** sans connexion, puis 200 (IGC et GPX) une fois
+  connecté. Le téléchargement des fichiers suppose donc une session connectée.
