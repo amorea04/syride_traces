@@ -59,11 +59,16 @@ uv run python main.py --publish 1          # scraping, pkl, puis publication de 
    - **doublons probables** (même pilote, même date et même durée, numéros différents) : listés dans
      `<données>/_rapport_doublons.txt`, jamais supprimés.
    Un instantané de la liste est gardé dans `<pilote>/_raw/activites_*.html.gz` (les 5 derniers).
-2. **Complétion** : pour chaque vol à compléter, le script ouvre la fiche dans Chrome (une seule fenêtre,
-   profil `_chrome_profile`) et enregistre la **fiche brute** `<numéro>.sheet.html.gz`, qui contient la
+2. **Complétion** : pour chaque vol à compléter, le script ouvre la fiche dans Chrome et enregistre la **fiche brute** `<numéro>.sheet.html.gz`, qui contient la
    trace complète (`fv-config`, 1 point par seconde). Les informations propres à la fiche, la trace, les
    statistiques et les coordonnées de départ en sont tirées. Ordre : vols incomplets, vols sans trace, puis
    le reste du plus récent au plus ancien. Chrome n'est ouvert que s'il y a une fiche à lire.
+   **Connexion à la demande** : la connexion ne sert qu'à télécharger les fichiers. Une première fenêtre
+   connectée (profil `_chrome_profile`) traite d'abord les vols dont le pilote a un profil de fichiers et
+   à qui il manque un fichier ; elle est fermée, puis une seconde fenêtre sans connexion (profil temporaire
+   jetable) lit les fiches de tous les autres vols. Si la connexion n'est pas confirmée, les vols à fichiers
+   sont lus eux aussi sans connexion (informations seules) et leurs fichiers reportés ; un vol à qui il ne
+   manque que des fichiers n'est alors pas lu (la fiche ne lui apporterait rien).
 3. **Index** : mise à jour de `flights.db`, puis génération du pkl.
 
 **Profils à fichiers.** GPX et IGC ne sont téléchargés que pour les pilotes de
