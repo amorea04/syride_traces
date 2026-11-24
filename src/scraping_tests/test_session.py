@@ -629,11 +629,11 @@ def test_connexion_refusee_vol_a_qui_il_ne_manque_que_des_fichiers_non_lu(tmp_pa
 def test_budget_partage_entre_les_deux_passes(tmp_path, monkeypatch, sheet_recent):
     session = Session(monkeypatch, sheet_recent)
     win = Windows(monkeypatch, session)
-    make_flight(tmp_path, "10", pilot=PILOT)
+    make_flight(tmp_path, "20", pilot=PILOT)   # rang 0 : aucun vol mieux classé à réserver
     for num in ("11", "12", "13"):
         make_flight(tmp_path, num, pilot=AUTRE)
     result = run_session(tmp_path, max_sheets=2)
-    assert len(win.reads()) == 2 and win.reads()[0][1:] == (PILOT, "10")   # passe 1 d'abord
+    assert len(win.reads()) == 2 and win.reads()[0][1:] == (PILOT, "20")   # passe 1 d'abord
     assert result["sheets_used"] == 2 and result["pending"] == 2
     assert "Nombre maximum de fiches atteint (2)" in result["stopped"]
 
@@ -674,3 +674,118 @@ def test_dry_run_annonce_la_fenetre_prevue(tmp_path, monkeypatch, sheet_recent, 
     assert f"{PILOT} / trace 10" in out and "[fenêtre connectée]" in out
     assert f"{AUTRE} / trace 11" in out and "[fenêtre sans connexion]" in out
     assert session.reads == []
+
+
+# ------------------------ Priorité des fiches sous plafond (réserve) et fin à la limite de téléchargement ------------------------
+
+
+def full_json(sheet_html):
+    """Champs de fiche complets : il ne manque alors que des fichiers (groupe 1 de la file)."""
+    full = parse_flight_sheet_full(sheet_html)[0]
+    full.pop("adresse_zip", None)
+    return full
+
+
+def test_plafond_reserve_aux_vols_prioritaires_fenetre_connectee_non_ouverte(tmp_path, monkeypatch,
+                                                                             sheet_recent, capsys):
+    """Plafond 3 : 5 vols sans fichiers (informations manquantes, rangs 0-4) passent avant 2 vols à
+    fichiers (rangs 5-6). Aucune fiche connectée, aucune connexion pour rien."""
+    session = Session(monkeypatch, sheet_recent)
+    win = Windows(monkeypatch, session)
+    full = full_json(sheet_recent)
+    for num in ("20", "21", "22", "23", "24"):
+        make_flight(tmp_path, num, pilot=AUTRE)
+    for num in ("10", "11"):
+        make_flight(tmp_path, num, pilot=PILOT, **full)
+    result = run_session(tmp_path, max_sheets=3)
+    out = capsys.readouterr().out
+    assert win.kinds().count("create") == 1 and "login" not in win.kinds()   # une fenêtre, sans connexion
+    assert win.events[0][2] is True
+    assert win.reads() == [(1, AUTRE, "24"), (1, AUTRE, "23"), (1, AUTRE, "22")]   # rangs 0, 1, 2
+    assert session.downloads == []
+    assert result["sheets_used"] == 3 and result["pending"] == 4
+    assert "Nombre maximum de fiches atteint (3)" in result["stopped"]
+    assert "Fenêtre connectée non ouverte" in out
+
+
+def test_plafond_large_la_passe_connectee_lit_tout_puis_les_vols_prioritaires(tmp_path, monkeypatch,
+                                                                              sheet_recent):
+    """Plafond 10 : 2 vols prioritaires + 5 vols à fichiers = 7 fiches, tout tient."""
+    session = Session(monkeypatch, sheet_recent)
+    win = Windows(monkeypatch, session)
+    full = full_json(sheet_recent)
+    for num in ("20", "21"):
+        make_flight(tmp_path, num, pilot=AUTRE)
+    for num in ("10", "11", "12", "13", "14"):
+        make_flight(tmp_path, num, pilot=PILOT, **full)
+    result = run_session(tmp_path, max_sheets=10)
+    assert [r[0] for r in win.reads()] == [1] * 5 + [2] * 2
+    assert [r[2] for r in win.reads()][5:] == ["21", "20"]
+    assert result["sheets_used"] == 7 and result["pending"] == 0 and result["stopped"] is None
+
+
+def test_plafond_serre_la_passe_connectee_s_arrete_et_garde_la_reserve(tmp_path, monkeypatch,
+                                                                       sheet_recent, capsys):
+    """Plafond 6 : 2 vols prioritaires en réserve, la fenêtre connectée lit 4 fiches puis s'arrête ;
+    la passe 2 lit les 2 vols prioritaires ; le 5e vol connecté reste à compléter (non lu sans
+    connexion)."""
+    session = Session(monkeypatch, sheet_recent)
+    win = Windows(monkeypatch, session)
+    full = full_json(sheet_recent)
+    for num in ("20", "21"):
+        make_flight(tmp_path, num, pilot=AUTRE)
+    for num in ("10", "11", "12", "13", "14"):
+        make_flight(tmp_path, num, pilot=PILOT, **full)
+    result = run_session(tmp_path, max_sheets=6)
+    out = capsys.readouterr().out
+    assert [r[0] for r in win.reads()] == [1] * 4 + [2] * 2
+    assert {r[2] for r in win.reads() if r[0] == 2} == {"20", "21"}
+    assert win.kinds().count("create") == 2 and win.kinds().count("login") == 1
+    assert result["sheets_used"] == 6 and result["pending"] == 1
+    assert "Nombre maximum de fiches atteint (6)" in result["stopped"]
+    assert "Fenêtre connectée arrêtée" in out and "vols mieux classés" in out
+
+
+def test_limite_de_telechargement_la_passe_connectee_se_termine_et_le_reste_passe_en_passe_2(
+        tmp_path, monkeypatch, sheet_recent, capsys):
+    session = Session(monkeypatch, sheet_recent)
+    win = Windows(monkeypatch, session)
+    appels = []
+
+    def download(**kwargs):
+        appels.append(kwargs["expected_ext"])
+        if len(appels) == 2:
+            raise scraper.DownloadLimitError("DOWNLOAD LIMIT REACHED")
+
+    monkeypatch.setattr(scraper, "download_trace_via_browser", download)
+    full = full_json(sheet_recent)
+    make_flight(tmp_path, "40", pilot=AUTRE)               # rang 0 : sans fichiers
+    make_flight(tmp_path, "38", pilot=PILOT)               # rang 1 : connecté, téléchargé
+    make_flight(tmp_path, "37", pilot=PILOT)               # rang 2 : connecté, limite atteinte
+    make_flight(tmp_path, "36", pilot=AUTRE)               # rang 3 : sans fichiers
+    make_flight(tmp_path, "35", pilot=PILOT)               # rang 4 : connecté non traité, infos manquantes
+    make_flight(tmp_path, "34", pilot=PILOT, **full)       # rang 5 : connecté non traité, que des fichiers
+    result = run_session(tmp_path, files_by_pilot={PILOT: ("gpx",)}, backfill_raw=False)
+    out = capsys.readouterr().out
+    assert win.reads() == [(1, PILOT, "38"), (1, PILOT, "37"),            # passe connectée, arrêtée au 2e vol
+                           (2, AUTRE, "40"), (2, AUTRE, "36"), (2, PILOT, "35")]   # passe 2, dans l'ordre des rangs
+    assert win.kinds().count("login") == 1 and win.kinds().count("create") == 2
+    assert len(appels) == 2                                                # plus aucun téléchargement ensuite
+    assert result["downloads_blocked"] is True
+    assert result["sheets_used"] == 5 and result["pending"] == 0
+    assert result["pending_downloads"] == 3                                # 37 (bloqué), 35 (infos seules), 34 (sauté)
+    assert f"{PILOT} / trace 35  (infos manquantes + fichiers) [infos seules : téléchargements bloqués]" in out or \
+        "trace 35" in out and "[infos seules : téléchargements bloqués]" in out
+    assert not any(r[2] == "34" for r in win.reads())
+
+
+def test_sans_plafond_la_passe_connectee_lit_tout_avant_la_passe_2(tmp_path, monkeypatch, sheet_recent):
+    session = Session(monkeypatch, sheet_recent)
+    win = Windows(monkeypatch, session)
+    full = full_json(sheet_recent)
+    make_flight(tmp_path, "20", pilot=AUTRE)
+    for num in ("10", "11", "12"):
+        make_flight(tmp_path, num, pilot=PILOT, **full)
+    result = run_session(tmp_path)    # max_sheets None
+    assert [r[0] for r in win.reads()] == [1, 1, 1, 2]
+    assert result["sheets_used"] == 4 and result["pending"] == 0 and result["stopped"] is None
