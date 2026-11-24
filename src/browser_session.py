@@ -29,6 +29,13 @@ Rien n'est jamais supprimé. Gestion des limites de Syride (stratégie « dégra
 
 Le lancement suivant complète ce qui manque.
 
+Priorité sous plafond (--max-sheets) : la file globale est triée par groupes (informations
+manquantes d'abord). La fenêtre connectée (vols à fichiers) passe en premier mais ne lit une fiche
+que s'il reste assez de plafond pour les vols mieux classés de la fenêtre sans connexion ; sinon elle
+s'arrête (ou n'est pas ouverte) et ses vols restent à compléter. À la première limite de
+téléchargement, la fenêtre connectée se termine et ses vols restants rejoignent la fenêtre sans
+connexion, dans l'ordre de la file.
+
 Autres points : une seule fenêtre Chrome à la fois (connectée pour les vols à fichiers, puis
 sans connexion pour les autres fiches), pause automatique en cas de vérification
 Cloudflare ou Turnstile (voir syride_scraper), profil Chrome persistant (_chrome_profile) pour la fenêtre connectée.
@@ -403,6 +410,12 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
     connexion (profil temporaire jetable) pour tous les autres vols, où aucun téléchargement n'est
     jamais tenté. Si la connexion n'est pas confirmée, les vols à fichiers sont lus dans la seconde
     fenêtre en « informations seules » (fichiers reportés). Budget et arrêts sont communs aux deux.
+    Priorité sous plafond (max_sheets) : avant de lire la fiche d'un vol connecté de rang k, on
+    réserve une fiche par vol de la seconde fenêtre de rang < k (vols mieux classés, par ex.
+    informations manquantes) ; si le budget restant n'y suffit plus, la fenêtre connectée s'arrête
+    (ou n'est pas ouverte) et ses vols restants ne sont pas lus : ils restent à compléter. À la
+    première limite de téléchargement, la fenêtre connectée se termine et ses vols restants sont
+    lus dans la seconde fenêtre, mêlés aux autres selon leur rang.
 
       PHASE 1 (si do_scrape) : liste des vols de TOUS les pilotes lue par HTTP (sans Chrome),
           réconciliée avec le disque : vols nouveaux, modifiés, absents, réapparus. Aucune
@@ -647,12 +660,37 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
             results = {}   # pilote -> [ok, échecs, sans lien, infos seules]
             loop = {"delay_scale": 1.0, "n_sheet_calls": 0, "processed": 0, "stop": False}
 
+            plain_ranks = [k for k, _ in plain_items]
+
+            def reserve_hit(rank):
+                """Vrai si la fiche du vol de rang `rank` (passe connectée) doit être gardée pour des
+                vols mieux classés lus en passe 2 : budget déjà utilisé + vols mieux classés de la
+                passe 2 >= plafond. Sans plafond : jamais."""
+                if budget.max is None:
+                    return False
+                n_avant = sum(1 for r in plain_ranks if r < rank)
+                return budget.used + n_avant >= budget.max
+
             def run_pass(driver, items, connected, reason=None, reason_ids=()):
                 """Traite `items` [(rang dans la file, vol)] dans la fenêtre `driver`. Sans connexion
-                (connected=False), AUCUN téléchargement n'est tenté (allow_download=False)."""
+                (connected=False), AUCUN téléchargement n'est tenté (allow_download=False).
+                Retourne (reportes, reserves) pour la passe connectée : `reportes` = vols non traités
+                à lire en passe 2 (limite de téléchargement atteinte), `reserves` = vols laissés de côté
+                pour des vols prioritaires de la passe 2 (réserve de budget), à compléter plus tard."""
                 nonlocal blocked, pending, downloads_blocked, pending_downloads
-                for i, item in items:
+                for pos, (i, item) in enumerate(items):
                     pilot, nav, data_nav = item["pilot"], item["num"], item["data"]
+
+                    # Réserve de budget (passe connectée) : les fiches restantes du plafond vont aux
+                    # vols mieux classés de la passe 2 ; les vols connectés restants ne sont PAS lus
+                    # sans connexion, ils restent à compléter.
+                    if connected and reserve_hit(i):
+                        rest = items[pos:]
+                        print(f"\nFenêtre connectée arrêtée : les {budget.max - budget.used} fiche(s) "
+                              f"restantes du plafond vont à des vols mieux classés "
+                              f"dans la file. {len(rest)} vol(s) à fichiers restent à compléter.",
+                              flush=True)
+                        return [], rest
 
                     # Téléchargements bloqués pour la journée, ou fenêtre sans connexion : un vol à
                     # qui il ne manque que des fichiers n'apporte rien (la fiche ne ferait que
@@ -671,7 +709,7 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
                         print(f"\n{blocked}\nArrêt de la consultation des fiches : "
                               f"{pending} vol(s) restent à compléter.", flush=True)
                         loop["stop"] = True
-                        return
+                        return [], []
 
                     if driver[0] is None:   # fenêtre ouverte seulement quand une fiche est à lire
                         print("\nOuverture de la fenêtre sans connexion (fiches seules, aucun "
@@ -707,7 +745,7 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
                         print(f"\n{blocked}\nArrêt de la consultation des fiches : "
                               f"{pending} vol(s) restent à compléter.", flush=True)
                         loop["stop"] = True
-                        return
+                        return [], []
                     except Exception:
                         print("", "\n", traceback.format_exc())
                         print(f"Trace {nav} non complétée (informations conservées).")
@@ -735,37 +773,60 @@ def process_pilots(path: str, pilots: list, scroll: int = -1, do_scrape: bool = 
                                     "ne sera téléchargé pour cette exécution.\nOn continue de parcourir les fiches "
                                     "pour compléter les JSON (informations seules)."
                                   + "\n" + "-" * 60, flush=True)
+                        if connected:
+                            # Fin de la passe connectée : les vols suivants passent en passe 2
+                            rest = items[pos + 1:]
+                            if rest:
+                                print(f"Fenêtre connectée terminée : {len(rest)} vol(s) à fichiers "
+                                      f"passent à la lecture sans connexion.", flush=True)
+                            return rest, []
                     elif status == "info_only":
                         counts[3] += 1
                         pending_downloads += 1
                     else:
                         counts[1] += 1
+                return [], []
 
-            # ---- Passe 1 : fenêtre CONNECTÉE, vols à fichiers (en premier : ils sont peu nombreux)
+            # ---- Passe 1 : fenêtre CONNECTÉE, vols à fichiers (en premier : ils sont peu nombreux).
+            # Réserve : le plafond de fiches est d'abord pour les vols mieux classés de la passe 2.
             switched, switch_reason = [], None
+            carried, reserved = [], []
             if connected_items:
-                print(f"\nFenêtre connectée : {len(connected_items)} vol(s) à fichiers.", flush=True)
-                try:
-                    logged_in = open_window(True)
-                    if logged_in:
-                        run_pass([ctx["driver"]], connected_items, True)
-                    else:
-                        switched = connected_items
-                        switch_reason = "connexion non confirmée"
-                        print("Connexion à Syride non confirmée : les fiches des vols à fichiers sont "
-                              "lues sans connexion (informations seules), téléchargements reportés. "
-                              "Vérifie SYRIDE_EMAIL / SYRIDE_PASSWORD dans .env.", flush=True)
-                finally:
-                    close_window()   # une seule fenêtre à la fois
+                if reserve_hit(connected_items[0][0]):
+                    # Aucune fiche connectée ne peut être lue : pas de fenêtre, pas de connexion.
+                    reserved = list(connected_items)
+                    print(f"\nFenêtre connectée non ouverte : les {budget.max - budget.used} fiche(s) "
+                          f"du plafond vont à des vols mieux classés dans la file. "
+                          f"{len(reserved)} vol(s) à fichiers restent à compléter.", flush=True)
+                else:
+                    print(f"\nFenêtre connectée : {len(connected_items)} vol(s) à fichiers.", flush=True)
+                    try:
+                        logged_in = open_window(True)
+                        if logged_in:
+                            carried, reserved = run_pass([ctx["driver"]], connected_items, True)
+                        else:
+                            switched = connected_items
+                            switch_reason = "connexion non confirmée"
+                            print("Connexion à Syride non confirmée : les fiches des vols à fichiers sont "
+                                  "lues sans connexion (informations seules), téléchargements reportés. "
+                                  "Vérifie SYRIDE_EMAIL / SYRIDE_PASSWORD dans .env.", flush=True)
+                    finally:
+                        close_window()   # une seule fenêtre à la fois
 
             # ---- Passe 2 : fenêtre SANS connexion (jamais de connexion, jamais de téléchargement)
-            if not loop["stop"] and (plain_items or switched):
+            if not loop["stop"] and (plain_items or switched or carried):
                 holder = [None]
                 try:
-                    run_pass(holder, sorted(plain_items + switched, key=lambda t: t[0]), False,
+                    run_pass(holder, sorted(plain_items + switched + carried, key=lambda t: t[0]), False,
                              reason=switch_reason, reason_ids={k for k, _ in switched})
                 finally:
                     close_window()
+
+            if not loop["stop"]:
+                # Fin normale : restent à compléter les vols connectés laissés de côté (réserve)
+                pending = len(queue) - loop["processed"]
+                if reserved and blocked is None:
+                    blocked = _blocked_reason(SheetBudgetReached(), budget)
 
             if results:
                 print("\nBilan de la phase 2 :")
