@@ -62,10 +62,10 @@ PILOTES = {
 FICHIERS_PAR_PILOTE = {"AdrienM": ("gpx", "igc")}
 
 # Nombre de fiches de vol consultées par lancement (défaut de --max-sheets). Syride en autorise
-# environ 50 par jour : 40 laisse une marge pour un second lancement dans la journée. Les vols
-# nouveaux ou incomplets passent d'abord, le rattrapage des fiches brutes utilise le reste. Le
-# script s'arrête plus tôt si Syride affiche une limite.
-MAX_SHEETS_PAR_LANCEMENT = 40
+# environ 50 par jour : 50 utilise tout le quota en un lancement. Les vols à fichiers passent
+# d'abord, puis toutes les autres fiches du plus récent au plus ancien. Le script s'arrête plus
+# tôt si Syride affiche une limite.
+MAX_SHEETS_PAR_LANCEMENT = 50
 
 # Dérivés (ne pas modifier : utilisés par main.py et create_global_pkl.py)
 # Pilotes scrapés par défaut (nom du dossier)

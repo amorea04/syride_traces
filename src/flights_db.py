@@ -382,13 +382,11 @@ def get_global_queue(conn: sqlite3.Connection, pilots: list, fill_igc: bool = Fa
         session qui ne connaît pas encore les fiches brutes continue de fonctionner).
 
     Retourne une liste de dicts {pilot, num, data, need_gpx, need_igc, need_info, need_raw},
-    triée par groupes :
-      1. informations de fiche manquantes,
-      2. GPX manquant (informations présentes),
-      3. IGC seul,
-      4. fiche brute seule (rattrapage) ;
+    triée en deux groupes :
+      1. vols à fichiers (GPX manquant, ou IGC avec fill_igc), lus dans la fenêtre connectée,
+      2. toutes les autres fiches (informations manquantes ou fiche brute seule), mêlées ;
     dans chaque groupe, du plus récent au plus ancien (numéro de trace décroissant, tous
-    pilotes confondus).
+    pilotes confondus ; le numéro suit l'ordre d'envoi sur Syride, à peu près celui des dates).
     """
     if tasks not in ("all", "info", "files"):
         raise ValueError(f"Mode tasks invalide : {tasks!r} (attendu : all, info ou files)")
@@ -432,15 +430,10 @@ def get_global_queue(conn: sqlite3.Connection, pilots: list, fill_igc: bool = Fa
         if files_by_pilot is None:   # ordre historique : (IGC seul en dernier, numéro décroissant)
             igc_only = not (item["need_info"] or item["need_gpx"])
             return (igc_only, -(int(item["num"]) if item["num"].isdigit() else 0))
-        if item["need_info"]:
-            group = 0
-        elif item["need_gpx"]:
-            group = 1
-        elif item["need_igc"] and fill_igc:
-            group = 2
-        else:
-            group = 3
-        return (group, -(int(item["num"]) if item["num"].isdigit() else 0))
+        # Vols à fichiers d'abord (fenêtre connectée), puis toutes les autres fiches (informations
+        # manquantes ou fiche brute seule) mêlées : seul compte le numéro de trace.
+        file_work = item["need_gpx"] or (item["need_igc"] and fill_igc)
+        return (0 if file_work else 1, -(int(item["num"]) if item["num"].isdigit() else 0))
 
     queue.sort(key=sort_key)
     return queue

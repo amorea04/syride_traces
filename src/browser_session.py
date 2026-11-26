@@ -29,8 +29,8 @@ Rien n'est jamais supprimé. Gestion des limites de Syride (stratégie « dégra
 
 Le lancement suivant complète ce qui manque.
 
-Priorité sous plafond (--max-sheets) : la file globale est triée par groupes (informations
-manquantes d'abord). La fenêtre connectée (vols à fichiers) passe en premier mais ne lit une fiche
+Priorité sous plafond (--max-sheets) : la file globale met les vols à fichiers d'abord, puis toutes
+les autres fiches du plus récent au plus ancien. La fenêtre connectée (vols à fichiers) passe en premier mais ne lit une fiche
 que s'il reste assez de plafond pour les vols mieux classés de la fenêtre sans connexion ; sinon elle
 s'arrête (ou n'est pas ouverte) et ses vols restent à compléter. À la première limite de
 téléchargement, la fenêtre connectée se termine et ses vols restants rejoignent la fenêtre sans

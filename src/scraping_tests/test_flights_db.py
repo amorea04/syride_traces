@@ -358,8 +358,8 @@ def test_file_avec_files_by_pilot(tmp_path, conn):
     build_queue_fixture(tmp_path, conn)
     queue = flights_db.get_global_queue(conn, [PILOT, "Autre"],
                                         files_by_pilot={PILOT: ("gpx", "igc")})
-    # groupes : infos (60 puis 10), GPX seul (50), IGC non demandé, rattrapage brut (40, 20)
-    assert nums(queue) == ["60", "10", "50", "40", "20"]
+    # vols à fichiers (50, 10), puis les autres fiches par numéro décroissant : infos (60), brut (40, 20)
+    assert nums(queue) == ["50", "10", "60", "40", "20"]
     by = {i["num"]: i for i in queue}
     assert by["60"]["need_gpx"] is False and by["60"]["need_igc"] is False   # profil sans fichiers
     assert by["60"]["need_info"] and by["60"]["need_raw"]
@@ -374,10 +374,10 @@ def test_file_fill_igc_et_groupes(tmp_path, conn):
     build_queue_fixture(tmp_path, conn)
     queue = flights_db.get_global_queue(conn, [PILOT], fill_igc=True, backfill_raw=False,
                                         files_by_pilot={PILOT: ("gpx", "igc")})
-    assert nums(queue) == ["10", "50", "40"]    # infos, GPX, puis IGC seul ; 20 et 30 sont complets
+    assert nums(queue) == ["50", "40", "10"]    # tous à fichiers (GPX ou IGC) ; 20 et 30 sont complets
     queue = flights_db.get_global_queue(conn, [PILOT], fill_igc=True,
                                         files_by_pilot={PILOT: ("gpx",)})
-    assert nums(queue) == ["10", "50", "40", "20"]   # profil sans IGC : IGC ignoré ; 40 et 20 en rattrapage
+    assert nums(queue) == ["50", "10", "40", "20"]   # profil sans IGC : IGC ignoré ; 40 et 20 en rattrapage
 
 
 def test_file_backfill_raw(tmp_path, conn):
@@ -385,8 +385,8 @@ def test_file_backfill_raw(tmp_path, conn):
     avec = flights_db.get_global_queue(conn, [PILOT], files_by_pilot={PILOT: ("gpx",)})
     sans = flights_db.get_global_queue(conn, [PILOT], files_by_pilot={PILOT: ("gpx",)},
                                        backfill_raw=False)
-    assert nums(avec) == ["10", "50", "40", "20"]
-    assert nums(sans) == ["10", "50"]
+    assert nums(avec) == ["50", "10", "40", "20"]
+    assert nums(sans) == ["50", "10"]
 
 
 def test_file_modes_et_no_link(tmp_path, conn):

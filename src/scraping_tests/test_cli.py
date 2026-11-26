@@ -109,10 +109,10 @@ def test_main_fill_igc_sans_pilote_igc(recorder, capsys):
 
 
 @pytest.mark.parametrize("argv,expected", [
-    ([], 40), (["--max-sheets", "12"], 12), (["--max-sheets", "0"], None),
+    ([], 50), (["--max-sheets", "12"], 12), (["--max-sheets", "0"], None),
 ])
 def test_main_plafond_de_fiches(recorder, argv, expected):
-    # Défaut : MAX_SHEETS_PAR_LANCEMENT (40) ; 0 = sans plafond.
-    assert params.MAX_SHEETS_PAR_LANCEMENT == 40
+    # Défaut : MAX_SHEETS_PAR_LANCEMENT (50) ; 0 = sans plafond.
+    assert params.MAX_SHEETS_PAR_LANCEMENT == 50
     main.main(["--dry-run", "1", "--pilots", "j2f"] + argv)
     assert recorder.calls[0]["max_sheets"] == expected
