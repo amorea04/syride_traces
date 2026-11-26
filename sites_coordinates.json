@@ -75,6 +75,12 @@
     "longitude": -5.3896999999999995,
     "n_files": 2
   },
+  "Alpage Sous Le Nivolet": {
+    "latitude": 45.609625,
+    "longitude": 5.9631,
+    "n_available": 2,
+    "n_files": 2
+  },
   "Alpe D'Huez : Le Signal": {
     "latitude": 45.10043866666666,
     "longitude": 6.059772,
@@ -121,9 +127,10 @@
     "n_files": 2
   },
   "Aubas": {
-    "latitude": 45.088716700000006,
-    "longitude": 1.2151334,
-    "n_files": 10
+    "latitude": 45.088751214285715,
+    "longitude": 1.215047666666667,
+    "n_available": 14,
+    "n_files": 14
   },
   "Aubeville": {
     "latitude": 45.49739336,
@@ -155,6 +162,12 @@
     "longitude": 5.578033,
     "n_files": 1
   },
+  "Aéroclub De Saintes": {
+    "latitude": 45.7026,
+    "longitude": -0.63925,
+    "n_available": 1,
+    "n_files": 1
+  },
   "Aérodrome d'Ussel Thalamy": {
     "latitude": 45.53640907142857,
     "longitude": 2.420271,
@@ -172,9 +185,10 @@
     "n_files": 3
   },
   "Balanzac N": {
-    "latitude": 45.73069057142857,
-    "longitude": -0.8441094285714287,
-    "n_files": 7
+    "latitude": 45.733562871794874,
+    "longitude": -0.8500640512820513,
+    "n_available": 13,
+    "n_files": 13
   },
   "Ballerand": {
     "latitude": 45.604889625,
@@ -302,6 +316,12 @@
     "longitude": 5.9612,
     "n_files": 2
   },
+  "Bros": {
+    "latitude": 45.066716666666665,
+    "longitude": 1.8996833333333334,
+    "n_available": 1,
+    "n_files": 1
+  },
   "Brûlain1": {
     "latitude": 46.1924866,
     "longitude": -0.33490204,
@@ -408,10 +428,10 @@
     "n_files": 1
   },
   "Charvet": {
-    "latitude": 45.5515,
-    "longitude": 6.092083333333333,
-    "n_available": 1,
-    "n_files": 1
+    "latitude": 45.55215833333333,
+    "longitude": 6.092325,
+    "n_available": 2,
+    "n_files": 2
   },
   "Chavagnac": {
     "latitude": 45.86611675,
@@ -657,6 +677,12 @@
     "n_available": 3,
     "n_files": 3
   },
+  "Croix Du Plane": {
+    "latitude": 45.655883333333335,
+    "longitude": 6.135516666666667,
+    "n_available": 1,
+    "n_files": 1
+  },
   "Crète Sous La Croix": {
     "latitude": 45.6127085,
     "longitude": 5.969525,
@@ -718,9 +744,10 @@
     "n_files": 1
   },
   "Douelle": {
-    "latitude": 44.46376442857143,
-    "longitude": 1.3723118571428572,
-    "n_files": 7
+    "latitude": 44.46375566666667,
+    "longitude": 1.3722962592592591,
+    "n_available": 9,
+    "n_files": 9
   },
   "Dune Du Pilat - Grande Dune": {
     "latitude": 44.593662125,
@@ -796,6 +823,12 @@
     "latitude": 45.6613665,
     "longitude": 6.171142,
     "n_files": 2
+  },
+  "Falaise Mortagne": {
+    "latitude": 45.48308333333333,
+    "longitude": -0.8008833333333333,
+    "n_available": 1,
+    "n_files": 1
   },
   "Fayards": {
     "latitude": 45.56119235999999,
@@ -873,15 +906,22 @@
     "longitude": 6.371755666666668,
     "n_files": 3
   },
+  "Grand Som": {
+    "latitude": 45.371183333333335,
+    "longitude": 5.81265,
+    "n_available": 1,
+    "n_files": 1
+  },
   "Grands Montets": {
     "latitude": 45.947083,
     "longitude": 6.960017,
     "n_files": 1
   },
   "Grands Moulins": {
-    "latitude": 45.4068,
-    "longitude": 6.19885,
-    "n_files": 1
+    "latitude": 45.40756666666667,
+    "longitude": 6.195333333333334,
+    "n_available": 2,
+    "n_files": 2
   },
   "Granier": {
     "latitude": 45.4669,
@@ -916,9 +956,10 @@
     "n_files": 25
   },
   "Intermédiaire Sud Margériaz": {
-    "latitude": 45.625417,
-    "longitude": 6.0489,
-    "n_files": 1
+    "latitude": 45.625005666666674,
+    "longitude": 6.048811111111111,
+    "n_available": 3,
+    "n_files": 3
   },
   "Izana": {
     "latitude": 28.329745100000004,
@@ -1005,6 +1046,12 @@
     "longitude": 5.822683,
     "n_files": 1
   },
+  "La Couronne Se": {
+    "latitude": 45.58166666666666,
+    "longitude": 0.1065,
+    "n_available": 1,
+    "n_files": 1
+  },
   "La Couronne1": {
     "latitude": 45.583283,
     "longitude": 0.101867,
@@ -1032,9 +1079,10 @@
     "n_files": 25
   },
   "La Scia": {
-    "latitude": 45.345379599999994,
-    "longitude": 5.8458098,
-    "n_files": 5
+    "latitude": 45.345358000000004,
+    "longitude": 5.845772055555557,
+    "n_available": 6,
+    "n_files": 6
   },
   "La Tanière": {
     "latitude": 44.216937,
@@ -1294,9 +1342,10 @@
     "n_files": 18
   },
   "Les Mottes   Le Mur": {
-    "latitude": 45.77261458333333,
-    "longitude": -0.8530369166666666,
-    "n_files": 24
+    "latitude": 45.77251268,
+    "longitude": -0.8531207733333334,
+    "n_available": 26,
+    "n_files": 25
   },
   "Les Mottes Nord": {
     "latitude": 45.75367059999999,
@@ -1443,14 +1492,32 @@
     "longitude": 6.8676165000000005,
     "n_files": 2
   },
+  "Mont Granier": {
+    "latitude": 45.464483333333334,
+    "longitude": 5.925483333333333,
+    "n_available": 1,
+    "n_files": 1
+  },
   "Mont Gros": {
     "latitude": 43.765244,
     "longitude": 7.442614,
     "n_files": 1
   },
+  "Mont Joigny": {
+    "latitude": 45.49126666666667,
+    "longitude": 5.897516666666666,
+    "n_available": 1,
+    "n_files": 1
+  },
   "Mont Morbié": {
     "latitude": 45.59745,
     "longitude": 6.11515,
+    "n_files": 1
+  },
+  "Mont Outhéran, La Faille": {
+    "latitude": 45.46606666666667,
+    "longitude": 5.846116666666667,
+    "n_available": 1,
     "n_files": 1
   },
   "Mont Pelat": {
@@ -1464,9 +1531,10 @@
     "n_files": 4
   },
   "Mont St-Michel": {
-    "latitude": 45.550883,
-    "longitude": 6.001567,
-    "n_files": 1
+    "latitude": 45.55084983333333,
+    "longitude": 6.0015168333333335,
+    "n_available": 2,
+    "n_files": 2
   },
   "Montagne De Bange": {
     "latitude": 45.7191585,
@@ -1685,9 +1753,10 @@
     "n_files": 3
   },
   "Plan De La Limace": {
-    "latitude": 45.664714000000004,
-    "longitude": 6.210530666666667,
-    "n_files": 6
+    "latitude": 45.66463342857143,
+    "longitude": 6.210464380952381,
+    "n_available": 7,
+    "n_files": 7
   },
   "Planfait": {
     "latitude": 45.85311930769231,
@@ -1730,16 +1799,16 @@
     "n_files": 25
   },
   "Pointe De La Galopaz": {
-    "latitude": 45.56825005128206,
-    "longitude": 6.069224435897436,
-    "n_available": 13,
-    "n_files": 13
+    "latitude": 45.56808695238095,
+    "longitude": 6.069260785714285,
+    "n_available": 14,
+    "n_files": 14
   },
   "Pointe De La Sauge": {
-    "latitude": 45.55074451851852,
-    "longitude": 6.057551814814815,
-    "n_available": 9,
-    "n_files": 9
+    "latitude": 45.55067506666667,
+    "longitude": 6.057656633333333,
+    "n_available": 10,
+    "n_files": 10
   },
   "Pointe Fine": {
     "latitude": 44.437,
@@ -1872,9 +1941,10 @@
     "n_files": 25
   },
   "Rom": {
-    "latitude": 45.823733,
-    "longitude": -0.596367,
-    "n_files": 1
+    "latitude": 45.82963322222222,
+    "longitude": -0.5893001111111111,
+    "n_available": 3,
+    "n_files": 3
   },
   "Roque Del Conde": {
     "latitude": 28.103979,
@@ -1943,9 +2013,10 @@
     "n_files": 2
   },
   "Sainte- Gemme": {
-    "latitude": 45.7821434,
-    "longitude": -0.8448464,
-    "n_files": 5
+    "latitude": 45.782133388888894,
+    "longitude": -0.8448692222222222,
+    "n_available": 6,
+    "n_files": 6
   },
   "Salvi": {
     "latitude": 42.5522,
@@ -1979,9 +2050,10 @@
     "n_files": 19
   },
   "Semnoz": {
-    "latitude": 45.8050791875,
-    "longitude": 6.092749,
-    "n_files": 16
+    "latitude": 45.80506668627451,
+    "longitude": 6.092880431372549,
+    "n_available": 17,
+    "n_files": 17
   },
   "Serpaton": {
     "latitude": 44.91290425,
@@ -2040,6 +2112,12 @@
     "latitude": 45.801500000000004,
     "longitude": -0.8110999999999999,
     "n_files": 4
+  },
+  "Soult": {
+    "latitude": 44.89812777777777,
+    "longitude": 1.653827777777778,
+    "n_available": 3,
+    "n_files": 3
   },
   "Sous L'Observatoire Sqint Veran": {
     "latitude": 44.688125,
